@@ -199,7 +199,51 @@ class VCardParser implements IVCardParser {
 			}
 		}
 		
-		// Addresses... very complicated :(
+		// Addresses...
+		$addresses = $vcard->select('ADR');
+		foreach ($addresses as $address) {
+			$type = $address->offsetGet('TYPE');
+			debug("Found address $type");
+
+			switch ($type) {
+				case 'HOME':
+					$pStreet  = 'home_address_street';
+					$pCity    = 'home_address_city';
+					$pState   = 'home_address_state';
+					$pPCode   = 'home_address_postal_code';
+					$pCountry = 'home_address_country';
+					break;
+				case 'WORK':
+					$pStreet  = 'business_address_street';
+					$pCity    = 'business_address_city';
+					$pState   = 'business_address_state';
+					$pPCode   = 'business_address_postal_code';
+					$pCountry = 'business_address_country';
+					break;
+				case 'OTHER':
+					$pStreet  = 'other_address_street';
+					$pCity    = 'other_address_city';
+					$pState   = 'other_address_state';
+					$pPCode   = 'other_address_postal_code';
+					$pCountry = 'other_address_country';
+					break;
+				default:
+					debug ("Unknwon address type $type - skipping");
+					continue;
+			}
+			
+			$addressComponents = VCardParser::splitCompundProperty($address->value);
+
+			$dump = print_r($addressComponents, true);
+			debug("Address components:\n$dump");
+			
+			// Set properties
+			$properties[$p[$pStreet]]  = isset($addressComponents[2]) ? $addressComponents[2] : '';
+			$properties[$p[$pCity]]    = isset($addressComponents[3]) ? $addressComponents[3] : '';
+			$properties[$p[$pState]]   = isset($addressComponents[4]) ? $addressComponents[4] : '';
+			$properties[$p[$pPCode]]   = isset($addressComponents[5]) ? $addressComponents[5] : '';
+			$properties[$p[$pCountry]] = isset($addressComponents[6]) ? $addressComponents[6] : '';
+		}
 		
 		// emails need to handle complementary properties plus create one off entries!
 		$nremails = array();

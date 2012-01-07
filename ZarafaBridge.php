@@ -751,9 +751,6 @@ class Zarafa_Bridge {
 				PR_ATTACH_NUM => 1
 			);
 			
-			$dump = print_r($properties, true);
-			debug("Attachment properties:\n$dump");
-			
 			mapi_setprops($attach, $properties);
 			mapi_savechanges($attach);
 			

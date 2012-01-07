@@ -414,9 +414,6 @@ class Zarafa_CardDav_Backend extends Sabre_CardDAV_Backend_Abstract {
 			debug("Removing properties\n$dump");
 			mapi_deleteprops($contact, $nullProperties);
 		}
-
-		$dump = print_r($mapiProperties, true);
-		debug("Setting mapi properties for contact\n$dump");
 		
 		// Set properties
 		mapi_setprops ($contact, $mapiProperties);
