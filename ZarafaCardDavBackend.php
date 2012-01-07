@@ -1,0 +1,457 @@
+<?php
+/*
+ * Copyright 2011 - 2012 Guillaume Lapierre
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License, version 3, 
+ * as published by the Free Software Foundation.
+ *  
+ * "Zarafa" is a registered trademark of Zarafa B.V. 
+ *
+ * This software use SabreDAV, an open source software distributed
+ * with New BSD License. Please see <http://code.google.com/p/sabredav/>
+ * for more information about SabreDAV
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
+ *  
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * Project page: <http://code.google.com/p/sabre-zarafa/>
+ * 
+ */
+
+	require_once("common.inc.php");
+
+	// PHP-MAPI
+	require_once("mapi/mapi.util.php");
+	require_once("mapi/mapicode.php");
+	require_once("mapi/mapidefs.php");
+	require_once("mapi/mapitags.php");
+	require_once("mapi/mapiguid.php");
+	
+class Zarafa_CardDav_Backend extends Sabre_CardDAV_Backend_Abstract {
+	
+	protected $bridge;
+	
+    public function __construct($zarafaBridge) {
+		// Stores a reference to Zarafa Auth Backend so as to get the session
+        $this->bridge = $zarafaBridge;
+    }
+	
+    /**
+     * Returns the list of addressbooks for a specific user.
+     *
+     * Every addressbook should have the following properties:
+     *   id - an arbitrary unique id
+     *   uri - the 'basename' part of the url
+     *   principaluri - Same as the passed parameter
+     *
+     * Any additional clark-notation property may be passed besides this. Some 
+     * common ones are :
+     *   {DAV:}displayname
+     *   {urn:ietf:params:xml:ns:carddav}addressbook-description
+     *   {http://calendarserver.org/ns/}getctag
+     * 
+     * @param string $principalUri 
+     * @return array 
+     */
+    public function getAddressBooksForUser($principalUri) {
+		
+		$adressBooks = array();
+		
+		$folders = $this->bridge->getAdressBooks();
+		foreach ($folders as $entryId => $f) {
+		
+			$adressBooks[] = array(
+				'id'  => $entryId,
+				'uri' =>  $f['displayname'],
+				'principaluri' => $principalUri,
+				'{DAV:}displayname' => $f['displayname'],
+				'{' . Sabre_CardDAV_Plugin::NS_CARDDAV . '}addressbook-description' => $f['description'],
+				'{http://calendarserver.org/ns/}getctag' => $f['ctag'],
+				'{' . Sabre_CardDAV_Plugin::NS_CARDDAV . '}supported-address-data' => 
+                    new Sabre_CardDAV_Property_SupportedAddressData()
+			);
+		}
+		
+		return $adressBooks;
+	} 
+
+    /**
+     * Updates an addressbook's properties
+     *
+     * See Sabre_DAV_IProperties for a description of the mutations array, as 
+     * well as the return value. 
+     *
+     * @param mixed $addressBookId
+     * @param array $mutations
+     * @see Sabre_DAV_IProperties::updateProperties
+     * @return bool|array
+     */
+    public function updateAddressBook($addressBookId, array $mutations) {
+
+		if (READ_ONLY) {
+			debug("Read only");
+			return false;
+		}
+		
+		// Debug information
+		$dump = print_r($mutations, true);
+		
+		// What we know to change
+		$authorizedMutations = array ('{DAV:}displayname', '{' . Sabre_CardDAV_Plugin::NS_CARDDAV . '}addressbook-description');
+		
+		// Check the mutations
+		foreach ($mutations as $m => $value) {
+			if (!in_array($m, $authorizedMutations)) {
+				debug("Unknown mutation: $m => $value");
+				return false;
+			}
+		}
+		
+		// Do the mutations
+		$folder = mapi_msgstore_openentry($this->bridge->getStore(), $addressBookId);
+		
+		if (mapi_last_hresult() > 0) {
+			return false;
+		}
+		
+		$mapiProperties = array();
+		
+		// Display Name
+		if (isset($mutations['{DAV:}displayname'])) {
+			$displayName = $mutations['{DAV:}displayname'];
+			if ($displayName == '') {
+				return false;
+			}
+			$mapiProperties[PR_DISPLAY_NAME] = $displayName;
+		}
+		
+		// Description
+		if (isset($mutations['{' . Sabre_CardDAV_Plugin::NS_CARDDAV . '}addressbook-description'])) {
+			$description = $mutations['{' . Sabre_CardDAV_Plugin::NS_CARDDAV . '}addressbook-description'];
+			$mapiProperties[805568542] = $description;
+		}
+		
+		// Apply changes
+		if (count($mapiProperties) > 0) {
+			mapi_setprops($folder, $mapiProperties);
+			if (mapi_last_hresult() > 0) {
+				return false;
+			}
+
+			mapi_savechanges($folder);
+			if (mapi_last_hresult() > 0) {
+				return false;
+			}
+
+			return true;
+		}
+
+		// No detected change
+		return false;
+	}
+
+    /**
+     * Creates a new address book 
+     *
+     * @param string $principalUri 
+     * @param string $url Just the 'basename' of the url. 
+     * @param array $properties 
+     * @return void
+     */
+    public function createAddressBook($principalUri, $url, array $properties) {
+		
+		if (READ_ONLY) {
+			debug("Read only");
+			return false;
+		}
+		
+		$dump = print_r($properties, true);
+		
+		$rootFolder = $this->bridge->getRootFolder();
+		
+		$displayName = isset($properties['{DAV:}displayname']) ? $properties['{DAV:}displayname'] : '';
+		$description = isset($properties['{' . Sabre_CardDAV_Plugin::NS_CARDDAV . '}addressbook-description']) ? $properties['{' . Sabre_CardDAV_Plugin::NS_CARDDAV . '}addressbook-description'] : '';
+		
+		$subFolder = mapi_folder_createfolder($rootFolder, $displayName, $description, MAPI_UNICODE | OPEN_IF_EXISTS, FOLDER_GENERIC);
+		mapi_setprops ($subFolder, array (907214878 => 'IPF.Contact'));
+		mapi_savechanges($subFolder);
+		
+	}
+
+    /**
+     * Deletes an entire addressbook and all its contents
+     *
+     * @param mixed $addressBookId 
+     * @return void
+     */
+    public function deleteAddressBook($addressBookId) {
+
+		if (READ_ONLY || !ALLOW_DELETE_FOLDER) {
+			debug("Permission denied by config");
+			return false;
+		}
+		
+		$folders = $this->bridge->getAdressBooks();
+		
+		$parentFolderId = $folders[$addressBookId]['parentId'];
+		$folder         = mapi_msgstore_openentry($this->bridge->getStore(), $addressBookId);
+		$parentFolder   = mapi_msgstore_openentry($this->bridge->getStore(), $parentFolderId);
+		
+		// Delete folder content
+		mapi_folder_emptyfolder($folder, DEL_ASSOCIATED);
+		mapi_folder_deletefolder($parentFolder, $addressBookId);
+	}
+
+    /**
+     * Returns all cards for a specific addressbook id. 
+     *
+     * This method should return the following properties for each card:
+     *   * carddata - raw vcard data
+     *   * uri - Some unique url
+     *   * lastmodified - A unix timestamp
+
+     * @param mixed $addressbookId 
+     * @return array 
+     */
+    public function getCards($addressbookId) {
+
+		$cards = array();
+		
+		$folder = mapi_msgstore_openentry($this->bridge->getStore(), $addressbookId);
+		$contactsTable = mapi_folder_getcontentstable($folder);
+		$contacts = mapi_table_queryallrows($contactsTable);
+
+		$i = 0;
+		foreach ($contacts as $c) {
+			$i++;
+			$contactProperties = $this->bridge->getProperties($c[PR_ENTRYID]);
+			
+			// URI is based on PR_CARDDAV_URI or use ENTRYID
+			if (isset($contactProperties[PR_CARDDAV_URI])) {
+				$uri = $contactProperties[PR_CARDDAV_URI];
+			} else {
+				// Generate a GUID and use it as URI - store in zarafa
+				$uri = $this->bridge->generateRandomGuid() . ".vcf";
+				$contact = mapi_msgstore_openentry($this->bridge->getStore(), $c[PR_ENTRYID], MAPI_MODIFY);
+				mapi_setprops ($contact, array(PR_CARDDAV_URI => $uri));
+				mapi_savechanges($contact);
+			}
+			
+			$cards[] = array(
+				'id' => $contactProperties[PR_ENTRYID],
+				'carddata' => $this->bridge->getContactVCard($contactProperties[PR_ENTRYID]),
+				'uri' => $uri, 
+				'lastmodified' => $contactProperties[PR_LAST_MODIFICATION_TIME]
+			);
+		}
+		
+		return $cards;
+	}
+
+    /**
+     * Returns a specfic card
+     * 
+     * @param mixed $addressBookId 
+     * @param string $cardUri 
+     * @return void
+     */
+    public function getCard($addressBookId, $cardUri) {
+
+		// Init
+		$entryId = 0;
+		
+		debug("getCard($addressBookId, $cardUri)");
+		
+		// $entryId = $this->bridge->strToEntryId (substr($cardUri, 0, -4));
+		// Search addressBook for cardUri
+		$folder = mapi_msgstore_openentry($this->bridge->getStore(), $addressBookId);
+		$contactsTable = mapi_folder_getcontentstable($folder);
+		$contacts = mapi_table_queryallrows($contactsTable, array(PR_ENTRYID, PR_CARDDAV_URI, PR_SUBJECT));
+		
+		foreach ($contacts as $c) {
+			if (isset($c[PR_CARDDAV_URI])) {
+				if ($c[PR_CARDDAV_URI] == $cardUri) {
+					$entryId = $c[PR_ENTRYID];
+					break;
+				}
+			} else {
+				// CardURI can be PR_ENTRYID .vcf
+				if ($this->bridge->entryIdToStr($c[PR_ENTRYID]) == substr($cardUri, 0, -4)) {
+					$entryId = $c[PR_ENTRYID];
+					break;
+				}
+			}
+		}
+		
+		if ($entryId === 0) {
+			return false;
+		}
+		
+		$contactProperties = $this->bridge->getProperties($entryId);
+		$card = array(
+			'id' => $contactProperties[PR_ENTRYID],
+			'carddata' => $this->bridge->getContactVCard($contactProperties[PR_ENTRYID]),
+			'uri' => $cardUri,
+			'lastmodified' => $contactProperties[PR_LAST_MODIFICATION_TIME]
+		);
+		
+		return $card;
+	} 
+
+    /**
+     * Creates a new card
+     * 
+     * @param mixed $addressBookId 
+     * @param string $cardUri 
+     * @param string $cardData 
+     * @return bool 
+     */
+    public function createCard($addressBookId, $cardUri, $cardData) {
+		debug("createCard - $cardUri\n$cardData");
+		
+		if (READ_ONLY) {
+			return false;
+		}
+		
+		$folder = mapi_msgstore_openentry($this->bridge->getStore(), $addressBookId);
+		$contact = mapi_folder_createmessage($folder);
+		$mapiProperties = $this->bridge->vcardToMapiProperties($cardData);
+		$mapiProperties[PR_CARDDAV_URI] = $cardUri;
+		
+		if (SAVE_RAW_VCARD) {
+			// Save RAW vCard
+			$mapiProperties[PR_CARDDAV_RAW_DATA] = $cardData;
+			$mapiProperties[PR_CARDDAV_RAW_DATA_GENERATION_TIME] = time();
+		}
+		
+		// Handle contact picture
+		$contactPicture = NULL;
+		if (isset($mapiProperties['ContactPicture'])) {
+			$contactPicture = $mapiProperties['ContactPicture'];
+			unset($mapiProperties['ContactPicture']);
+			$this->bridge->setContactPicture($contact, $contactPicture);
+		}
+		
+		mapi_setprops($contact, $props);
+		mapi_savechanges($contact);
+		
+		return mapi_last_hresult() == 0;
+	} 
+
+    /**
+     * Updates a card
+     * 
+     * @param mixed $addressBookId 
+     * @param string $cardUri 
+     * @param string $cardData 
+     * @return bool 
+     */
+    public function updateCard($addressBookId, $cardUri, $cardData) {
+		debug("updateCard - $cardUri\n$cardData");
+
+		if (READ_ONLY) {
+			debug("Read only");
+			return false;
+		}
+		
+		// Update object properties
+		$folder = mapi_msgstore_openentry($this->bridge->getStore(), $addressBookId);
+		$contactsTable = mapi_folder_getcontentstable($folder);
+		$contacts = mapi_table_queryallrows($contactsTable, array(PR_ENTRYID, PR_CARDDAV_URI, PR_SUBJECT));
+		
+		$entryId = 0;
+		foreach ($contacts as $c) {
+			if (isset($c[PR_CARDDAV_URI])) {
+				if ($c[PR_CARDDAV_URI] == $cardUri) {
+					$entryId = $c[PR_ENTRYID];
+					break;
+				}
+			} else {
+				// CardURI can be PR_ENTRYID .vcf
+				if ($this->bridge->entryIdToStr($c[PR_ENTRYID]) == substr($cardUri, 0, -4)) {
+					$entryId = $c[PR_ENTRYID];
+					break; 
+				}
+			}
+		}
+		
+		if ($entryId === 0) {
+			return false;
+		}
+		
+		$mapiProperties = $this->bridge->vcardToMapiProperties($cardData);
+		$contact = mapi_msgstore_openentry($this->bridge->getStore(), $entryId);
+		
+		if (SAVE_RAW_VCARD) {
+			// Save RAW vCard
+			$mapiProperties[PR_CARDDAV_RAW_DATA] = $cardData;
+			$mapiProperties[PR_CARDDAV_RAW_DATA_GENERATION_TIME] = time();
+		}
+
+		// Handle contact picture
+		if (isset($mapiProperties['ContactPicture'])) {
+			$contactPicture = $mapiProperties['ContactPicture'];
+			unset($mapiProperties['ContactPicture']);
+			$this->bridge->setContactPicture($contact, $contactPicture);
+		}
+		
+		// Remove NULL properties
+		if (CLEAR_MISSING_PROPERTIES) {
+			$nullProperties = array();
+			foreach ($mapiProperties as $p => $v) {
+				if ($v == NULL) {
+					$nullProperties[] = $p;
+					unset($mapiProperties[$p]);
+				}
+			}
+			$dump = print_r ($nullProperties, true);
+			debug("Removing properties\n$dump");
+			mapi_deleteprops($contact, $nullProperties);
+		}
+
+		$dump = print_r($mapiProperties, true);
+		debug("Setting mapi properties for contact\n$dump");
+		
+		// Set properties
+		mapi_setprops ($contact, $mapiProperties);
+		
+		// Save changes to backend
+		mapi_savechanges($contact);		
+		
+		return mapi_last_hresult() == 0;
+	}
+
+    /**
+     * Deletes a card
+     * 
+     * @param mixed $addressBookId 
+     * @param string $cardUri 
+     * @return bool 
+     */
+    public function deleteCard($addressBookId, $cardUri) {
+
+		if (READ_ONLY) {
+			debug("Read only");
+			return false;
+		}
+		
+		$folder = mapi_msgstore_openentry($this->bridge->getStore(), $addressBookId);
+		
+		mapi_folder_deletemessages($folder, array($this->bridge->strToEntryId(substr($cardUri, 0, -4))));
+		
+		if (mapi_last_hresult() > 0) {
+			return false;
+		}
+	
+		return true;
+	}
+		
+}
+
+?>
