@@ -88,7 +88,24 @@ class VCardParser implements IVCardParser {
 			$properties[$p['company_telephone_number']] = NULL;
 			$properties[$p['car_telephone_number']] = NULL;
 			$properties[$p['assistant_telephone_number']] = NULL;
-			
+			$properties[$p['assistant']] = NULL;
+			$properties[$p['manager_name']] = NULL;
+			$properties[$p['spouse_name']] = NULL;
+			$properties[$p['home_address_street']] = NULL;
+			$properties[$p['home_address_city']] = NULL;
+			$properties[$p['home_address_state']] = NULL;
+			$properties[$p['home_address_postal_code']] = NULL;
+			$properties[$p['home_address_country']] = NULL;
+			$properties[$p['business_address_street']] = NULL;
+			$properties[$p['business_address_city']] = NULL;
+			$properties[$p['business_address_state']] = NULL;
+			$properties[$p['business_address_postal_code']] = NULL;
+			$properties[$p['business_address_country']] = NULL;
+			$properties[$p['other_address_street']] = NULL;
+			$properties[$p['other_address_city']] = NULL;
+			$properties[$p['other_address_state']] = NULL;
+			$properties[$p['other_address_postal_code']] = NULL;
+			$properties[$p['other_address_country']] = NULL;
 			$nremails = array();
 			$abprovidertype = 0;
 			for ($i = 1; $i <= 3; $i++) {
@@ -100,9 +117,13 @@ class VCardParser implements IVCardParser {
 			}
 			$properties[$p["address_book_mv"]] = NULL;
 			$properties[$p["address_book_long"]] = NULL;
+			$properties[$p['webpage']] = NULL;
+			$properties[$p['im']] = NULL;
+			$properties[$p['categories']] = NULL;
 		}
 		
 		// Name components
+		$sortAs = '';
 		if (isset($vcard->n)) {
 			debug("N: " . $vcard->n);
 			$nameInfo = VCardParser::splitCompundProperty($vcard->n->value);
@@ -114,8 +135,9 @@ class VCardParser implements IVCardParser {
 			$properties[$p['middle_name']]         = isset($nameInfo[2]) ? $nameInfo[2] : ''; 
 			$properties[$p['display_name_prefix']] = isset($nameInfo[3]) ? $nameInfo[3] : ''; 
 			$properties[$p['generation']]          = isset($nameInfo[4]) ? $nameInfo[4] : '';
+			
+			$sortAs = $vcard->n->offsetGet('SORT-AS');
 		}
-		if (isset($vcard->fn))				$properties[$p['display_name']] = $vcard->fn->value;
 		if (isset($vcard->nickname))		$properties[$p['nickname']] = $vcard->nickname->value;
 		if (isset($vcard->title))			$properties[$p['title']] = $vcard->title->value;
 		if (isset($vcard->role))			$properties[$p['profession']] = $vcard->role->value;
@@ -124,6 +146,17 @@ class VCardParser implements IVCardParser {
 			$orgInfo = VCardParser::splitCompundProperty($vcard->org->value);
 			$properties[$p['company_name']] = $orgInfo[0];
 		}
+
+		if (isset($vcard->fn)) {
+			$properties[$p['display_name']] = $vcard->fn->value;
+			$properties[PR_SUBJECT] = $vcard->fn->value;
+			if (empty($sortAs)) {
+				$sortAs = $vcard->fn->value;
+			}
+		}
+
+		$properties[$p['fileas']] = $sortAs;
+
 		
 		// Custom... not quite sure X-MS-STUFF renders as x_ms_stuff... will have to check that!
 		if (isset($vcard->x_ms_assistant))	$properties[$p['assistant']] = $vcard->x_ms_assistant->value;

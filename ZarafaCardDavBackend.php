@@ -338,7 +338,20 @@ class Zarafa_CardDav_Backend extends Sabre_CardDAV_Backend_Abstract {
 			$this->bridge->setContactPicture($contact, $contactPicture);
 		}
 		
-		mapi_setprops($contact, $props);
+		// Do not set empty properties
+		foreach ($mapiProperties as $p => $v) {
+			if (empty($v)) {
+				unset($mapiProperties[$p]);
+			}
+		}
+		
+		// Add missing properties for new contacts
+		$p = $this->bridge->getExtendedProperties();
+		$mapiProperties[$p["icon_index"]] = "512";
+		$mapiProperties[$p["message_class"]] = 'IPM.Contact';
+		// message flags ?
+		
+		mapi_setprops($contact, $mapiProperties);
 		mapi_savechanges($contact);
 		
 		return mapi_last_hresult() == 0;
