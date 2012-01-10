@@ -43,6 +43,34 @@
 	// If set to true all the write operations will be refused
 	define ('READ_ONLY', false);
 
+	// Some clients do not add a TYPE= attribute for telephone numbers
+	// This parameters maps empty TYPE to a MAPI attribute
+	// unmapped properties are not exported by sabre-zarafa to VCARDs
+	// unless used as DEFAULT_TELEPHONE_NUMBER_PROPERTY.
+	
+	// Valid values are:
+	//  home_telephone_number			(mapped to )
+	//	home2_telephone_number			(mapped to )
+	//	cellular_telephone_number		(mapped to )
+	//	office_telephone_number			(mapped to )
+	//	business2_telephone_number		(mapped to )
+	//	business_fax_number				(mapped to )
+	//	home_fax_number					(mapped to )
+	//	pager_telephone_number			(mapped to )
+	//	isdn_number						(mapped to )
+	//	company_telephone_number		(mapped to )
+	//	car_telephone_number			(mapped to )
+	//	assistant_telephone_number		(mapped to )
+	//	callback_telephone_number		* unmapped *
+	//	other_telephone_number			* unmapped *
+	//	primary_fax_number				* unmapped *
+	//	primary_telephone_number		* unmapped *
+	//	radio_telephone_number			* unmapped *
+	//	telex_telephone_number			* unmapped *
+	//	ttytdd_telephone_number			* unmapped *
+	
+	define ('DEFAULT_TELEPHONE_NUMBER_PROPERTY', 'primary_telephone_number');
+	
 	// If set, missing information from VCard will be removed from existing contact
 	// if present. This could be lead to information loss if CardDav client
 	// does not handle correctly all information or does not send back some

@@ -198,7 +198,8 @@ class VCardParser implements IVCardParser {
 				$type = $typeParam->value;
 			}
 			
-			if ($type == 'HOME,VOICE') {
+			if (($type == 'HOME,VOICE') || ($type == 'HOME')) {
+				$type = 'HOME,VOICE';	// Force count key
 				$pk = 'home_telephone_number';
 				if ($typeCount[$type] == 1) {
 					$pk = 'home2_telephone_number';
@@ -219,6 +220,7 @@ class VCardParser implements IVCardParser {
 			if ($type == 'WORK')			$pk = 'company_telephone_number';
 			if ($type == 'CAR')				$pk = 'car_telephone_number';
 			if ($type == 'SECR')			$pk = 'assistant_telephone_number';
+			if ($type == '')				$pk = DEFAULT_TELEPHONE_NUMBER_PROPERTY;
 			
 			// Counting
 			if ($pk != '') {

@@ -377,17 +377,16 @@ class Zarafa_Bridge {
 		$this->setVCard($vCard,'TEL;TYPE=CAR',        $contactProperties,$p['car_telephone_number']);
 		$this->setVCard($vCard,'TEL;TYPE=SECR',		  $contactProperties,$p['assistant_telephone_number']);
 
-		/*
-		Unmatched telephone numbers properties
+		// There are unmatched telephone numbers in zarafa, use them!
+		$unmatchedProperties = array("callback_telephone_number", "other_telephone_number", "primary_fax_number",
+									 "primary_telephone_number", "radio_telephone_number", "telex_telephone_number",
+									 "ttytdd_telephone_number"
+									);
 		
-		$properties["callback_telephone_number"] = PR_CALLBACK_TELEPHONE_NUMBER;
-		$properties["other_telephone_number"] = PR_OTHER_TELEPHONE_NUMBER;
-		$properties["primary_fax_number"] = PR_PRIMARY_FAX_NUMBER;
-		$properties["primary_telephone_number"] = PR_PRIMARY_TELEPHONE_NUMBER;
-		$properties["radio_telephone_number"] = PR_RADIO_TELEPHONE_NUMBER;
-		$properties["telex_telephone_number"] = PR_TELEX_NUMBER;
-		$properties["ttytdd_telephone_number"] = PR_TTYTDD_PHONE_NUMBER;
-		*/
+		if (in_array(DEFAULT_TELEPHONE_NUMBER_PROPERTY, $unmatchedProperties)) {
+			// unmatched found a match!
+			$this->setVCard($vCard, 'TEL', $contactProperties, $p[DEFAULT_TELEPHONE_NUMBER_PROPERTY]);
+		}
 
 		$this->setVCardAddress($vCard, 'HOME',  $contactProperties, 'home');
 		$this->setVCardAddress($vCard, 'WORK',  $contactProperties, 'business');
