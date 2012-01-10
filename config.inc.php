@@ -29,7 +29,7 @@
 	define ('SABRE_AUTH_REALM', 'Zarafa SabreDAV CardDav');
 	define ('CARDDAV_ROOT_URI', '/sabre-zarafa');
 	define ('ZARAFA_DOMAINNAME', 'zeguigui.com');
-	define ('VCARD_PRODUCT_ID', '-//SabreDav/ZarafaBackend/0.1');
+	define ('VCARD_PRODUCT_ID', '-//SabreDav/ZarafaBackend/0.3');
 	
 	// Charset to convert data to.
 	// iPhone does not support UTF8 nor windows contact
