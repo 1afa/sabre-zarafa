@@ -364,6 +364,7 @@ class VCardParser implements IVCardParser {
 						ob_end_clean();
 						$properties['ContactPicture'] = $content;
 						$properties[PR_HASATTACH] = true;
+						$properties[$p['has_picture']] = true;
 					}
 				}
 			} else {

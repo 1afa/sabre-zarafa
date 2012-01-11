@@ -645,6 +645,9 @@ class Zarafa_Bridge {
 
 		$properties["notes"] = PR_BODY;
 		
+		// Has contact picture
+		$properties["has_picture"] = "PT_BOOLEAN:{00062004-0000-0000-C000-000000000046}:0x8015";
+		
 		// Custom properties needed for carddav functionnality
 		$properties["carddav_uri"] = PR_CARDDAV_URI;
 		
@@ -653,6 +656,8 @@ class Zarafa_Bridge {
 		
 		// Dump properties to debug
 		$dump = print_r ($this->extendedProperties, true);
+		debug("Properties init done:\n$dump");
+		debug("PR_HASATTACH => " . PR_HASATTACH);
 	}
 	
 	/**
