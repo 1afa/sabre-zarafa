@@ -29,7 +29,7 @@
 	define ('SABRE_AUTH_REALM', 'Zarafa SabreDAV CardDav');
 	define ('CARDDAV_ROOT_URI', '/sabre-zarafa');
 	define ('ZARAFA_DOMAINNAME', 'zeguigui.com');
-	define ('VCARD_PRODUCT_ID', '-//SabreDav/ZarafaBackend/0.3');
+	define ('VCARD_PRODUCT_ID', '-//SabreDav/ZarafaBackend/0.4');
 	
 	// Charset to convert data to.
 	// iPhone does not support UTF8 nor windows contact
@@ -43,6 +43,9 @@
 	// If set to true all the write operations will be refused
 	define ('READ_ONLY', false);
 
+	// Allow SabreDAV browser plugin
+	define('SABRE_DAV_BROWSER_PLUGIN', true);
+	
 	// Some clients do not add a TYPE= attribute for telephone numbers
 	// This parameters maps empty TYPE to a MAPI attribute
 	// unmapped properties are not exported by sabre-zarafa to VCARDs
@@ -68,7 +71,6 @@
 	//	radio_telephone_number			* unmapped *
 	//	telex_telephone_number			* unmapped *
 	//	ttytdd_telephone_number			* unmapped *
-	
 	define ('DEFAULT_TELEPHONE_NUMBER_PROPERTY', 'primary_telephone_number');
 	
 	// If set, missing information from VCard will be removed from existing contact
@@ -96,6 +98,8 @@
 	define ('SAVE_RAW_VCARD', false);
 	
 	// Set default timezone
-	date_default_timezone_set('Europe/Paris');
+	if (function_exists("date_default_timezone_set")) {
+		date_default_timezone_set('Europe/Paris');
+	}
 	
 ?>

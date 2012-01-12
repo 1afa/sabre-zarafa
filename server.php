@@ -41,7 +41,7 @@
 	
 	function checkMapiError($msg) {
 		if (mapi_last_hresult() != 0) {
-			echo "Erreur lors de la requête $msg : " . get_mapi_error_name() . "\n";
+			echo "MAPI request error: $msg : " . get_mapi_error_name() . "\n";
 			exit;
 		}
 	}
@@ -71,11 +71,16 @@
 	$server = new Sabre_DAV_Server($nodes);
 	$server->setBaseUri(CARDDAV_ROOT_URI);
 
-	// Plugins 
+	// Required plugins 
 	$server->addPlugin(new Sabre_DAV_Auth_Plugin($authBackend, SABRE_AUTH_REALM));
-	$server->addPlugin(new Sabre_DAV_Browser_Plugin());
 	$server->addPlugin(new Sabre_CardDAV_Plugin());
 	$server->addPlugin(new Sabre_DAVACL_Plugin());
+
+	// Optional plugins
+	if (SABRE_DAV_BROWSER_PLUGIN) {
+		$server->addPlugin(new Sabre_DAV_Browser_Plugin());
+	}
+
 	
 	// Start server
 	$server->exec();	

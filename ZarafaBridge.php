@@ -238,8 +238,7 @@ class Zarafa_Bridge {
 		$vObject = Sabre_VObject_Reader::read($vcardData);
 
 		// Extract version to call the correct parser
-		$version = $vObject->version;
-		
+		$version = $vObject->version->value;
 		$majorVersion = substr($version, 0, 1);
 		
 		$objectClass = "VCardParser$majorVersion";
