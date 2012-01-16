@@ -136,7 +136,7 @@ class VCardParser implements IVCardParser {
 			$properties[$p['display_name_prefix']] = isset($nameInfo[3]) ? $nameInfo[3] : ''; 
 			$properties[$p['generation']]          = isset($nameInfo[4]) ? $nameInfo[4] : '';
 			
-			$sortAs = $vcard->n->offsetGet('SORT-AS');
+			$sortAs = $vcard->n->offsetGet('SORT-AS')->value;
 		}
 		if (isset($vcard->nickname))		$properties[$p['nickname']] = $vcard->nickname->value;
 		if (isset($vcard->title))			$properties[$p['title']] = $vcard->title->value;
@@ -237,7 +237,7 @@ class VCardParser implements IVCardParser {
 		// Addresses...
 		$addresses = $vcard->select('ADR');
 		foreach ($addresses as $address) {
-			$type = $address->offsetGet('TYPE');
+			$type = $address->offsetGet('TYPE')->value;
 			debug("Found address $type");
 
 			switch ($type) {
@@ -343,8 +343,8 @@ class VCardParser implements IVCardParser {
 		
 		// Contact picture
 		if (isset($vcard->photo)) {
-			$type     = $vcard->photo->offsetGet("TYPE");
-			$encoding = $vcard->photo->offsetGet("ENCODING");
+			$type     = $vcard->photo->offsetGet("TYPE")->value;
+			$encoding = $vcard->photo->offsetGet("ENCODING")->value;
 			$content  = $vcard->photo->value;
 			
 			debug("Found contact picture type $type encoding $encoding");

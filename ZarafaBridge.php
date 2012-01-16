@@ -154,11 +154,11 @@ class Zarafa_Bridge {
 	
 	/**
 	 * Get connected user email address
-	 * TODO: read user email address from MAPI
 	 * @return email address
 	 */
 	public function getConnectedUserMailAddress() {
-		return $this->connectedUser . "@" . ZARAFA_DOMAINNAME;
+		$userInfo = mapi_zarafa_getuser_by_name($this->store, $this->connectedUser);
+		return $userInfo["emailaddress"];
 	}
 	
 	/**

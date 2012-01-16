@@ -25,11 +25,20 @@
  */
 
 	// Configuration file for Zarafa SabreDAV interface
-	define ('ZARAFA_SERVER', 'file:///var/run/zarafa');
-	define ('SABRE_AUTH_REALM', 'Zarafa SabreDAV CardDav');
+
+	// Location of the SabreDAV server.
+	// see SabreDAV documentation: 
+	//      http://code.google.com/p/sabredav/wiki/CardDAV#Get_clients_working
 	define ('CARDDAV_ROOT_URI', '/sabre-zarafa');
-	define ('ZARAFA_DOMAINNAME', 'zeguigui.com');
-	define ('VCARD_PRODUCT_ID', '-//SabreDav/ZarafaBackend/0.4');
+
+	// Zarafa server location
+	define ('ZARAFA_SERVER', 'file:///var/run/zarafa');
+	
+	// Authentication realm
+	define ('SABRE_AUTH_REALM', 'Zarafa SabreDAV CardDav');
+	
+	// Product ID sent in vcards
+	define ('VCARD_PRODUCT_ID', '-//SabreDav/ZarafaBackend/0.5');
 	
 	// Charset to convert data to.
 	// iPhone does not support UTF8 nor windows contact
@@ -95,7 +104,7 @@
 	// This should improve compatibility with CardDav clients using fields
 	// that do not map easily with zarafa (multiple IMPP in emClient for
 	// example)
-	define ('SAVE_RAW_VCARD', false);
+	define ('SAVE_RAW_VCARD', true);
 	
 	// Set default timezone
 	if (function_exists("date_default_timezone_set")) {
