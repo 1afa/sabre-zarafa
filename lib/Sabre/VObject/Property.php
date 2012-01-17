@@ -13,7 +13,7 @@
  *
  * @package Sabre
  * @subpackage VObject
- * @copyright Copyright (C) 2007-2011 Rooftop Solutions. All rights reserved.
+ * @copyright Copyright (C) 2007-2012 Rooftop Solutions. All rights reserved.
  * @author Evert Pot (http://www.rooftopsolutions.nl/) 
  * @license http://code.google.com/p/sabredav/wiki/License Modified BSD License
  */
@@ -115,8 +115,8 @@ class Sabre_VObject_Property extends Sabre_VObject_Element {
         $out = '';
         while(strlen($str)>0) {
             if (strlen($str)>75) {
-                $out.= substr($str,0,75) . "\r\n";
-                $str = ' ' . substr($str,75);
+                $out.= mb_strcut($str,0,75,'utf-8') . "\r\n";
+                $str = ' ' . mb_strcut($str,75,strlen($str),'utf-8');
             } else {
                 $out.=$str . "\r\n";
                 $str='';
