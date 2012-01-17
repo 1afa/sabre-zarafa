@@ -456,7 +456,7 @@ class Zarafa_Bridge {
 		}
 		
 		// Misc
-		$vCard->add('UID', $this->entryIdToStr($contactProperties[PR_ENTRYID]));
+		$vCard->add('UID', "urn:uuid:" . substr($contactProperties[PR_CARDDAV_URI], 0, -4)); // $this->entryIdToStr($contactProperties[PR_ENTRYID]));
 		$this->setVCard($vCard, 'NOTE', $contactProperties, $p['notes']);
 		$vCard->add('PRODID', VCARD_PRODUCT_ID);
 		$vCard->add('REV', date('c',$contactProperties[$p['last_modification_time']]));
