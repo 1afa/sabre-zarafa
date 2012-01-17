@@ -396,7 +396,12 @@ class Zarafa_Bridge {
 			if (isset($contactProperties[$p["email_address_$i"]])) {
 				// Zarafa needs an email display name
 				$emailProperty = new Sabre_VObject_Property('EMAIL', $contactProperties[$p["email_address_$i"]]);
-				$emailProperty->offsetSet("X-CN", Zarafa_Bridge::toVcardCharset($contactProperties[$p["email_address_display_name_$i"]]));
+				
+				// Get display name
+				$dn = isset($contactProperties[$p["email_address_display_name_$i"]]) ? $contactProperties[$p["email_address_display_name_$i"]]
+																					 : $contactProperties[$p['display_name']];
+				
+				$emailProperty->offsetSet("X-CN", Zarafa_Bridge::toVcardCharset($dn));
 				$vCard->add($emailProperty);
 			}
 		}

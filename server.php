@@ -78,9 +78,9 @@
 
 	// Optional plugins
 	if (SABRE_DAV_BROWSER_PLUGIN) {
-		$server->addPlugin(new Sabre_DAV_Browser_Plugin());
+		// Do not allow POST
+		$server->addPlugin(new Sabre_DAV_Browser_Plugin(false));
 	}
-
 	
 	// Start server
 	$server->exec();	
