@@ -264,32 +264,13 @@ class Zarafa_CardDav_Backend extends Sabre_CardDAV_Backend_Abstract {
     public function getCard($addressBookId, $cardUri) {
 
 		// Init
-		$entryId = 0;
-		
-		debug("getCard($addressBookId, $cardUri)");
-		
-		// $entryId = $this->bridge->strToEntryId (substr($cardUri, 0, -4));
-		// Search addressBook for cardUri
+		debug("getCard(" . bin2hex($addressBookId) . ", $cardUri)");
+
 		$folder = mapi_msgstore_openentry($this->bridge->getStore(), $addressBookId);
-		$contactsTable = mapi_folder_getcontentstable($folder);
-		$contacts = mapi_table_queryallrows($contactsTable, array(PR_ENTRYID, PR_CARDDAV_URI, PR_SUBJECT));
-		
-		foreach ($contacts as $c) {
-			if (isset($c[PR_CARDDAV_URI])) {
-				if ($c[PR_CARDDAV_URI] == $cardUri) {
-					$entryId = $c[PR_ENTRYID];
-					break;
-				}
-			} else {
-				// CardURI can be PR_ENTRYID .vcf
-				if ($this->bridge->entryIdToStr($c[PR_ENTRYID]) == substr($cardUri, 0, -4)) {
-					$entryId = $c[PR_ENTRYID];
-					break;
-				}
-			}
-		}
+		$entryId = $this->getContactEntryId($addressBookId, $cardUri);
 		
 		if ($entryId === 0) {
+			debug("Contact not found!");
 			return false;
 		}
 		
@@ -374,25 +355,7 @@ class Zarafa_CardDav_Backend extends Sabre_CardDAV_Backend_Abstract {
 		}
 		
 		// Update object properties
-		$folder = mapi_msgstore_openentry($this->bridge->getStore(), $addressBookId);
-		$contactsTable = mapi_folder_getcontentstable($folder);
-		$contacts = mapi_table_queryallrows($contactsTable, array(PR_ENTRYID, PR_CARDDAV_URI, PR_SUBJECT));
-		
-		$entryId = 0;
-		foreach ($contacts as $c) {
-			if (isset($c[PR_CARDDAV_URI])) {
-				if ($c[PR_CARDDAV_URI] == $cardUri) {
-					$entryId = $c[PR_ENTRYID];
-					break;
-				}
-			} else {
-				// CardURI can be PR_ENTRYID .vcf
-				if ($this->bridge->entryIdToStr($c[PR_ENTRYID]) == substr($cardUri, 0, -4)) {
-					$entryId = $c[PR_ENTRYID];
-					break; 
-				}
-			}
-		}
+		$entryId = $this->getContactEntryId($addressBookId, $cardUri);
 		
 		if ($entryId === 0) {
 			return false;
@@ -450,18 +413,55 @@ class Zarafa_CardDav_Backend extends Sabre_CardDAV_Backend_Abstract {
 			debug("Read only");
 			return false;
 		}
-		
+
 		$folder = mapi_msgstore_openentry($this->bridge->getStore(), $addressBookId);
+		$entryId = $this->getContactEntryId($addressBookId, $cardUri);
 		
-		mapi_folder_deletemessages($folder, array($this->bridge->strToEntryId(substr($cardUri, 0, -4))));
-		
+		if ($entryId === 0) {
+			debug("Contact not found!");
+			return false;
+		}
+
+		// $folder = mapi_msgstore_openentry($this->bridge->getStore(), $addressBookId);
+		mapi_folder_deletemessages($folder, array($entryId));
+
 		if (mapi_last_hresult() > 0) {
 			return false;
 		}
-	
+
 		return true;
 	}
+
+	/**
+	 * Translate ($addressBookId, $cardUri) to entry id
+	 * @param $addressBookId address book to search contact in
+	 * @param $cardUri name of contact card to retrieve
+	 */
+	protected function getContactEntryId($addressBookId, $cardUri) {
+		// Update object properties
+		$folder = mapi_msgstore_openentry($this->bridge->getStore(), $addressBookId);
+		$contactsTable = mapi_folder_getcontentstable($folder);
+		$contacts = mapi_table_queryallrows($contactsTable, array(PR_ENTRYID, PR_CARDDAV_URI, PR_SUBJECT));
+
+		$entryId = 0;
+		foreach ($contacts as $c) {
+			if (isset($c[PR_CARDDAV_URI])) {
+				if ($c[PR_CARDDAV_URI] == $cardUri) {
+					$entryId = $c[PR_ENTRYID];
+					break;
+				}
+			} else {
+				// CardURI can be PR_ENTRYID .vcf
+				if ($this->bridge->entryIdToStr($c[PR_ENTRYID]) == substr($cardUri, 0, -4)) {
+					$entryId = $c[PR_ENTRYID];
+					break; 
+				}
+			}
+		}
 		
+		return $entryId;
+	}
+	
 }
 
 ?>
