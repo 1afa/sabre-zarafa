@@ -136,7 +136,10 @@ class VCardParser implements IVCardParser {
 			$properties[$p['display_name_prefix']] = isset($nameInfo[3]) ? $nameInfo[3] : ''; 
 			$properties[$p['generation']]          = isset($nameInfo[4]) ? $nameInfo[4] : '';
 			
-			$sortAs = $vcard->n->offsetGet('SORT-AS')->value;
+			// Issue 3#8
+			if ($vcard->n->offsetExists('SORT-AS')) {
+				$sortAs = $vcard->n->offsetGet('SORT-AS')->value;
+			}
 		}
 		if (isset($vcard->nickname))		$properties[$p['nickname']] = $vcard->nickname->value;
 		if (isset($vcard->title))			$properties[$p['title']] = $vcard->title->value;
