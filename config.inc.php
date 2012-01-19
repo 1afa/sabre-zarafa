@@ -38,7 +38,7 @@
 	define ('SABRE_AUTH_REALM', 'Zarafa SabreDAV CardDav');
 	
 	// Product ID sent in vcards
-	define ('VCARD_PRODUCT_ID', '-//SabreDav/ZarafaBackend/0.5');
+	define ('VCARD_PRODUCT_ID', '-//SabreDav/ZarafaBackend/0.8');
 	
 	// Charset to convert data to.
 	// iPhone does not support UTF8 nor windows contact
@@ -104,7 +104,7 @@
 	// This should improve compatibility with CardDav clients using fields
 	// that do not map easily with zarafa (multiple IMPP in emClient for
 	// example)
-	define ('SAVE_RAW_VCARD', true);
+	define ('SAVE_RAW_VCARD', false);
 	
 	// Set default timezone
 	if (function_exists("date_default_timezone_set")) {
