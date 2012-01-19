@@ -401,7 +401,7 @@ class Zarafa_Bridge {
 				$dn = isset($contactProperties[$p["email_address_display_name_$i"]]) ? $contactProperties[$p["email_address_display_name_$i"]]
 																					 : $contactProperties[$p['display_name']];
 				
-				$emailProperty->offsetSet("X-CN", Zarafa_Bridge::toVcardCharset($dn));
+				$emailProperty->offsetSet("X-CN", '"' . Zarafa_Bridge::toVcardCharset($dn) . '"');
 				$vCard->add($emailProperty);
 			}
 		}
