@@ -49,6 +49,8 @@
 	include_once "vcard/VCardParser2.php";
 	include_once "vcard/VCardParser3.php";
 	include_once "vcard/VCardParser4.php";
+	require_once "vcard/IVCardProducer.php";
+	include_once "vcard/VCardProducer.php";
 	
 /**
  * This is main class for Sabre backends
@@ -285,7 +287,7 @@ class Zarafa_Bridge {
 		$vCard = new Sabre_VObject_Component('VCARD');
 
 		// Produce VCard object
-		$producer->propertiesToVObject($contactProperties, $vCard);
+		$producer->propertiesToVObject($contact, $vCard);
 		
 		// Serialize
 		$vCardData = $vCard->serialize();
