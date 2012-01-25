@@ -51,7 +51,7 @@ class VCardProducer implements IVCardProducer {
 	 * conversion is done by the bridge, vobject is always UTF8 encoded
 	 */
 	public function getDefaultCharset() {
-		if ($this->version >= 4) {
+		if ($this->version >= 3) {
 			return "utf-8";
 		} else {
 			return 'ISO-8859-1//TRANSLIT';
