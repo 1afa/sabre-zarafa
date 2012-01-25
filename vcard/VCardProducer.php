@@ -46,11 +46,15 @@ class VCardProducer implements IVCardProducer {
 		$this->defaultCharset = 'utf-8';
 	}
 
+	/**
+	 * Decide charset for vcard
+	 * conversion is done by the bridge, vobject is always UTF8 encoded
+	 */
 	public function getDefaultCharset() {
 		if ($this->version >= 4) {
 			return "utf-8";
 		} else {
-			return "iso-8859-1";
+			return 'ISO-8859-1//TRANSLIT';
 		}
 	}
 	
@@ -77,7 +81,7 @@ class VCardProducer implements IVCardProducer {
 		
 		// Private contact ?
 		if (isset($contactProperties[$p['private']]) && $contactProperties[$p['private']]) {
-			$vCard->add('CLASS', 'PRIVATE');
+			$vCard->add('CLASS', 'PRIVATE');		// Not in VCARD 4.0 but keep it for compatibility
 		}
 
 		// Mandatory FN
@@ -119,7 +123,7 @@ class VCardProducer implements IVCardProducer {
 		$this->setVCard($vCard, 'ORG',             $contactProperties, $p['company_name']);
 		$this->setVCard($vCard, 'OFFICE',          $contactProperties, $p['office_location']);
 
-		if ($this->version == 4) {
+		if ($this->version >= 4) {
 			if (isset($contactProperties[$p['assistant']])) {
 				if (!empty ($contactProperties[$p['assistant']])) {
 					$element = new Sabre_VObject_Property('RELATED');
@@ -146,19 +150,24 @@ class VCardProducer implements IVCardProducer {
 					$vCard->add($element);
 				}
 			}
-		} else {
-			// Extended syntax
-			$this->setVCard($vCard, 'X-MS-ASSISTANT',  $contactProperties, $p['assistant']);
-			$this->setVCard($vCard, 'X-MS-MANAGER',    $contactProperties, $p['manager_name']);
-			$this->setVCard($vCard, 'X-MS-SPOUSE',     $contactProperties, $p['spouse_name']);
-		}
+		} 
+		
+		// older syntax - may be needed by some clients so keep it!
+		$this->setVCard($vCard, 'X-MS-ASSISTANT',  $contactProperties, $p['assistant']);
+		$this->setVCard($vCard, 'X-MS-MANAGER',    $contactProperties, $p['manager_name']);
+		$this->setVCard($vCard, 'X-MS-SPOUSE',     $contactProperties, $p['spouse_name']);
 		
 		// Dates
 		if (isset($contactProperties[$p['birthday']]) && ($contactProperties[$p['birthday']] > 0))
-			$vCard->add('BDAY', date('Ymd',$contactProperties[$p['birthday']]));
+			$vCard->add('BDAY', date(DATE_PATTERN, $contactProperties[$p['birthday']]));
 		
-		if (isset($contactProperties[$p['wedding_anniversary']]) && ($contactProperties[$p['wedding_anniversary']] > 0))
-			$vCard->add('ANNIVERSARY', date('Ymd', $contactProperties[$p['wedding_anniversary']]));
+		if (isset($contactProperties[$p['wedding_anniversary']]) && ($contactProperties[$p['wedding_anniversary']] > 0)) {
+			if ($this->version >= 4) {
+				$vCard->add('ANNIVERSARY', date(DATE_PATTERN, $contactProperties[$p['wedding_anniversary']]));
+			} else {
+				$vCard->add('X-ANNIVERSARY', 		   date(DATE_PATTERN, $contactProperties[$p['wedding_anniversary']]));
+			}
+		}
 		
 		// Telephone numbers
 		// webaccess can handle 19 telephone numbers...
@@ -284,11 +293,15 @@ class VCardProducer implements IVCardProducer {
 			$address[] = isset($contactProperties[$p[$propertyPrefix . '_address_postal_code']]) ? $contactProperties[$p[$propertyPrefix . '_address_postal_code']] : '';
 			$address[] = isset($contactProperties[$p[$propertyPrefix . '_address_country']])     ? $contactProperties[$p[$propertyPrefix . '_address_country']] : '';
 		}
-
-		$element = new Sabre_VObject_Property('ADR');
-		$element->setValue( implode(';', $address));
-		$element->offsetSet('TYPE', $addressType);
-		$vCard->add($element);
+		
+		$address = implode(';', $address);
+		
+		if ($address != ';;;;;;') {
+			$element = new Sabre_VObject_Property('ADR');
+			$element->setValue($address);
+			$element->offsetSet('TYPE', $addressType);
+			$vCard->add($element);
+		}
 	}
 
 }

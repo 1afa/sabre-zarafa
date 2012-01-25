@@ -293,7 +293,11 @@ class Zarafa_Bridge {
 		$vCardData = $vCard->serialize();
 		
 		// Charset conversion?
-		//TODO :)
+		$targetCharset = (VCARD_CHARSET == '') ? $producer->getDefaultCharset() : VCARD_CHARSET;
+		
+		if ($targetCharset != 'utf-8') {
+			$vCardData = iconv("UTF-8", $targetCharset, $vCardData);
+		}
 		
 		if (SAVE_RAW_VCARD) {
 			// Check if raw vCard is up-to-date

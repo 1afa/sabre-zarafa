@@ -45,15 +45,15 @@
 	// - 2 : old 2.1 format
 	// - 3 : 3.0 format - compatible with OS.X addressbook
 	// - 4 : newer 4.0 format - compatible with emClient
-	define('VCARD_VERSION', 4);
+	define('VCARD_VERSION', 3);
 	
 	// Charset to convert data to.
 	// iPhone does not support UTF8 nor windows contact
 	// vcard 4 are supposed to be utf8 encoded according to RFC :(
 	// This is a ICONV parameter so one can use //TRANSLIT if needed
-	// Note that sabre zarafa has a bug handling UTF8 vcard data so you
-	// should consider setting this to something not UTF8
-	define ('VCARD_CHARSET', 'utf8');
+	// Default empty: let producer decide! (vcard4 utf8, other: iso-8859-1)
+	define ('VCARD_CHARSET', '');
+		// utf-8
 		// 'ISO-8859-1//TRANSLIT');
 	
 	// If set to true all the write operations will be refused
@@ -112,6 +112,9 @@
 	// that do not map easily with zarafa (multiple IMPP in emClient for
 	// example)
 	define ('SAVE_RAW_VCARD', false);
+	
+	// How to "write" dates to VCard
+	define ('DATE_PATTERN', 'Ymd');
 	
 	// Set default timezone
 	if (function_exists("date_default_timezone_set")) {
