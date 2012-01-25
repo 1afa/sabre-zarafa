@@ -24,10 +24,10 @@
  * 
  */
 	
-require_once "IVCardParser.php";
-require_once "VCardParser.php";
+require_once "vcard/IVCardParser.php";
+require_once "vcard/VCardParser.php";
 	
-class VCardParser3 extends VCardParser {
+class VCardParser4 extends VCardParser {
 
 	/**
 	 * Convert vObject to an array of properties

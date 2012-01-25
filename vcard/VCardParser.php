@@ -24,7 +24,7 @@
  * 
  */
 	
-require_once "IVCardParser.php";
+require_once "vcard/IVCardParser.php";
 require_once "config.inc.php";
 	
 // PHP-MAPI

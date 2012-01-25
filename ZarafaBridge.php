@@ -26,11 +26,13 @@
 
 	// Load configuration file
 	define('BASE_PATH', dirname(__FILE__) . "/");
-	include (BASE_PATH . "config.inc.php");
-	include (BASE_PATH . "common.inc.php");
 
 	// Change include path
 	set_include_path(get_include_path() . PATH_SEPARATOR . "/usr/share/php/" . PATH_SEPARATOR . BASE_PATH . "lib/");
+
+	// Load config and common
+	include (BASE_PATH . "config.inc.php");
+	include (BASE_PATH . "common.inc.php");
 	
 	// PHP-MAPI
 	require_once("mapi/mapi.util.php");
@@ -43,10 +45,10 @@
 	include_once "Sabre/VObject/includes.php";
 	
 	// VObject to mapi properties
-	require_once "IVCardParser.php";		// too many vcard formats :(
-	include_once "VCardParser2.php";
-	include_once "VCardParser3.php";
-	include_once "VCardParser4.php";
+	require_once "vcard/IVCardParser.php";		// too many vcard formats :(
+	include_once "vcard/VCardParser2.php";
+	include_once "vcard/VCardParser3.php";
+	include_once "vcard/VCardParser4.php";
 	
 /**
  * This is main class for Sabre backends
@@ -278,191 +280,18 @@ class Zarafa_Bridge {
 				return $contactProperties[PR_CARDDAV_RAW_DATA];
 			} 
 		}
-		
-		debug("Generating contact vCard from properties");
 	
+		$producer = new VCardProducer($this, VCARD_VERSION);
 		$vCard = new Sabre_VObject_Component('VCARD');
-		$vCard->add ('VERSION', "4.0");
-		
-		// Private contact ?
-		if (isset($contactProperties[$p['private']]) && $contactProperties[$p['private']]) {
-			$vCard->add('CLASS', 'PRIVATE');
-		}
 
-		// Mandatory FN
-		$this->setVCard($vCard, 'FN', $contactProperties, $p['display_name']);
-		
-		// Contact name and pro information
-		// N property
-		/*
-		   Special note:  The structured property value corresponds, in
-			  sequence, to the Family Names (also known as surnames), Given
-			  Names, Additional Names, Honorific Prefixes, and Honorific
-			  Suffixes.  The text components are separated by the SEMICOLON
-			  character (U+003B).  Individual text components can include
-			  multiple text values separated by the COMMA character (U+002C).
-			  This property is based on the semantics of the X.520 individual
-			  name attributes [CCITT.X520.1988].  The property SHOULD be present
-			  in the vCard object when the name of the object the vCard
-			  represents follows the X.520 model.
-
-			  The SORT-AS parameter MAY be applied to this property.
-		*/		
-		
-		$contactInfos = array();
-		$contactInfos[] = isset($contactProperties[$p['surname']])             ? $contactProperties[$p['surname']] : '';
-		$contactInfos[] = isset($contactProperties[$p['given_name']])          ? $contactProperties[$p['given_name']] : '';
-		$contactInfos[] = isset($contactProperties[$p['middle_name']])         ? $contactProperties[$p['middle_name']] : '';
-		$contactInfos[] = isset($contactProperties[$p['display_name_prefix']]) ? $contactProperties[$p['display_name_prefix']] : '';
-		$contactInfos[] = isset($contactProperties[$p['generation']])          ? $contactProperties[$p['generation']] : '';
-		
-		// bug workaround
-		$element = new Sabre_VObject_Property("N");
-		$element->setValue(Zarafa_Bridge::toVcardCharset(implode(';', $contactInfos)));
-		// $element->offsetSet("SORT-AS", '"' . $contactProperties[$p['fileas']] . '"');
-		$vCard->add($element);
-		
-		$this->setVCard($vCard, 'SORT-AS',         $contactProperties, $p['fileas']);
-		$this->setVCard($vCard, 'NICKNAME',        $contactProperties, $p['nickname']);
-		$this->setVCard($vCard, 'TITLE',           $contactProperties, $p['title']);
-		$this->setVCard($vCard, 'ROLE',            $contactProperties, $p['profession']);
-		$this->setVCard($vCard, 'ORG',             $contactProperties, $p['company_name']);
-		$this->setVCard($vCard, 'OFFICE',          $contactProperties, $p['office_location']);
-
-		if (isset($contactProperties[$p['assistant']])) {
-			$element = new Sabre_VObject_Property('RELATED');
-			$element->setValue( Zarafa_Bridge::toVcardCharset($contactProperties[$p['assistant']]));
-			$element->offsetSet('TYPE','assistant');	// Not RFC compliant
-			$vCard->add($element);
-		}
-
-		if (isset($contactProperties[$p['manager_name']])) {
-			$element = new Sabre_VObject_Property('RELATED');
-			$element->setValue( Zarafa_Bridge::toVcardCharset($contactProperties[$p['manager_name']]));
-			$element->offsetSet('TYPE','manager');		// Not RFC compliant
-			$vCard->add($element);
-		}
-
-		if (isset($contactProperties[$p['spouse_name']])) {
-			$element = new Sabre_VObject_Property('RELATED');
-			$element->setValue( Zarafa_Bridge::toVcardCharset($contactProperties[$p['spouse_name']]));
-			$element->offsetSet('TYPE','spouse');
-			$vCard->add($element);
-		}
-		
-		// Keep those just to be sure!
-		$this->setVCard($vCard, 'X-MS-ASSISTANT',  $contactProperties, $p['assistant']);
-		$this->setVCard($vCard, 'X-MS-MANAGER',    $contactProperties, $p['manager_name']);
-		$this->setVCard($vCard, 'X-MS-SPOUSE',     $contactProperties, $p['spouse_name']);
-		
-		// Dates
-		if (isset($contactProperties[$p['birthday']]) && ($contactProperties[$p['birthday']] > 0))
-			$vCard->add('BDAY', date('Ymd',$contactProperties[$p['birthday']]));
-		if (isset($contactProperties[$p['wedding_anniversary']]) && ($contactProperties[$p['wedding_anniversary']] > 0))
-			$vCard->add('ANNIVERSARY', date('Ymd', $contactProperties[$p['wedding_anniversary']]));
-		
-		// Telephone numbers
-		// webaccess can handle 19 telephone numbers...
-		$this->setVCard($vCard,'TEL;TYPE=HOME,VOICE', $contactProperties,$p['home_telephone_number']);
-		$this->setVCard($vCard,'TEL;TYPE=HOME,VOICE', $contactProperties,$p['home2_telephone_number']);
-		$this->setVCard($vCard,'TEL;TYPE=CELL',		  $contactProperties,$p['cellular_telephone_number']);
-		$this->setVCard($vCard,'TEL;TYPE=WORK,VOICE', $contactProperties,$p['office_telephone_number']);
-		$this->setVCard($vCard,'TEL;TYPE=WORK,VOICE', $contactProperties,$p['business2_telephone_number']);
-		$this->setVCard($vCard,'TEL;TYPE=WORK,FAX',   $contactProperties,$p['business_fax_number']);
-		$this->setVCard($vCard,'TEL;TYPE=HOME,FAX',   $contactProperties,$p['home_fax_number']);
-		$this->setVCard($vCard,'TEL;TYPE=PAGER',      $contactProperties,$p['pager_telephone_number']);
-		$this->setVCard($vCard,'TEL;TYPE=ISDN',       $contactProperties,$p['isdn_number']);
-		$this->setVCard($vCard,'TEL;TYPE=WORK',       $contactProperties,$p['company_telephone_number']);
-		$this->setVCard($vCard,'TEL;TYPE=CAR',        $contactProperties,$p['car_telephone_number']);
-		$this->setVCard($vCard,'TEL;TYPE=SECR',		  $contactProperties,$p['assistant_telephone_number']);
-
-		// There are unmatched telephone numbers in zarafa, use them!
-		$unmatchedProperties = array("callback_telephone_number", "other_telephone_number", "primary_fax_number",
-									 "primary_telephone_number", "radio_telephone_number", "telex_telephone_number",
-									 "ttytdd_telephone_number"
-									);
-		
-		if (in_array(DEFAULT_TELEPHONE_NUMBER_PROPERTY, $unmatchedProperties)) {
-			// unmatched found a match!
-			$this->setVCard($vCard, 'TEL', $contactProperties, $p[DEFAULT_TELEPHONE_NUMBER_PROPERTY]);
-		}
-
-		$this->setVCardAddress($vCard, 'HOME',  $contactProperties, 'home');
-		$this->setVCardAddress($vCard, 'WORK',  $contactProperties, 'business');
-		$this->setVCardAddress($vCard, 'OTHER', $contactProperties, 'other');
-		
-		// emails
-		for ($i = 1; $i <= 3; $i++) {
-			if (isset($contactProperties[$p["email_address_$i"]])) {
-				// Zarafa needs an email display name
-				$emailProperty = new Sabre_VObject_Property('EMAIL', $contactProperties[$p["email_address_$i"]]);
-				
-				// Get display name
-				$dn = isset($contactProperties[$p["email_address_display_name_$i"]]) ? $contactProperties[$p["email_address_display_name_$i"]]
-																					 : $contactProperties[$p['display_name']];
-				
-				$emailProperty->offsetSet("X-CN", '"' . Zarafa_Bridge::toVcardCharset($dn) . '"');
-				$vCard->add($emailProperty);
-			}
-		}
-		
-		// URL and Instant Messenging (vCard 3.0 extension)
-		$this->setVCard($vCard,'URL',   $contactProperties,$p["webpage"]); 
-		$this->setVCard($vCard,'IMPP',  $contactProperties,$p["im"]); 
-		
-		// Categories
-		$contactCategories = '';
-		if (isset($contactProperties[$p['categories']])) {
-			if (is_array($contactProperties[$p['categories']])) {
-				$contactCategories = implode(',', $contactProperties[$p['categories']]);
-			} else {
-				$contactCategories = $contactProperties[$p['categories']];
-			}
-		}
-		if ($contactCategories != '') {
-			$vCard->add('CATEGORIES',  Zarafa_Bridge::toVcardCharset($contactCategories));
-		}
-
-		// Contact picture?
-		$hasattachProp = mapi_getprops($contact, array(PR_HASATTACH));
-		$photo = NULL;
-		$photoMime = '';
-		if (isset($hasattachProp[PR_HASATTACH])&& $hasattachProp[PR_HASATTACH]) {
-			debug("Has attachments!");	
-			$attachmentTable = mapi_message_getattachmenttable($contact);
-			$attachments = mapi_table_queryallrows($attachmentTable, array(PR_ATTACH_NUM, PR_ATTACH_SIZE, PR_ATTACH_LONG_FILENAME, PR_ATTACH_FILENAME, PR_ATTACHMENT_HIDDEN, PR_DISPLAY_NAME, PR_ATTACH_METHOD, PR_ATTACH_CONTENT_ID, PR_ATTACH_MIME_TAG, PR_ATTACHMENT_CONTACTPHOTO, PR_EC_WA_ATTACHMENT_HIDDEN_OVERRIDE));
-			$dump = print_r ($attachments, true);
-			debug("Attachments table\n$dump");
-			foreach ($attachments as $attachmentRow) {
-				if (isset($attachmentRow[PR_ATTACHMENT_CONTACTPHOTO]) && $attachmentRow[PR_ATTACHMENT_CONTACTPHOTO]) {
-					debug("Found contact photo!");
-					$attach = mapi_message_openattach($contact, $attachmentRow[PR_ATTACH_NUM]);
-					$photo = mapi_attach_openbin($attach,PR_ATTACH_DATA_BIN);
-					if (isset($attachmentRow[PR_ATTACH_MIME_TAG])) {
-						$photoMime = $attachmentRow[PR_ATTACH_MIME_TAG];
-					} else {
-						$photoMime = 'image/jpeg';
-					}
-					break;
-				}
-			}
-		}
-		if ($photo != NULL) {
-			$photoEncoded = base64_encode($photo);
-			$photoProperty = new Sabre_VObject_Property('PHOTO',$photoEncoded);
-			$photoProperty->offsetSet('TYPE', $photoMime);
-			$photoProperty->offsetSet('ENCODING','b');
-			$vCard->add($photoProperty);
-		}
-		
-		// Misc
-		$vCard->add('UID', "urn:uuid:" . substr($contactProperties[PR_CARDDAV_URI], 0, -4)); // $this->entryIdToStr($contactProperties[PR_ENTRYID]));
-		$this->setVCard($vCard, 'NOTE', $contactProperties, $p['notes']);
-		$vCard->add('PRODID', VCARD_PRODUCT_ID);
-		$vCard->add('REV', date('c',$contactProperties[$p['last_modification_time']]));
+		// Produce VCard object
+		$producer->propertiesToVObject($contactProperties, $vCard);
 		
 		// Serialize
 		$vCardData = $vCard->serialize();
+		
+		// Charset conversion?
+		//TODO :)
 		
 		if (SAVE_RAW_VCARD) {
 			// Check if raw vCard is up-to-date
@@ -474,51 +303,6 @@ class Zarafa_Bridge {
 		}
 		
 		return $vCardData;
-	}
-	
-	/**
-	 * Convert string to VCARD charset
-	 */
-	public static function toVcardCharset($str) {
-		if (VCARD_CHARSET == 'utf8') {
-			return $str;
-		} else {
-			return iconv("UTF-8", VCARD_CHARSET, $str);
-			// return utf8_decode($str);
-		}
-	}
-	
-	/**
-	 * Helper function to set a vObject property
-	 */
-	protected function setVCard($vCard, $vCardProperty, &$contactProperties, $propertyId) {
-		if (isset($contactProperties[$propertyId]) && ($contactProperties[$propertyId] != '')) {
-			$vCard->add($vCardProperty, Zarafa_Bridge::toVcardCharset($contactProperties[$propertyId]));
-		}
-	}
-
-	/**
-	 * Helper function to set an address in vObject
-	 */
-	protected function setVCardAddress($vCard, $addressType, &$contactProperties, $propertyPrefix) {
-
-		$p = $this->extendedProperties;
-		
-		$address = array();
-		if (isset($contactProperties[$p[$propertyPrefix ."_address"]])) {
-			$address[] = '';	// post office box
-			$address[] = '';	// extended address
-			$address[] = isset($contactProperties[$p[$propertyPrefix . '_address_street']])      ? $contactProperties[$p[$propertyPrefix . '_address_street']] : '';
-			$address[] = isset($contactProperties[$p[$propertyPrefix . '_address_city']])        ? $contactProperties[$p[$propertyPrefix . '_address_city']] : '';
-			$address[] = isset($contactProperties[$p[$propertyPrefix . '_address_state']])       ? $contactProperties[$p[$propertyPrefix . '_address_state']] : '';
-			$address[] = isset($contactProperties[$p[$propertyPrefix . '_address_postal_code']]) ? $contactProperties[$p[$propertyPrefix . '_address_postal_code']] : '';
-			$address[] = isset($contactProperties[$p[$propertyPrefix . '_address_country']])     ? $contactProperties[$p[$propertyPrefix . '_address_country']] : '';
-		}
-
-		$element = new Sabre_VObject_Property('ADR');
-		$element->setValue( Zarafa_Bridge::toVcardCharset(implode(';', $address)));
-		$element->offsetSet('TYPE', $addressType);
-		$vCard->add($element);
 	}
 	
 	/**

@@ -24,10 +24,10 @@
  * 
  */
 	
-require_once "IVCardParser.php";
-require_once "VCardParser.php";
+require_once "vcard/IVCardParser.php";
+require_once "vcard/VCardParser.php";
 	
-class VCardParser2 extends VCardParser {
+class VCardParser3 extends VCardParser {
 
 	/**
 	 * Convert vObject to an array of properties
@@ -36,6 +36,7 @@ class VCardParser2 extends VCardParser {
 	 */
 	public function vObjectToProperties($vcard, &$properties) {
 		parent::vObjectToProperties($vcard, $properties);
+		
 	}
 
 }

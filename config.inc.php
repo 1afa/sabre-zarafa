@@ -38,7 +38,14 @@
 	define ('SABRE_AUTH_REALM', 'Zarafa SabreDAV CardDav');
 	
 	// Product ID sent in vcards
-	define ('VCARD_PRODUCT_ID', '-//SabreDav/ZarafaBackend/0.8');
+	define ('VCARD_PRODUCT_ID', '-//SabreDav/ZarafaBackend/0.9');
+	
+	// Choose VCard version
+	// Supported values:
+	// - 2 : old 2.1 format
+	// - 3 : 3.0 format - compatible with OS.X addressbook
+	// - 4 : newer 4.0 format - compatible with emClient
+	define('VCARD_VERSION', 4);
 	
 	// Charset to convert data to.
 	// iPhone does not support UTF8 nor windows contact
