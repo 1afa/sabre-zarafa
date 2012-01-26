@@ -462,6 +462,7 @@ class Zarafa_Bridge {
 	 */
 	public function generateRandomGuid() {
 		
+		/*
 		if (function_exists('uuid_create')) {
 			// Not yet tested :)
 			uuid_create($context);
@@ -469,6 +470,7 @@ class Zarafa_Bridge {
 			uuid_export($context, UUID_FMT_STR, $uuid);
 			return trim($uuid);
 		}
+		*/
 		
 		$data1a = mt_rand(0, 0xFFFF);		// 32 bits - splited
 		$data1b = mt_rand(0, 0xFFFF);
