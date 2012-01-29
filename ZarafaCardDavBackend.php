@@ -25,6 +25,10 @@
  */
 
 	require_once("common.inc.php");
+	
+	// Logging
+	include_once ("log4php/Logger.php");
+	Logger::configure("log4php.xml");
 
 	// PHP-MAPI
 	require_once("mapi/mapi.util.php");
@@ -36,10 +40,12 @@
 class Zarafa_CardDav_Backend extends Sabre_CardDAV_Backend_Abstract {
 	
 	protected $bridge;
+	private $logger;
 	
     public function __construct($zarafaBridge) {
 		// Stores a reference to Zarafa Auth Backend so as to get the session
         $this->bridge = $zarafaBridge;
+		$this->logger = Logger::getLogger(__CLASS__);		
     }
 	
     /**
@@ -61,11 +67,12 @@ class Zarafa_CardDav_Backend extends Sabre_CardDAV_Backend_Abstract {
      */
     public function getAddressBooksForUser($principalUri) {
 		
+		$this->logger->info("getAddressBooksForUser($principalUri)");
+		
 		$adressBooks = array();
 		
 		$folders = $this->bridge->getAdressBooks();
 		foreach ($folders as $entryId => $f) {
-		
 			$adressBooks[] = array(
 				'id'  => $entryId,
 				'uri' =>  $f['displayname'],
@@ -77,6 +84,9 @@ class Zarafa_CardDav_Backend extends Sabre_CardDAV_Backend_Abstract {
                     new Sabre_CardDAV_Property_SupportedAddressData()
 			);
 		}
+
+		$dump = print_r($adressBooks, true);
+		$this->logger->debug("Address books:\n$dump");
 		
 		return $adressBooks;
 	} 
@@ -94,13 +104,16 @@ class Zarafa_CardDav_Backend extends Sabre_CardDAV_Backend_Abstract {
      */
     public function updateAddressBook($addressBookId, array $mutations) {
 
+		$this->logger->info("updateAddressBook(" . bin2hex($addressBookId). ")");
+	
 		if (READ_ONLY) {
-			debug("Read only");
+			$this->logger->warn("Trying to update read-only address book");
 			return false;
 		}
 		
 		// Debug information
 		$dump = print_r($mutations, true);
+		$this->logger->debug("Mutations:\n$dump");
 		
 		// What we know to change
 		$authorizedMutations = array ('{DAV:}displayname', '{' . Sabre_CardDAV_Plugin::NS_CARDDAV . '}addressbook-description');
@@ -108,15 +121,17 @@ class Zarafa_CardDav_Backend extends Sabre_CardDAV_Backend_Abstract {
 		// Check the mutations
 		foreach ($mutations as $m => $value) {
 			if (!in_array($m, $authorizedMutations)) {
-				debug("Unknown mutation: $m => $value");
+				$this->logger->warn("Unknown mutation: $m => $value");
 				return false;
 			}
 		}
 		
 		// Do the mutations
+		$this->logger->trace("applying mutations");
 		$folder = mapi_msgstore_openentry($this->bridge->getStore(), $addressBookId);
 		
 		if (mapi_last_hresult() > 0) {
+			$this->logger->fatal("Error opening addressbook: " . get_mapi_error_name());
 			return false;
 		}
 		
@@ -141,11 +156,13 @@ class Zarafa_CardDav_Backend extends Sabre_CardDAV_Backend_Abstract {
 		if (count($mapiProperties) > 0) {
 			mapi_setprops($folder, $mapiProperties);
 			if (mapi_last_hresult() > 0) {
+				$this->logger->fatal("Error applying mutations: " . get_mapi_error_name());
 				return false;
 			}
 
 			mapi_savechanges($folder);
 			if (mapi_last_hresult() > 0) {
+				$this->logger->fatal("Error saving changes to addressbook: " . get_mapi_error_name());
 				return false;
 			}
 
@@ -153,6 +170,7 @@ class Zarafa_CardDav_Backend extends Sabre_CardDAV_Backend_Abstract {
 		}
 
 		// No detected change
+		$this->logger->info("No changes detected for addressbook");
 		return false;
 	}
 
@@ -165,23 +183,25 @@ class Zarafa_CardDav_Backend extends Sabre_CardDAV_Backend_Abstract {
      * @return void
      */
     public function createAddressBook($principalUri, $url, array $properties) {
+		$this->logger->info("createAddressBook($principalUri, $url)");
 		
 		if (READ_ONLY) {
-			debug("Read only");
+			$this->logger->warn("Cannot create address book: read-only");
 			return false;
 		}
 		
-		$dump = print_r($properties, true);
-		
 		$rootFolder = $this->bridge->getRootFolder();
-		
 		$displayName = isset($properties['{DAV:}displayname']) ? $properties['{DAV:}displayname'] : '';
 		$description = isset($properties['{' . Sabre_CardDAV_Plugin::NS_CARDDAV . '}addressbook-description']) ? $properties['{' . Sabre_CardDAV_Plugin::NS_CARDDAV . '}addressbook-description'] : '';
 		
 		$subFolder = mapi_folder_createfolder($rootFolder, $displayName, $description, MAPI_UNICODE | OPEN_IF_EXISTS, FOLDER_GENERIC);
 		mapi_setprops ($subFolder, array (907214878 => 'IPF.Contact'));
 		mapi_savechanges($subFolder);
-		
+
+		if (mapi_last_hresult() > 0) {
+			$this->logger->fatal("Error saving changes to addressbook: " . get_mapi_error_name());
+			return false;
+		}
 	}
 
     /**
@@ -192,8 +212,10 @@ class Zarafa_CardDav_Backend extends Sabre_CardDAV_Backend_Abstract {
      */
     public function deleteAddressBook($addressBookId) {
 
+		$this->logger->info("deleteAddressBook(" . bin2hex($addressBookId) . ")");
+	
 		if (READ_ONLY || !ALLOW_DELETE_FOLDER) {
-			debug("Permission denied by config");
+			$this->logger->warn("Cannot delete address book: permission denied by config");
 			return false;
 		}
 		
@@ -206,6 +228,10 @@ class Zarafa_CardDav_Backend extends Sabre_CardDAV_Backend_Abstract {
 		// Delete folder content
 		mapi_folder_emptyfolder($folder, DEL_ASSOCIATED);
 		mapi_folder_deletefolder($parentFolder, $addressBookId);
+
+		if (mapi_last_hresult() > 0) {
+			$this->logger->fatal("Error deleting addressbook: " . get_mapi_error_name());
+		}
 	}
 
     /**
@@ -221,6 +247,8 @@ class Zarafa_CardDav_Backend extends Sabre_CardDAV_Backend_Abstract {
      */
     public function getCards($addressbookId) {
 
+		$this->logger->info("getCards(" . bin2hex($addressbookId) . ")");
+	
 		$cards = array();
 		
 		$folder = mapi_msgstore_openentry($this->bridge->getStore(), $addressbookId);
@@ -234,9 +262,11 @@ class Zarafa_CardDav_Backend extends Sabre_CardDAV_Backend_Abstract {
 			
 			// URI is based on PR_CARDDAV_URI or use ENTRYID
 			if (isset($contactProperties[PR_CARDDAV_URI])) {
+				$this->logger->debug("Using contact URI: " . $contactProperties[PR_CARDDAV_URI]);
 				$uri = $contactProperties[PR_CARDDAV_URI];
 			} else {
 				// Generate a GUID and use it as URI - store in zarafa
+				$this->logger->debug("Generating a GUID for contact");
 				$uri = $this->bridge->generateRandomGuid() . ".vcf";
 				$contact = mapi_msgstore_openentry($this->bridge->getStore(), $c[PR_ENTRYID], MAPI_MODIFY);
 				mapi_setprops ($contact, array(PR_CARDDAV_URI => $uri));
@@ -251,6 +281,9 @@ class Zarafa_CardDav_Backend extends Sabre_CardDAV_Backend_Abstract {
 			);
 		}
 		
+		$dump = print_r ($cards, true);
+		$this->logger->trace("Addressbook cards\n$dump");
+		
 		return $cards;
 	}
 
@@ -264,13 +297,13 @@ class Zarafa_CardDav_Backend extends Sabre_CardDAV_Backend_Abstract {
     public function getCard($addressBookId, $cardUri) {
 
 		// Init
-		debug("getCard(" . bin2hex($addressBookId) . ", $cardUri)");
+		$this->logger->info("getCard(" . bin2hex($addressBookId) . ", $cardUri)");
 
 		$folder = mapi_msgstore_openentry($this->bridge->getStore(), $addressBookId);
 		$entryId = $this->getContactEntryId($addressBookId, $cardUri);
 		
 		if ($entryId === 0) {
-			debug("Contact not found!");
+			$this->logger->warn("Contact not found!");
 			return false;
 		}
 		
@@ -294,9 +327,10 @@ class Zarafa_CardDav_Backend extends Sabre_CardDAV_Backend_Abstract {
      * @return bool 
      */
     public function createCard($addressBookId, $cardUri, $cardData) {
-		debug("createCard - $cardUri\n$cardData");
+		$this->logger->info("createCard - $cardUri\n$cardData");
 		
 		if (READ_ONLY) {
+			$this->logger->warn("createCard failed: read-only");
 			return false;
 		}
 		
@@ -307,6 +341,7 @@ class Zarafa_CardDav_Backend extends Sabre_CardDAV_Backend_Abstract {
 		
 		if (SAVE_RAW_VCARD) {
 			// Save RAW vCard
+			$this->logger->debug("Saving raw vcard");
 			$mapiProperties[PR_CARDDAV_RAW_DATA] = $cardData;
 			$mapiProperties[PR_CARDDAV_RAW_DATA_GENERATION_TIME] = time();
 		}
@@ -314,12 +349,14 @@ class Zarafa_CardDav_Backend extends Sabre_CardDAV_Backend_Abstract {
 		// Handle contact picture
 		$contactPicture = NULL;
 		if (isset($mapiProperties['ContactPicture'])) {
+			$this->logger->debug("Contact picture detected");
 			$contactPicture = $mapiProperties['ContactPicture'];
 			unset($mapiProperties['ContactPicture']);
 			$this->bridge->setContactPicture($contact, $contactPicture);
 		}
 		
 		// Do not set empty properties
+		$this->logger->trace("Removing empty properties");
 		foreach ($mapiProperties as $p => $v) {
 			if (empty($v)) {
 				unset($mapiProperties[$p]);
@@ -327,6 +364,7 @@ class Zarafa_CardDav_Backend extends Sabre_CardDAV_Backend_Abstract {
 		}
 		
 		// Add missing properties for new contacts
+		$this->logger->trace("Adding missing properties for new contacts");
 		$p = $this->bridge->getExtendedProperties();
 		$mapiProperties[$p["icon_index"]] = "512";
 		$mapiProperties[$p["message_class"]] = 'IPM.Contact';
@@ -347,10 +385,10 @@ class Zarafa_CardDav_Backend extends Sabre_CardDAV_Backend_Abstract {
      * @return bool 
      */
     public function updateCard($addressBookId, $cardUri, $cardData) {
-		debug("updateCard - $cardUri\n$cardData");
+		$this->logger->info("updateCard - $cardUri");
 
 		if (READ_ONLY) {
-			debug("Read only");
+			$this->logger->warn("Cannot update card: read-only");
 			return false;
 		}
 		
@@ -358,6 +396,7 @@ class Zarafa_CardDav_Backend extends Sabre_CardDAV_Backend_Abstract {
 		$entryId = $this->getContactEntryId($addressBookId, $cardUri);
 		
 		if ($entryId === 0) {
+			$this->logger->warn("Cannot find contact");
 			return false;
 		}
 		
@@ -366,6 +405,7 @@ class Zarafa_CardDav_Backend extends Sabre_CardDAV_Backend_Abstract {
 		
 		if (SAVE_RAW_VCARD) {
 			// Save RAW vCard
+			$this->logger->debug("Saving raw vcard");
 			$mapiProperties[PR_CARDDAV_RAW_DATA] = $cardData;
 			$mapiProperties[PR_CARDDAV_RAW_DATA_GENERATION_TIME] = time();
 		}
@@ -379,6 +419,7 @@ class Zarafa_CardDav_Backend extends Sabre_CardDAV_Backend_Abstract {
 		
 		// Remove NULL properties
 		if (CLEAR_MISSING_PROPERTIES) {
+			$this->logger->debug("Clearing missing properties");
 			$nullProperties = array();
 			foreach ($mapiProperties as $p => $v) {
 				if ($v == NULL) {
@@ -387,7 +428,7 @@ class Zarafa_CardDav_Backend extends Sabre_CardDAV_Backend_Abstract {
 				}
 			}
 			$dump = print_r ($nullProperties, true);
-			debug("Removing properties\n$dump");
+			$this->logger->trace("Removing properties\n$dump");
 			mapi_deleteprops($contact, $nullProperties);
 		}
 		
@@ -409,8 +450,10 @@ class Zarafa_CardDav_Backend extends Sabre_CardDAV_Backend_Abstract {
      */
     public function deleteCard($addressBookId, $cardUri) {
 
+		$this->logger->info("deleteCard($cardUri)");
+	
 		if (READ_ONLY) {
-			debug("Read only");
+			$this->logger->warn("Cannot delete card: read-only");
 			return false;
 		}
 
@@ -418,7 +461,7 @@ class Zarafa_CardDav_Backend extends Sabre_CardDAV_Backend_Abstract {
 		$entryId = $this->getContactEntryId($addressBookId, $cardUri);
 		
 		if ($entryId === 0) {
-			debug("Contact not found!");
+			$this->logger->warn("Contact not found!");
 			return false;
 		}
 
@@ -439,6 +482,8 @@ class Zarafa_CardDav_Backend extends Sabre_CardDAV_Backend_Abstract {
 	 */
 	protected function getContactEntryId($addressBookId, $cardUri) {
 		// Update object properties
+		$this->logger->trace("getContactEntryId($cardUri)");
+		
 		$folder = mapi_msgstore_openentry($this->bridge->getStore(), $addressBookId);
 		$contactsTable = mapi_folder_getcontentstable($folder);
 		$contacts = mapi_table_queryallrows($contactsTable, array(PR_ENTRYID, PR_CARDDAV_URI, PR_SUBJECT));

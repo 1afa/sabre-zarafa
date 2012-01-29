@@ -24,15 +24,13 @@
  * 
  */
 
-	// Load configuration file
-	define('BASE_PATH', dirname(__FILE__) . "/");
-
-	// Change include path
-	set_include_path(get_include_path() . PATH_SEPARATOR . "/usr/share/php/" . PATH_SEPARATOR . BASE_PATH . "lib/");
-
 	// Load config and common
 	include (BASE_PATH . "config.inc.php");
 	include (BASE_PATH . "common.inc.php");
+
+	// Logging
+	include_once ("log4php/Logger.php");
+	Logger::configure("log4php.xml");
 	
 	// PHP-MAPI
 	require_once("mapi/mapi.util.php");
@@ -65,7 +63,16 @@ class Zarafa_Bridge {
 	protected $extendedProperties;
 	protected $connectedUser;
 	protected $adressBooks;
+	private $logger;
 
+	/**
+	 * Constructor
+	 */
+	public function __construct() {
+		// Stores a reference to Zarafa Auth Backend so as to get the session
+		$this->logger = Logger::getLogger(__CLASS__);
+	}
+	
 	/**
 	 * Connect to Zarafa and do some init
 	 * @param $user user login
@@ -73,14 +80,22 @@ class Zarafa_Bridge {
 	 */
 	public function connect($user, $password) {
 	
+		$this->logger->debug("connect($user," . md5($password) . ")");
 		$this->session = NULL;
-		$session = mapi_logon_zarafa($user, $password, ZARAFA_SERVER);
+		
+		try {
+			$session = mapi_logon_zarafa($user, $password, ZARAFA_SERVER);
+		} catch (Exception $e) {
+			$this->logger->debug("connection failed: " . get_mapi_error_name());
+			return false;
+		}
 
 		if ($session === FALSE) {
 			// Failed
 			return false;
 		}
 
+		$this->logger->trace("Connected to zarafa server - init bridge");
 		$this->session = $session;
 
 		// Find user store
@@ -125,6 +140,7 @@ class Zarafa_Bridge {
 	 * @return MAPI session
 	 */
 	public function getMapiSession() {
+		$this->logger->trace("getMapiSession");
 		return $this->session;
 	}
 	
@@ -133,6 +149,7 @@ class Zarafa_Bridge {
 	 * @return user store
 	 */
 	public function getStore() {
+		$this->logger->trace("getStore");
 		return $this->store;
 	}
 	
@@ -141,6 +158,7 @@ class Zarafa_Bridge {
 	 * @return root folder
 	 */
 	public function getRootFolder() {
+		$this->logger->trace("getRootFolder");
 		return $this->rootFolder;
 	}
 	
@@ -149,10 +167,12 @@ class Zarafa_Bridge {
 	 * @return connected user
 	 */
 	public function getConnectedUser() {
+		$this->logger->trace("getConnectedUser");
 		return $this->connectedUser;
 	}
 	
 	public function getExtendedProperties() {
+		$this->logger->trace("getExtendedProperties");
 		return $this->extendedProperties;
 	}
 	
@@ -161,7 +181,10 @@ class Zarafa_Bridge {
 	 * @return email address
 	 */
 	public function getConnectedUserMailAddress() {
+		$this->logger->trace("getConnectedUserMailAddress");
 		$userInfo = mapi_zarafa_getuser_by_name($this->store, $this->connectedUser);
+		
+		$this->logger->debug("User email address: " . $userInfo["emailaddress"]);
 		return $userInfo["emailaddress"];
 	}
 	
@@ -169,7 +192,10 @@ class Zarafa_Bridge {
 	 * Get list of addressbooks
 	 */
 	public function getAdressBooks() {
+		$this->logger->trace("getAdressBooks");
+		
 		if ($this->adressBooks === NULL) {
+			$this->logger->debug("Building list of address books");
 			$this->adressBooks = array();
 			$this->buildAdressBooks('', $this->rootFolder, $this->rootFolderId);
 		}
@@ -181,6 +207,7 @@ class Zarafa_Bridge {
 	 * Recursively find folders in Zarafa
 	 */
 	private function buildAdressBooks($prefix, $folder, $parentFolderId) {
+		$this->logger->trace("buildAdressBooks");
 		
 		$folderProperties = mapi_getprops($folder);
 		$currentFolderName = $this->to_charset($folderProperties[PR_DISPLAY_NAME]);
@@ -207,6 +234,7 @@ class Zarafa_Bridge {
 	 * @param $entryId
 	 */
 	public function getProperties($entryId) {
+		$this->logger->trace("getProperties(" . bin2hex($entryId) . ")");
 		$mapiObject = mapi_msgstore_openentry($this->store, $entryId);
 		$props = mapi_getprops($mapiObject);
 		return $props;
@@ -237,8 +265,9 @@ class Zarafa_Bridge {
 	 * @return array
 	 */
 	public function vcardToMapiProperties($vcardData) {
-		debug ("Analysing vcardData\n$vcardData");
+		$this->logger->trace("vcardToMapiProperties");
 
+		$this->logger->info("VCARD:\n" . $vcardData);
 		$vObject = Sabre_VObject_Reader::read($vcardData);
 
 		// Extract version to call the correct parser
@@ -246,6 +275,7 @@ class Zarafa_Bridge {
 		$majorVersion = substr($version, 0, 1);
 		
 		$objectClass = "VCardParser$majorVersion";
+		$this->logger->debug("Using $objectClass to parse vcard data");
 		$parser = new $objectClass($this);
 		
 		$properties = array();
@@ -257,7 +287,7 @@ class Zarafa_Bridge {
 		$dump = ob_get_contents();
 		ob_end_clean();
 		
-		debug("vcardToMapiProperties - result :\n$dump");
+		$this->logger->debug("VCard properties:\n" . $dump);
 		
 		return $properties;
 	}
@@ -270,6 +300,8 @@ class Zarafa_Bridge {
 	 */
 	public function getContactVCard($contactId) {
 
+		$this->logger->trace("getContactVCard(" . bin2hex($contactId) . ")");
+	
 		$contact = mapi_msgstore_openentry($this->store, $contactId);
 		$contactProperties = $this->getProperties($contactId);
 		$p = $this->extendedProperties;
@@ -279,6 +311,7 @@ class Zarafa_Bridge {
 			$vcardGenerationTime = $contactProperties[PR_CARDDAV_RAW_DATA_GENERATION_TIME];
 			$lastModifiedDate    = $contactProperties[$p['last_modification_time']];
 			if ($vcardGenerationTime >= $lastModifiedDate) {
+				$this->logger->debug("Using saved vcard");
 				return $contactProperties[PR_CARDDAV_RAW_DATA];
 			} 
 		}
@@ -287,19 +320,23 @@ class Zarafa_Bridge {
 		$vCard = new Sabre_VObject_Component('VCARD');
 
 		// Produce VCard object
+		$this->logger->trace("Producing vcard from contact properties");
 		$producer->propertiesToVObject($contact, $vCard);
 		
 		// Serialize
 		$vCardData = $vCard->serialize();
+		$this->logger->debug("Produced VCard\n" . $vCardData);
 		
 		// Charset conversion?
 		$targetCharset = (VCARD_CHARSET == '') ? $producer->getDefaultCharset() : VCARD_CHARSET;
 		
 		if ($targetCharset != 'utf-8') {
+			$this->logger->debug("Converting from UTF-8 to $targetCharset");
 			$vCardData = iconv("UTF-8", $targetCharset, $vCardData);
 		}
 		
 		if (SAVE_RAW_VCARD) {
+			$this->logger->debug("Saving vcard to contact properties");
 			// Check if raw vCard is up-to-date
 			mapi_setprops($contact, Array(
 					PR_CARDDAV_RAW_DATA_GENERATION_TIME => time(),
@@ -315,8 +352,9 @@ class Zarafa_Bridge {
 	 * Init properties to read contact data
 	 */
 	protected function initProperties() {
+		$this->logger->trace("initProperties");
+		
 		$properties = array();
-
 		$properties["subject"] = PR_SUBJECT;
 		$properties["icon_index"] = PR_ICON_INDEX;
 		$properties["message_class"] = PR_MESSAGE_CLASS;
@@ -450,8 +488,7 @@ class Zarafa_Bridge {
 		
 		// Dump properties to debug
 		$dump = print_r ($this->extendedProperties, true);
-		debug("Properties init done:\n$dump");
-		debug("PR_HASATTACH => " . PR_HASATTACH);
+		$this->logger->trace("Properties init done:\n$dump");
 	}
 	
 	/**
@@ -462,9 +499,12 @@ class Zarafa_Bridge {
 	 */
 	public function generateRandomGuid() {
 		
+		$this->logger->trace("generateRandomGuid");
+		
 		/*
 		if (function_exists('uuid_create')) {
 			// Not yet tested :)
+			$this->logger->debug("Using uuid_create");
 			uuid_create($context);
 			uuid_make($context, UUID_MAKE_V4);
 			uuid_export($context, UUID_FMT_STR, $uuid);
@@ -494,6 +534,7 @@ class Zarafa_Bridge {
 	 * @param $store
 	 */
 	public function isUnicodeStore($store) {
+		$this->logger->trace("Testing store for unicode");
 		$supportmask = mapi_getprops($store, array(PR_STORE_SUPPORT_MASK));
 		if (isset($supportmask[PR_STORE_SUPPORT_MASK]) && ($supportmask[PR_STORE_SUPPORT_MASK] & STORE_UNICODE_OK)) {
 			define('STORE_SUPPORTS_UNICODE', true);
@@ -508,7 +549,7 @@ class Zarafa_Bridge {
 	 * @param contactPicture must be a valid jpeg file. If contactPicture is NULL will remove contact picture from contact if exists
 	 */
 	public function setContactPicture(&$contact, $contactPicture) {
-		debug("Set contact picture for contact");
+		$this->logger->trace("setContactPicture");
 		
 		// Find if contact picture is already set
 		$contactAttachment = -1;
@@ -526,7 +567,7 @@ class Zarafa_Bridge {
 		
 		// Create an attachment if necessary
 		if ($contactAttachment != -1) {
-			debug("removing existing contact picture");
+			$this->logger->trace("removing existing contact picture");
 			$attach = mapi_message_deleteattach($contact, $contactAttachment);
 		}
 
@@ -534,7 +575,7 @@ class Zarafa_Bridge {
 		$attach = mapi_message_createattach($contact);
 		
 		if ($contactPicture !== NULL) {
-			debug("Saving contact picture as attachment");
+			$this->logger->debug("Saving contact picture as attachment");
 			
 			// Update contact attachment properties
 			$properties = array(
@@ -556,9 +597,9 @@ class Zarafa_Bridge {
 			
 			// Test
 			if (mapi_last_hresult() > 0) {
-				debug("Error saving contact picture: " . mapi_last_hresult());
+				$this->logger->warn("Error saving contact picture: " . get_mapi_error_name());
 			} else {
-				debug("contact picture done");
+				$this->logger->trace("contact picture done");
 			}
 		}
 	}

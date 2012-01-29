@@ -26,14 +26,20 @@
 
 require_once("common.inc.php");
 
+// Logging
+include_once ("log4php/Logger.php");
+Logger::configure("log4php.xml");
+
 class Zarafa_Principals_Backend implements Sabre_DAVACL_IPrincipalBackend {
 
 	protected $bridge;
 	protected $principals;
+	private $logger;
 	
     public function __construct($zarafaBridge) {
 		// Stores a reference to Zarafa Auth Backend so as to get the session
         $this->bridge = $zarafaBridge;
+		$this->logger = Logger::getLogger(__CLASS__);		
     }
 
     /**
@@ -54,10 +60,13 @@ class Zarafa_Principals_Backend implements Sabre_DAVACL_IPrincipalBackend {
      */
     public function getPrincipalsByPrefix($prefixPath) {
 
+		$this->logger->info("getPrincipalsByPrefix($prefixPath)");
+	
 		// Get connectedUser
 		$connectedUser = $this->bridge->getConnectedUser();
 		if ($connectedUser == '') {
 			// Not connected
+			$this->logger->warn("Not connected!");
 			return array();
 		}
 		
@@ -92,11 +101,13 @@ class Zarafa_Principals_Backend implements Sabre_DAVACL_IPrincipalBackend {
      */
     public function getPrincipalByPath($path) {
 		
+		$this->logger->info("getPrincipalByPath($path)");
+		
 		// Get connectedUser
 		$connectedUser = $this->bridge->getConnectedUser();
 		if ($connectedUser == '') {
 			// Not connected
-			debug("getPrincipalsByPrefix - not connected");
+			$this->logger->warn("getPrincipalsByPrefix - not connected");
 			return array();
 		}
 		
@@ -129,6 +140,8 @@ class Zarafa_Principals_Backend implements Sabre_DAVACL_IPrincipalBackend {
      */
     public function getGroupMemberSet($principal) {
 
+		$this->logger->info("getGroupMemberSet($principal)");
+	
         $principal = $this->getPrincipalByPath($principal);
         if (!$principal) throw new Sabre_DAV_Exception('Principal not found');
 
@@ -143,6 +156,8 @@ class Zarafa_Principals_Backend implements Sabre_DAVACL_IPrincipalBackend {
      * @return array 
      */
     public function getGroupMembership($principal) {
+
+		$this->logger->info("getGroupMembership($principal)");
 
         $principal = $this->getPrincipalByPath($principal);
         if (!$principal) throw new Sabre_DAV_Exception('Principal not found');
@@ -161,6 +176,7 @@ class Zarafa_Principals_Backend implements Sabre_DAVACL_IPrincipalBackend {
      * @return void
      */
     public function setGroupMemberSet($principal, array $members) {
+		$this->logger->info("setGroupMemberSet($principal)");
     }
 
 }

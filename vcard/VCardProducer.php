@@ -23,7 +23,11 @@
  * Project page: <http://code.google.com/p/sabre-zarafa/>
  * 
  */
-	
+
+// Logging
+include_once ("log4php/Logger.php");
+Logger::configure("log4php.xml");
+ 
 require_once "vcard/IVCardProducer.php";
 require_once "config.inc.php";
 	
@@ -39,11 +43,13 @@ class VCardProducer implements IVCardProducer {
 	public $defaultCharset;
 	protected $bridge;
 	protected $version;
+	protected $logger;
 	
 	function __construct($bridge, $version) {
 		$this->bridge = $bridge;
 		$this->version = $version;
 		$this->defaultCharset = 'utf-8';
+		$this->logger = Logger::getLogger(__CLASS__);
 	}
 
 	/**
@@ -51,11 +57,16 @@ class VCardProducer implements IVCardProducer {
 	 * conversion is done by the bridge, vobject is always UTF8 encoded
 	 */
 	public function getDefaultCharset() {
+		$this->logger->debug("getDefaultCharset");
+		$charset = 'ISO-8859-1//TRANSLIT';
+		
 		if ($this->version >= 3) {
-			return "utf-8";
-		} else {
-			return 'ISO-8859-1//TRANSLIT';
-		}
+			$charset = "utf-8";
+		} 
+		
+		$this->logger->debug("Charset: $charset");
+		
+		return $charset;
 	}
 	
 	/**
@@ -65,9 +76,13 @@ class VCardProducer implements IVCardProducer {
 	 */
 	public function propertiesToVObject($contact, &$vCard) {
 
-		debug("Generating contact vCard from properties");
+		$this->logger->debug("Generating contact vCard from properties");
+		
 		$p = $this->bridge->getExtendedProperties();
 		$contactProperties =  mapi_getprops($contact); // $this->bridge->getProperties($contactId);
+		
+		$dump = print_r($contactProperties, true);
+		$this->logger->trace("Contact properties:\n$contactProperties");
 		
 		// Version check
 		switch ($this->version) {
@@ -75,7 +90,7 @@ class VCardProducer implements IVCardProducer {
 			case 3:		$vCard->add('VERSION', '3.0');	break;
 			case 4:		$vCard->add('VERSION', '4.0');	break;
 			default:
-				debug("Unrecognised VCard version: " . $this->version);
+				$this->logger->fatal("Unrecognised VCard version: " . $this->version);
 				return;
 		}
 		
@@ -238,7 +253,10 @@ class VCardProducer implements IVCardProducer {
 		if (isset($hasattachProp[PR_HASATTACH])&& $hasattachProp[PR_HASATTACH]) {
 			$attachmentTable = mapi_message_getattachmenttable($contact);
 			$attachments = mapi_table_queryallrows($attachmentTable, array(PR_ATTACH_NUM, PR_ATTACH_SIZE, PR_ATTACH_LONG_FILENAME, PR_ATTACH_FILENAME, PR_ATTACHMENT_HIDDEN, PR_DISPLAY_NAME, PR_ATTACH_METHOD, PR_ATTACH_CONTENT_ID, PR_ATTACH_MIME_TAG, PR_ATTACHMENT_CONTACTPHOTO, PR_EC_WA_ATTACHMENT_HIDDEN_OVERRIDE));
+			
 			$dump = print_r ($attachments, true);
+			$this->logger->trace("Contact attachments:\n$dump");
+			
 			foreach ($attachments as $attachmentRow) {
 				if (isset($attachmentRow[PR_ATTACHMENT_CONTACTPHOTO]) && $attachmentRow[PR_ATTACHMENT_CONTACTPHOTO]) {
 					$attach = mapi_message_openattach($contact, $attachmentRow[PR_ATTACH_NUM]);
@@ -253,6 +271,7 @@ class VCardProducer implements IVCardProducer {
 			}
 		}
 		if ($photo != NULL) {
+			$this->logger->trace("Adding contact picture to VCard");
 			$photoEncoded = base64_encode($photo);
 			$photoProperty = new Sabre_VObject_Property('PHOTO',$photoEncoded);
 			$photoProperty->offsetSet('TYPE', $photoMime);
@@ -281,6 +300,8 @@ class VCardProducer implements IVCardProducer {
 	 */
 	protected function setVCardAddress($vCard, $addressType, &$contactProperties, $propertyPrefix) {
 
+		$this->logger->trace("setVCardAddress - $addressType");
+		
 		$p = $this->bridge->getExtendedProperties();
 		
 		$address = array();
@@ -297,6 +318,7 @@ class VCardProducer implements IVCardProducer {
 		$address = implode(';', $address);
 		
 		if ($address != ';;;;;;') {
+			$this->logger->trace("Not empty address - adding $address");
 			$element = new Sabre_VObject_Property('ADR');
 			$element->setValue($address);
 			$element->offsetSet('TYPE', $addressType);

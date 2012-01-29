@@ -26,6 +26,10 @@
 	
 require_once "vcard/IVCardParser.php";
 require_once "vcard/VCardParser.php";
+
+// Logging
+include_once ("log4php/Logger.php");
+Logger::configure("log4php.xml");
 	
 class VCardParser3 extends VCardParser {
 

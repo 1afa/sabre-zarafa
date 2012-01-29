@@ -23,9 +23,14 @@
  * Project page: <http://code.google.com/p/sabre-zarafa/>
  * 
  */
-	
+ 
 require_once "vcard/IVCardParser.php";
 require_once "config.inc.php";
+
+// Logging
+include_once ("log4php/Logger.php");
+Logger::configure("log4php.xml");
+
 	
 // PHP-MAPI
 require_once("mapi/mapi.util.php");
@@ -37,10 +42,12 @@ require_once("mapi/mapiguid.php");
 class VCardParser implements IVCardParser {
 
 	protected $bridge;
+	protected $logger;
 	
 	function __construct($bridge) {
 		debug("VCardParser constructor");
 		$this->bridge = $bridge;
+		$this->logger = Logger::getLogger(__CLASS__);
 	}
 
 	/**
@@ -49,20 +56,21 @@ class VCardParser implements IVCardParser {
      * @param object $properties array storing MAPI properties
 	 */
 	public function vObjectToProperties($vcard, &$properties) {
-		debug("Analyse de la vCard");
+		$this->logger->info("vObjectToProperties:\n$vcard");
 		
 		ob_start();
 		print_r ($vcard);
 		$dump = ob_get_contents();
 		ob_end_clean();
 
-		debug("VObject :\n$dump");
+		$this->logger->debug("VObject :\n$dump");
 		
 		// Common VCard properties parsing
 		$p = $this->bridge->getExtendedProperties();
 		
 		// Init properties
 		if (CLEAR_MISSING_PROPERTIES) {
+			$this->logger->trace("Clearing missing properties");
 			$properties[$p['surname']] = NULL;
 			$properties[$p['given_name']] = NULL;
 			$properties[$p['middle_name']] = NULL;
@@ -125,10 +133,10 @@ class VCardParser implements IVCardParser {
 		// Name components
 		$sortAs = '';
 		if (isset($vcard->n)) {
-			debug("N: " . $vcard->n);
+			$this->logger->trace("N: " . $vcard->n);
 			$nameInfo = VCardParser::splitCompundProperty($vcard->n->value);
 			$dump = print_r($nameInfo, true);
-			debug("Name info\n$dump");
+			$this->logger->trace("Name info\n$dump");
 			
 			$properties[$p['surname']]             = isset($nameInfo[0]) ? $nameInfo[0] : '';
 			$properties[$p['given_name']]          = isset($nameInfo[1]) ? $nameInfo[1] : '';
@@ -159,7 +167,6 @@ class VCardParser implements IVCardParser {
 		}
 
 		$properties[$p['fileas']] = $sortAs;
-
 		
 		// Custom... not quite sure X-MS-STUFF renders as x_ms_stuff... will have to check that!
 		if (isset($vcard->x_ms_assistant))	$properties[$p['assistant']] = $vcard->x_ms_assistant->value;
@@ -233,7 +240,7 @@ class VCardParser implements IVCardParser {
 				$properties[$p[$pk]] = $tel->value;
 				$typeCount[$type]++;
 			} else {
-				debug ("Unknown telephone type: '$type'");
+				$this->logger->warn("Unknown telephone type: '$type'");
 			}
 		}
 		
@@ -241,7 +248,7 @@ class VCardParser implements IVCardParser {
 		$addresses = $vcard->select('ADR');
 		foreach ($addresses as $address) {
 			$type = $address->offsetGet('TYPE')->value;
-			debug("Found address $type");
+			$this->logger->debug("Found address $type");
 
 			switch ($type) {
 				case 'HOME':
@@ -273,7 +280,7 @@ class VCardParser implements IVCardParser {
 			$addressComponents = VCardParser::splitCompundProperty($address->value);
 
 			$dump = print_r($addressComponents, true);
-			debug("Address components:\n$dump");
+			$this->logger->trace("Address components:\n$dump");
 			
 			// Set properties
 			$properties[$p[$pStreet]]  = isset($addressComponents[2]) ? $addressComponents[2] : '';
@@ -295,7 +302,7 @@ class VCardParser implements IVCardParser {
 		}
 		
 		$dump = print_r($emailsDisplayName, true);
-		debug("Display Names\n$dump");
+		$this->logger->trace("Display Names\n$dump");
 		
 		foreach ($emails as $email) {
 			$numMail++;
@@ -321,7 +328,7 @@ class VCardParser implements IVCardParser {
 				$displayName = $xCn->value;
 			}
 			
-			debug("Found email $numMail : $displayName <$address>");
+			$this->logger->debug("Found email $numMail : $displayName <$address>");
 			
 			$properties[$p["email_address_$numMail"]] = $address;
 			$properties[$p["email_address_display_name_email_$numMail"]] = $address;
@@ -350,15 +357,15 @@ class VCardParser implements IVCardParser {
 			$encoding = $vcard->photo->offsetGet("ENCODING")->value;
 			$content  = $vcard->photo->value;
 			
-			debug("Found contact picture type $type encoding $encoding");
+			$this->logger->debug("Found contact picture type $type encoding $encoding");
 			
 			if (($encoding == 'b') || ($encoding == '')) {
 				$content = base64_decode($content);
 				if (($type != 'image/jpeg') && ($type != 'image/jpg')) {
-					debug("Converting to jpeg using GD");
+					$this->logger->trace("Converting to jpeg using GD");
 					$img = imagecreatefromstring($content);
 					if ($img === FALSE) {
-						debug("Corrupted contact picture or unknown format");
+						$this->logger->warn("Corrupted contact picture or unknown format");
 					} else {
 						// Capture output
 						ob_start();
@@ -371,7 +378,7 @@ class VCardParser implements IVCardParser {
 					}
 				}
 			} else {
-				debug("Encoding not supported: $encoding");
+				$this->logger->warn("Encoding not supported: $encoding");
 			}
 		}
 		
@@ -391,6 +398,7 @@ class VCardParser implements IVCardParser {
 	 * @return escaped value
 	 */
 	public static function escapeVCardValue($value, $compound) {
+		
 		$replaceValues = array(
 			'\\' => '\\\\',
 			','	=> '\\,',

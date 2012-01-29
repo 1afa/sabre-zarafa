@@ -39,19 +39,4 @@
 	define ('PR_CARDDAV_RAW_DATA',					mapi_prop_tag(PT_STRING8, CARDDAV_CUSTOM_PROPERTY_ID | 0x0001));
 	define ('PR_CARDDAV_RAW_DATA_GENERATION_TIME',	mapi_prop_tag(PT_SYSTIME, CARDDAV_CUSTOM_PROPERTY_ID | 0x0002));
 
-	function debug($txt) {
-		$filename = BASE_PATH . "debug.txt";
-		
-		if (file_exists($filename)) {
-			try {
-				$fd = @fopen($filename, "a");
-				$msg = "[" . date("Y/m/d H:i:s") . "] " . $txt . "\n";
-				@fwrite($fd, $msg);
-				@fclose($fd);
-			} catch (Exception $e) {
-				// Do nothing :)
-			}
-		}
-	}
-
 ?>

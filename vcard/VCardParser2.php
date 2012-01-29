@@ -23,7 +23,11 @@
  * Project page: <http://code.google.com/p/sabre-zarafa/>
  * 
  */
-	
+
+// Logging
+include_once ("log4php/Logger.php");
+Logger::configure("log4php.xml");
+ 
 require_once "vcard/IVCardParser.php";
 require_once "vcard/VCardParser.php";
 	

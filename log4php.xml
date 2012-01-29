@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration xmlns="http://logging.apache.org/log4php/">
+	
+	<appender name="fileAppender" class="LoggerAppenderRollingFile">
+		<layout class="LoggerLayoutPattern">
+			<param name="conversionPattern" value="%d{Y-m-d H:i:s} %-5p %c %x - %m%n" />
+		</layout>
+		<param name="file" value="debug.txt" />
+		<param name="maxFileSize" value="5MB" />
+		<param name="maxBackupIndex" value="3" />
+	</appender>
+
+	<appender name="noDebug" class="LoggerAppenderNull" />
+	
+	<root>
+		<level value="DEBUG" />
+		<appender_ref ref="fileAppender" />
+	</root>
+</configuration>
