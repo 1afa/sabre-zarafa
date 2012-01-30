@@ -211,12 +211,28 @@ class Zarafa_Bridge {
 		
 		$folderProperties = mapi_getprops($folder);
 		$currentFolderName = $this->to_charset($folderProperties[PR_DISPLAY_NAME]);
+		
+		// Compute CTag - issue 8: ctag should be the max of PR_LAST_MODIFICATION_TIME of contacts
+		// of the folder.
+		$this->logger->trace("Computing CTag for address book");
+		$ctag = $folderProperties[PR_LAST_MODIFICATION_TIME];
+		
+		$contactsTable = mapi_folder_getcontentstable($folder);
+		$contacts      = mapi_table_queryallrows($contactsTable, array(PR_LAST_MODIFICATION_TIME));
+		foreach ($contacts as $c) {
+			if ($c[PR_LAST_MODIFICATION_TIME] > $ctag) {
+				$ctag = $c[PR_LAST_MODIFICATION_TIME];
+				$this->logger->trace("Found new ctag: $ctag");
+			}
+		}
+		
+		// Add address book
 		$this->adressBooks[$folderProperties[PR_ENTRYID]] = array(
 			'id'          => $folderProperties[PR_ENTRYID],
 			'displayname' => $folderProperties[PR_DISPLAY_NAME],
 			'prefix'      => $prefix,
 			'description' => (isset($folderProperties[805568542]) ? $folderProperties[805568542] : ''),
-			'ctag'        => $folderProperties[PR_LAST_MODIFICATION_TIME],
+			'ctag'        => $ctag,
 			'parentId'	  => $parentFolderId
 		);
 		

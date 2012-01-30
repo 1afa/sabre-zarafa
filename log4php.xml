@@ -13,7 +13,7 @@
 	<appender name="noDebug" class="LoggerAppenderNull" />
 	
 	<root>
-		<level value="DEBUG" />
+		<level value="WARN" />
 		<appender_ref ref="fileAppender" />
 	</root>
 </configuration>

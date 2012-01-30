@@ -24,18 +24,18 @@
  * 
  */
 
-	require_once("common.inc.php");
-	
-	// Logging
-	include_once ("log4php/Logger.php");
-	Logger::configure("log4php.xml");
+require_once("common.inc.php");
 
-	// PHP-MAPI
-	require_once("mapi/mapi.util.php");
-	require_once("mapi/mapicode.php");
-	require_once("mapi/mapidefs.php");
-	require_once("mapi/mapitags.php");
-	require_once("mapi/mapiguid.php");
+// Logging
+include_once ("log4php/Logger.php");
+Logger::configure("log4php.xml");
+
+// PHP-MAPI
+require_once("mapi/mapi.util.php");
+require_once("mapi/mapicode.php");
+require_once("mapi/mapidefs.php");
+require_once("mapi/mapitags.php");
+require_once("mapi/mapiguid.php");
 	
 class Zarafa_CardDav_Backend extends Sabre_CardDAV_Backend_Abstract {
 	
