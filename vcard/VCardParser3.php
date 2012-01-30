@@ -29,7 +29,6 @@ require_once "vcard/VCardParser.php";
 
 // Logging
 include_once ("log4php/Logger.php");
-Logger::configure("log4php.xml");
 	
 class VCardParser3 extends VCardParser {
 
@@ -39,8 +38,8 @@ class VCardParser3 extends VCardParser {
      * @return array
 	 */
 	public function vObjectToProperties($vcard, &$properties) {
+		$this->logger->trace("Calling parent vObjectToProperties");
 		parent::vObjectToProperties($vcard, $properties);
-		
 	}
 
 }

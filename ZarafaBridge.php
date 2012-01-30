@@ -283,7 +283,7 @@ class Zarafa_Bridge {
 	public function vcardToMapiProperties($vcardData) {
 		$this->logger->trace("vcardToMapiProperties");
 
-		$this->logger->info("VCARD:\n" . $vcardData);
+		$this->logger->debug("VCARD:\n" . $vcardData);
 		$vObject = Sabre_VObject_Reader::read($vcardData);
 
 		// Extract version to call the correct parser

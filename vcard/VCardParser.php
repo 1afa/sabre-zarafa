@@ -29,8 +29,6 @@ require_once "config.inc.php";
 
 // Logging
 include_once ("log4php/Logger.php");
-Logger::configure("log4php.xml");
-
 	
 // PHP-MAPI
 require_once("mapi/mapi.util.php");
@@ -45,9 +43,9 @@ class VCardParser implements IVCardParser {
 	protected $logger;
 	
 	function __construct($bridge) {
-		debug("VCardParser constructor");
 		$this->bridge = $bridge;
 		$this->logger = Logger::getLogger(__CLASS__);
+		$this->logger->trace(__CLASS__ . " constructor done.");
 	}
 
 	/**
@@ -56,14 +54,14 @@ class VCardParser implements IVCardParser {
      * @param object $properties array storing MAPI properties
 	 */
 	public function vObjectToProperties($vcard, &$properties) {
-		$this->logger->info("vObjectToProperties:\n$vcard");
+		$this->logger->info("vObjectToProperties");
 		
 		ob_start();
 		print_r ($vcard);
 		$dump = ob_get_contents();
 		ob_end_clean();
 
-		$this->logger->debug("VObject :\n$dump");
+		$this->logger->trace("VObject :\n$dump");
 		
 		// Common VCard properties parsing
 		$p = $this->bridge->getExtendedProperties();

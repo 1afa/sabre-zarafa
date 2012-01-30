@@ -336,6 +336,13 @@ class Zarafa_CardDav_Backend extends Sabre_CardDAV_Backend_Abstract {
 		
 		$folder = mapi_msgstore_openentry($this->bridge->getStore(), $addressBookId);
 		$contact = mapi_folder_createmessage($folder);
+	
+		if (mapi_last_hresult() != 0) {
+			$this->logger->fatal("MAPI error - cannot create contact: " . get_mapi_error_name());
+			return false;
+		}
+	
+		$this->logger->trace("Getting properties from vcard");
 		$mapiProperties = $this->bridge->vcardToMapiProperties($cardData);
 		$mapiProperties[PR_CARDDAV_URI] = $cardUri;
 		
