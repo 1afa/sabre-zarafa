@@ -219,10 +219,22 @@ class Zarafa_Bridge {
 		
 		$contactsTable = mapi_folder_getcontentstable($folder);
 		$contacts      = mapi_table_queryallrows($contactsTable, array(PR_LAST_MODIFICATION_TIME));
-		foreach ($contacts as $c) {
-			if ($c[PR_LAST_MODIFICATION_TIME] > $ctag) {
-				$ctag = $c[PR_LAST_MODIFICATION_TIME];
-				$this->logger->trace("Found new ctag: $ctag");
+
+		// Contact count
+		$contactCount = mapi_table_getrowcount($contactsTable);
+		$storedContactCount = isset($folderProperties[PR_CARDDAV_AB_CONTACT_COUNT]) ? $folderProperties[PR_CARDDAV_AB_CONTACT_COUNT] : 0;
+
+		if ($contactCount <> $storedContactCount) {
+			$this->logger->trace("Contact count ($contactCount) != stored contact count ($storedContactCount)");
+			$ctag = time();
+			mapi_setprops($folder, array(PR_CARDDAV_AB_CONTACT_COUNT => $contactCount));
+			mapi_savechanges($folder);
+		} else {
+			foreach ($contacts as $c) {
+				if ($c[PR_LAST_MODIFICATION_TIME] > $ctag) {
+					$ctag = $c[PR_LAST_MODIFICATION_TIME];
+					$this->logger->trace("Found new ctag: $ctag");
+				}
 			}
 		}
 		
@@ -498,6 +510,7 @@ class Zarafa_Bridge {
 		
 		// Custom properties needed for carddav functionnality
 		$properties["carddav_uri"] = PR_CARDDAV_URI;
+		$properties["contact_count"] = PR_CARDDAV_AB_CONTACT_COUNT;
 		
 		// Ask Mapi to load those properties and store mapping.
 		$this->extendedProperties = getPropIdsFromStrings($this->store, $properties);
