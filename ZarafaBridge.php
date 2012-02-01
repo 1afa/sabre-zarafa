@@ -214,7 +214,7 @@ class Zarafa_Bridge {
 		
 		// Compute CTag - issue 8: ctag should be the max of PR_LAST_MODIFICATION_TIME of contacts
 		// of the folder.
-		$this->logger->trace("Computing CTag for address book");
+		$this->logger->trace("Computing CTag for address book " . $folderProperties[PR_DISPLAY_NAME]);
 		$ctag = $folderProperties[PR_LAST_MODIFICATION_TIME];
 		
 		$contactsTable = mapi_folder_getcontentstable($folder);
@@ -224,8 +224,11 @@ class Zarafa_Bridge {
 		$contactCount = mapi_table_getrowcount($contactsTable);
 		$storedContactCount = isset($folderProperties[PR_CARDDAV_AB_CONTACT_COUNT]) ? $folderProperties[PR_CARDDAV_AB_CONTACT_COUNT] : 0;
 
+		$this->logger->trace("Contact count: $contactCount");
+		$this->logger->trace("Stored contact count: $storedContactCount");
+		
 		if ($contactCount <> $storedContactCount) {
-			$this->logger->trace("Contact count ($contactCount) != stored contact count ($storedContactCount)");
+			$this->logger->trace("Contact count != stored contact count");
 			$ctag = time();
 			mapi_setprops($folder, array(PR_CARDDAV_AB_CONTACT_COUNT => $contactCount));
 			mapi_savechanges($folder);
