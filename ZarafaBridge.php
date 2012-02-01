@@ -230,7 +230,7 @@ class Zarafa_Bridge {
 		if ($contactCount <> $storedContactCount) {
 			$this->logger->trace("Contact count != stored contact count");
 			$ctag = time();
-			mapi_setprops($folder, array(PR_CARDDAV_AB_CONTACT_COUNT => $contactCount));
+			mapi_setprops($folder, array(PR_CARDDAV_AB_CONTACT_COUNT => $contactCount, PR_LAST_MODIFICATION_TIME => $ctag));
 			mapi_savechanges($folder);
 		} else {
 			foreach ($contacts as $c) {
