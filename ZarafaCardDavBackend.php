@@ -375,6 +375,7 @@ class Zarafa_CardDav_Backend extends Sabre_CardDAV_Backend_Abstract {
 		$p = $this->bridge->getExtendedProperties();
 		$mapiProperties[$p["icon_index"]] = "512";
 		$mapiProperties[$p["message_class"]] = 'IPM.Contact';
+		$mapiProperties[PR_LAST_MODIFICATION_TIME] = time();
 		// message flags ?
 		
 		mapi_setprops($contact, $mapiProperties);
@@ -440,10 +441,11 @@ class Zarafa_CardDav_Backend extends Sabre_CardDAV_Backend_Abstract {
 		}
 		
 		// Set properties
+		$mapiProperties[PR_LAST_MODIFICATION_TIME] = time();
 		mapi_setprops ($contact, $mapiProperties);
 		
 		// Save changes to backend
-		mapi_savechanges($contact);		
+		mapi_savechanges($contact);
 		
 		return mapi_last_hresult() == 0;
 	}
