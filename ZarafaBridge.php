@@ -337,8 +337,6 @@ class Zarafa_Bridge {
 		$contactProperties = $this->getProperties($contactId);
 		$p = $this->extendedProperties;
 
-		$dump = print_r($contactProperties, true);
-		$this->logger->trace("Contact properties:\n$contactProperties");
 		$this->logger->trace("PR_CARDDAV_RAW_DATA: " . PR_CARDDAV_RAW_DATA);
 		$this->logger->trace("PR_CARDDAV_RAW_DATA_GENERATION_TIME:" . PR_CARDDAV_RAW_DATA_GENERATION_TIME);
 		
@@ -390,8 +388,8 @@ class Zarafa_Bridge {
 			$this->logger->debug("Saving vcard to contact properties");
 			// Check if raw vCard is up-to-date
 			mapi_setprops($contact, Array(
-					PR_CARDDAV_RAW_DATA_GENERATION_TIME => time(),
-					PR_CARDDAV_RAW_DATA => $vCardData
+					PR_CARDDAV_RAW_DATA => $vCardData,
+					PR_CARDDAV_RAW_DATA_GENERATION_TIME => time()
 			));
 			mapi_savechanges($contact);
 			
