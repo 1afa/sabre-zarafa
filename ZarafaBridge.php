@@ -341,10 +341,19 @@ class Zarafa_Bridge {
 			// Check if raw vCard is up-to-date
 			$vcardGenerationTime = $contactProperties[PR_CARDDAV_RAW_DATA_GENERATION_TIME];
 			$lastModifiedDate    = $contactProperties[$p['last_modification_time']];
-			if ($vcardGenerationTime >= $lastModifiedDate) {
+			
+			// Get product ID
+			$vObject = Sabre_VObject_Reader::read($contactProperties[PR_CARDDAV_RAW_DATA]);
+			$productId = $vObject->prodid->value;
+
+			$this->logger->trace("Saved vcard product id: $productId");
+			
+			if (($vcardGenerationTime >= $lastModifiedDate) && ($productId == VCARD_PRODUCT_ID)) {
 				$this->logger->debug("Using saved vcard");
 				return $contactProperties[PR_CARDDAV_RAW_DATA];
-			} 
+			} else {
+				$this->logger->trace("Contact modified or new version of Sabre-Zarafa");
+			}
 		}
 	
 		$producer = new VCardProducer($this, VCARD_VERSION);
