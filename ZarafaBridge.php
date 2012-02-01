@@ -389,6 +389,12 @@ class Zarafa_Bridge {
 					PR_CARDDAV_RAW_DATA => $vCardData
 			));
 			mapi_savechanges($contact);
+			
+			if (mapi_last_hresult() > 0) {
+				$this->logger->warn("Error saving vcard to contact: " . get_mapi_error_name());
+			} else {
+				$this->logger->trace("VCard successfully added to contact properties");
+			}
 		}
 		
 		return $vCardData;
