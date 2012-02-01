@@ -354,6 +354,12 @@ class Zarafa_Bridge {
 			} else {
 				$this->logger->trace("Contact modified or new version of Sabre-Zarafa");
 			}
+		} else {
+			if (SAVE_RAW_VCARD) {
+				$this->logger->trace("No saved raw vcard");
+			} else {
+				$this->logger->trace("Generation of vcards forced by config");
+			}
 		}
 	
 		$producer = new VCardProducer($this, VCARD_VERSION);
