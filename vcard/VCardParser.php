@@ -203,7 +203,7 @@ class VCardParser implements IVCardParser {
 			// Get type
 			$typeParam = $tel->offsetGet("TYPE");
 			if ($typeParam != NULL) {
-				$type = $typeParam->value;
+				$type = strtoupper($typeParam->value);
 			}
 			
 			if (($type == 'HOME,VOICE') || ($type == 'HOME')) {
@@ -245,7 +245,7 @@ class VCardParser implements IVCardParser {
 		// Addresses...
 		$addresses = $vcard->select('ADR');
 		foreach ($addresses as $address) {
-			$type = $address->offsetGet('TYPE')->value;
+			$type = strtoupper($address->offsetGet('TYPE')->value);
 			$this->logger->debug("Found address $type");
 
 			switch ($type) {
@@ -364,16 +364,19 @@ class VCardParser implements IVCardParser {
 					$img = imagecreatefromstring($content);
 					if ($img === FALSE) {
 						$this->logger->warn("Corrupted contact picture or unknown format");
+						$content = NULL;
 					} else {
 						// Capture output
 						ob_start();
 						imagejpeg($img);
 						$content = ob_get_contents();
 						ob_end_clean();
-						$properties['ContactPicture'] = $content;
-						$properties[PR_HASATTACH] = true;
-						$properties[$p['has_picture']] = true;
 					}
+				}
+				if ($content !== NULL) {
+					$properties['ContactPicture'] = $content;
+					$properties[PR_HASATTACH] = true;
+					$properties[$p['has_picture']] = true;
 				}
 			} else {
 				$this->logger->warn("Encoding not supported: $encoding");
