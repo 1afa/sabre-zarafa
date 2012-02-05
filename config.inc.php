@@ -38,7 +38,7 @@
 	define ('SABRE_AUTH_REALM', 'Zarafa SabreDAV CardDav');
 	
 	// Product ID sent in vcards
-	define ('VCARD_PRODUCT_ID', '-//SabreDav/ZarafaBackend/0.12');
+	define ('VCARD_PRODUCT_ID', '-//SabreDav/ZarafaBackend/0.13');
 	
 	// Choose VCard version
 	// Supported values:
@@ -111,10 +111,14 @@
 	// This should improve compatibility with CardDav clients using fields
 	// that do not map easily with zarafa (multiple IMPP in emClient for
 	// example)
-	define ('SAVE_RAW_VCARD', false);
+	define ('SAVE_RAW_VCARD', true);
 	
 	// How to "write" dates to VCard
 	define ('DATE_PATTERN', 'Ymd');
+	
+	// VCard cache version. Change cache version to force generation of
+	// vcards from contact properties
+	define ('CACHE_VERSION', '1.' + VCARD_VERSION);
 	
 	// Set default timezone
 	if (function_exists("date_default_timezone_set")) {

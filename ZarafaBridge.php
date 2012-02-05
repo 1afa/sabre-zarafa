@@ -345,13 +345,11 @@ class Zarafa_Bridge {
 			$vcardGenerationTime = $contactProperties[PR_CARDDAV_RAW_DATA_GENERATION_TIME];
 			$lastModifiedDate    = $contactProperties[$p['last_modification_time']];
 			
-			// Get product ID
-			$vObject = Sabre_VObject_Reader::read($contactProperties[PR_CARDDAV_RAW_DATA]);
-			$productId = $vObject->prodid->value;
-
-			$this->logger->trace("Saved vcard product id: $productId");
+			// Get cache version
+			$vcardCacheVersion = isset($contactProperties[PR_CARDDAV_RAW_DATA_VERSION]) ? $contactProperties[PR_CARDDAV_RAW_DATA_VERSION] : 'NONE';
+			$this->logger->trace("Saved vcard cache version: $productId");
 			
-			if (($vcardGenerationTime >= $lastModifiedDate) && ($productId == VCARD_PRODUCT_ID)) {
+			if (($vcardGenerationTime >= $lastModifiedDate) && ($vcardCacheVersion == CACHE_VERSION)) {
 				$this->logger->debug("Using saved vcard");
 				return $contactProperties[PR_CARDDAV_RAW_DATA];
 			} else {
@@ -389,6 +387,7 @@ class Zarafa_Bridge {
 			// Check if raw vCard is up-to-date
 			mapi_setprops($contact, Array(
 					PR_CARDDAV_RAW_DATA => $vCardData,
+					PR_CARDDAV_RAW_DATA_VERSION => CACHE_VERSION,
 					PR_CARDDAV_RAW_DATA_GENERATION_TIME => time()
 			));
 			mapi_savechanges($contact);
@@ -537,7 +536,10 @@ class Zarafa_Bridge {
 		
 		// Custom properties needed for carddav functionnality
 		$properties["carddav_uri"] = PR_CARDDAV_URI;
+		$properties["carddav_rawdata"] = PR_CARDDAV_RAW_DATA;
+		$properties["carddav_generation_time"] = PR_CARDDAV_RAW_DATA_GENERATION_TIME;
 		$properties["contact_count"] = PR_CARDDAV_AB_CONTACT_COUNT;
+		$properties["carddav_version"] = PR_CARDDAV_RAW_DATA_VERSION;
 		
 		// Ask Mapi to load those properties and store mapping.
 		$this->extendedProperties = getPropIdsFromStrings($this->store, $properties);
