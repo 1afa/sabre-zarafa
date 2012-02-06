@@ -338,7 +338,13 @@ class Zarafa_Bridge {
 		$p = $this->extendedProperties;
 
 		$this->logger->trace("PR_CARDDAV_RAW_DATA: " . PR_CARDDAV_RAW_DATA);
-		$this->logger->trace("PR_CARDDAV_RAW_DATA_GENERATION_TIME:" . PR_CARDDAV_RAW_DATA_GENERATION_TIME);
+		$this->logger->trace("PR_CARDDAV_RAW_DATA_GENERATION_TIME: " . PR_CARDDAV_RAW_DATA_GENERATION_TIME);
+		$this->logger->trace("PR_CARDDAV_RAW_DATA_VERSION: " . PR_CARDDAV_RAW_DATA_VERSION);
+		$this->logger->debug("CACHE VERSION: " . CACHE_VERSION);
+		
+		// dump properties
+		$dump = print_r($contactProperties, true);
+		$this->logger->trace("Contact properties:\n$dump");
 		
 		if (SAVE_RAW_VCARD && isset($contactProperties[PR_CARDDAV_RAW_DATA])) {
 			// Check if raw vCard is up-to-date
@@ -385,11 +391,16 @@ class Zarafa_Bridge {
 		if (SAVE_RAW_VCARD) {
 			$this->logger->debug("Saving vcard to contact properties");
 			// Check if raw vCard is up-to-date
-			mapi_setprops($contact, Array(
+			mapi_setprops($contact, array(
 					PR_CARDDAV_RAW_DATA => $vCardData,
 					PR_CARDDAV_RAW_DATA_VERSION => CACHE_VERSION,
 					PR_CARDDAV_RAW_DATA_GENERATION_TIME => time()
 			));
+
+			if (mapi_last_hresult() > 0) {
+				$this->logger->warn("Error setting contact properties: " . get_mapi_error_name());
+			} 
+
 			mapi_savechanges($contact);
 			
 			if (mapi_last_hresult() > 0) {

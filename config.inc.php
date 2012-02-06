@@ -118,7 +118,7 @@
 	
 	// VCard cache version. Change cache version to force generation of
 	// vcards from contact properties
-	define ('CACHE_VERSION', '1.' + VCARD_VERSION);
+	define ('CACHE_VERSION', '1.' . VCARD_VERSION);
 	
 	// Set default timezone
 	if (function_exists("date_default_timezone_set")) {
