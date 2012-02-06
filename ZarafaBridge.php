@@ -353,7 +353,7 @@ class Zarafa_Bridge {
 			
 			// Get cache version
 			$vcardCacheVersion = isset($contactProperties[PR_CARDDAV_RAW_DATA_VERSION]) ? $contactProperties[PR_CARDDAV_RAW_DATA_VERSION] : 'NONE';
-			$this->logger->trace("Saved vcard cache version: $productId");
+			$this->logger->trace("Saved vcard cache version: " . $vcardCacheVersion);
 			
 			if (($vcardGenerationTime >= $lastModifiedDate) && ($vcardCacheVersion == CACHE_VERSION)) {
 				$this->logger->debug("Using saved vcard");
