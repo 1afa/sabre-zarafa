@@ -159,12 +159,26 @@ class VCardParser implements IVCardParser {
 		if (isset($vcard->fn)) {
 			$properties[$p['display_name']] = $vcard->fn->value;
 			$properties[PR_SUBJECT] = $vcard->fn->value;
-			if (empty($sortAs)) {
-				$sortAs = $vcard->fn->value;
-			}
 		}
 
+		if (empty($sortAs) || SAVE_AS_OVERRIDE_SORTAS) {
+			$sortAs = SAVE_AS_PATTERN;		// $vcard->fn->value;
+			
+			// Do substitutions
+			$substitutionKeys   = array('%d', '%l', '%f', '%c');
+			$substitutionValues = array(
+				$properties[$p['display_name']],
+				$properties[$p['surname']],
+				$properties[$p['given_name']],
+				$properties[$p['company_name']]
+			);
+			$sortAs = str_replace($substitutionKeys, $substitutionValues, $sortAs);
+		}
+
+		// Should PR_SUBJET and display_name be equals to fileas? I think so!
 		$properties[$p['fileas']] = $sortAs;
+		$properties[$p['display_name']] = $sortAs;
+		$properties[PR_SUBJECT] = $sortAs;
 		
 		// Custom... not quite sure X-MS-STUFF renders as x_ms_stuff... will have to check that!
 		if (isset($vcard->x_ms_assistant))	$properties[$p['assistant']] = $vcard->x_ms_assistant->value;
@@ -203,7 +217,13 @@ class VCardParser implements IVCardParser {
 			// Get type
 			$typeParam = $tel->offsetGet("TYPE");
 			if ($typeParam != NULL) {
-				$type = strtoupper($typeParam->value);
+				$type = '';
+				foreach ($typeParam as $tp) {
+					if (strtoupper($tp->value) != 'PREF') {
+						$type .= ($type == '') ? '' : ',';
+						$type .= strtoupper($tp->value);
+					}
+				}
 			}
 			
 			if (($type == 'HOME,VOICE') || ($type == 'HOME')) {

@@ -47,6 +47,20 @@
 	// - 4 : newer 4.0 format - compatible with emClient
 	define('VCARD_VERSION', 3);
 	
+	// Pattern to generate the "name" of the contact in Zarafa
+	// Only used when no SORT-AS or X-CN is provided
+	// unless SAVE_AS_OVERRIDE_SORTAS is set to true
+	//
+	// If only a company name is given, use it
+	//
+	// Options available:
+	// %d - display name (default up to 0.12)
+	// %l - last name
+	// %f - first name
+	// %c - company name
+	define ('SAVE_AS_PATTERN', '%d');
+	define ('SAVE_AS_OVERRIDE_SORTAS', false);
+	
 	// Charset to convert data to.
 	// iPhone does not support UTF8 nor windows contact
 	// vcard 4 are supposed to be utf8 encoded according to RFC :(
