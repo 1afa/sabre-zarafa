@@ -220,7 +220,7 @@ class VCardParser implements IVCardParser {
 			if ($typeParam != NULL) {
 				$type = '';
 				foreach ($typeParam as $tp) {
-					if (strtoupper($tp->value) != 'PREF') {
+					if (!in_array(strtoupper($tp->value), array('PREF', 'IPHONE'))) {
 						$type .= ($type == '') ? '' : ',';
 						$type .= strtoupper($tp->value);
 					}
