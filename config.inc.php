@@ -82,22 +82,22 @@
 	// unless used as DEFAULT_TELEPHONE_NUMBER_PROPERTY.
 	
 	// Valid values are:
-	//  home_telephone_number			(mapped to )
-	//	home2_telephone_number			(mapped to )
-	//	cellular_telephone_number		(mapped to )
-	//	office_telephone_number			(mapped to )
-	//	business2_telephone_number		(mapped to )
-	//	business_fax_number				(mapped to )
-	//	home_fax_number					(mapped to )
-	//	pager_telephone_number			(mapped to )
-	//	isdn_number						(mapped to )
-	//	company_telephone_number		(mapped to )
-	//	car_telephone_number			(mapped to )
-	//	assistant_telephone_number		(mapped to )
+	//  home_telephone_number			(mapped)
+	//	home2_telephone_number			(mapped)
+	//	cellular_telephone_number		(mapped)
+	//	office_telephone_number			(mapped)
+	//	business2_telephone_number		(mapped)
+	//	business_fax_number				(mapped)
+	//	home_fax_number					(mapped)
+	//	pager_telephone_number			(mapped)
+	//	isdn_number						(mapped)
+	//	company_telephone_number		(mapped)
+	//	car_telephone_number			(mapped)
+	//	assistant_telephone_number		(mapped)
+	//	primary_telephone_number		(mapped)
 	//	callback_telephone_number		* unmapped *
 	//	other_telephone_number			* unmapped *
 	//	primary_fax_number				* unmapped *
-	//	primary_telephone_number		* unmapped *
 	//	radio_telephone_number			* unmapped *
 	//	telex_telephone_number			* unmapped *
 	//	ttytdd_telephone_number			* unmapped *

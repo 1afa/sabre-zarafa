@@ -207,6 +207,7 @@ class VCardParser implements IVCardParser {
 			'ISDN'		 => 0,
 			'WORK'		 => 0,
 			'CAR'		 => 0,
+			'MAIN'		 => 0,
 			'SECR'		 => 0
 		);
 		$telephoneNumbers = $vcard->select("TEL");
@@ -241,6 +242,7 @@ class VCardParser implements IVCardParser {
 			}
 			if ($type == 'CELL,VOICE')		$pk = 'cellular_telephone_number';
 			if ($type == 'CELL')			$pk = 'cellular_telephone_number';
+			if ($type == 'IPHONE')			$pk = 'cellular_telephone_number';
 			if ($type == 'WORK,FAX') 		$pk = 'business_fax_number';
 			if ($type == 'HOME,FAX') 		$pk = 'home_fax_number';
 			if ($type == 'PAGER')			$pk = 'pager_telephone_number';
@@ -248,6 +250,7 @@ class VCardParser implements IVCardParser {
 			if ($type == 'WORK')			$pk = 'company_telephone_number';
 			if ($type == 'CAR')				$pk = 'car_telephone_number';
 			if ($type == 'SECR')			$pk = 'assistant_telephone_number';
+			if ($type == 'MAIN')			$pk = 'primary_telephone_number';
 			if ($type == '')				$pk = DEFAULT_TELEPHONE_NUMBER_PROPERTY;
 			
 			// Counting
