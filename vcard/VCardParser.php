@@ -374,7 +374,7 @@ class VCardParser implements IVCardParser {
 		
 		// Contact picture
 		if (isset($vcard->photo)) {
-			$type     = $vcard->photo->offsetGet("TYPE")->value;
+			$type     = strtolower($vcard->photo->offsetGet("TYPE")->value);
 			$encoding = $vcard->photo->offsetGet("ENCODING")->value;
 			$content  = $vcard->photo->value;
 			
@@ -382,7 +382,7 @@ class VCardParser implements IVCardParser {
 			
 			if (($encoding == 'b') || ($encoding == '')) {
 				$content = base64_decode($content);
-				if (($type != 'image/jpeg') && ($type != 'image/jpg')) {
+				if (($type != 'jpeg') && ($type != 'image/jpeg') && ($type != 'image/jpg')) {
 					$this->logger->trace("Converting to jpeg using GD");
 					$img = imagecreatefromstring($content);
 					if ($img === FALSE) {
