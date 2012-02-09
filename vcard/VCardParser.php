@@ -147,6 +147,19 @@ class VCardParser implements IVCardParser {
 				$sortAs = $vcard->n->offsetGet('SORT-AS')->value;
 			}
 		}
+		
+		// Given sort-as ?
+		/*
+		if (isset($vcard->sort-as)) {
+			$this->logger->debug("Using vcard SORT-AS");
+			$sortAs = $vcard->sort-as->value;
+		}
+		*/
+		$sortAsProperty = $vcard->select("SORT-AS");
+		if (count($sortAsProperty) != 0) {
+			$sortAs = current($sortAsProperty)->value;
+		}
+		
 		if (isset($vcard->nickname))		$properties[$p['nickname']] = $vcard->nickname->value;
 		if (isset($vcard->title))			$properties[$p['title']] = $vcard->title->value;
 		if (isset($vcard->role))			$properties[$p['profession']] = $vcard->role->value;
@@ -162,6 +175,7 @@ class VCardParser implements IVCardParser {
 		}
 
 		if (empty($sortAs) || SAVE_AS_OVERRIDE_SORTAS) {
+			$this->logger->trace("Empty sort-as or SAVE_AS_OVERRIDE_SORTAS set");
 			$sortAs = SAVE_AS_PATTERN;		// $vcard->fn->value;
 			
 			// Do substitutions
@@ -176,6 +190,7 @@ class VCardParser implements IVCardParser {
 		}
 
 		// Should PR_SUBJET and display_name be equals to fileas? I think so!
+		$this->logger->debug("Contact display name: " . $sortAs);
 		$properties[$p['fileas']] = $sortAs;
 		$properties[$p['display_name']] = $sortAs;
 		$properties[PR_SUBJECT] = $sortAs;
