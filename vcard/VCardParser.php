@@ -399,7 +399,7 @@ class VCardParser implements IVCardParser {
 				$content = base64_decode($content);
 				if (($type != 'jpeg') && ($type != 'image/jpeg') && ($type != 'image/jpg')) {
 					$this->logger->trace("Converting to jpeg using GD");
-					$img = imagecreatefromstring($content);
+					$img = @imagecreatefromstring($content);
 					if ($img === FALSE) {
 						$this->logger->warn("Corrupted contact picture or unknown format");
 						$content = NULL;
@@ -409,6 +409,7 @@ class VCardParser implements IVCardParser {
 						imagejpeg($img);
 						$content = ob_get_contents();
 						ob_end_clean();
+						imagedestroy($img);
 					}
 				}
 				if ($content !== NULL) {
