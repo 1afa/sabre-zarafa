@@ -416,10 +416,13 @@ class Zarafa_CardDav_Backend extends Sabre_CardDAV_Backend_Abstract {
 			$this->logger->debug("Saving raw vcard");
 			$mapiProperties[PR_CARDDAV_RAW_DATA] = $cardData;
 			$mapiProperties[PR_CARDDAV_RAW_DATA_GENERATION_TIME] = time();
+		} else {
+			$this->logger->trace("Saving raw vcard skiped by config");
 		}
 
 		// Handle contact picture
-		if (isset($mapiProperties['ContactPicture'])) {
+		if (array_key_exists('ContactPicture', $mapiProperties)) {
+			$this->logger->debug("Updating contact picture");
 			$contactPicture = $mapiProperties['ContactPicture'];
 			unset($mapiProperties['ContactPicture']);
 			$this->bridge->setContactPicture($contact, $contactPicture);

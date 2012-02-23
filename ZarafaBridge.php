@@ -661,10 +661,9 @@ class Zarafa_Bridge {
 				PR_ATTACH_EXTENSION_A => '.jpg',
 				PR_ATTACH_NUM => 1
 			);
+			mapi_setprops($attach, $properties);
+			mapi_savechanges($attach);
 		}	
-
-		mapi_setprops($attach, $properties);
-		mapi_savechanges($attach);
 			
 		// Test
 		if (mapi_last_hresult() > 0) {

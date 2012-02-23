@@ -125,7 +125,7 @@
 	// This should improve compatibility with CardDav clients using fields
 	// that do not map easily with zarafa (multiple IMPP in emClient for
 	// example)
-	define ('SAVE_RAW_VCARD', true);
+	define ('SAVE_RAW_VCARD', false);
 	
 	// How to "write" dates to VCard
 	define ('DATE_PATTERN', 'Ymd');

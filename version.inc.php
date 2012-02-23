@@ -24,6 +24,6 @@
  * Repository URL: <https://sabre-zarafa.googlecode.com/svn/trunk>
  */
 	
-	define ('SABRE_ZARAFA_REV', '68');
-	define ('SABRE_ZARAFA_DATE', '2012/02/23 14:12:41');
+	define ('SABRE_ZARAFA_REV', '69');
+	define ('SABRE_ZARAFA_DATE', '2012/02/23 16:59:52');
 ?>
