@@ -126,6 +126,9 @@ class VCardParser implements IVCardParser {
 			$properties[$p['webpage']] = NULL;
 			$properties[$p['im']] = NULL;
 			$properties[$p['categories']] = NULL;
+			$properties['ContactPicture'] = NULL;
+			$properties[PR_HASATTACH] = false;
+			$properties[$p['has_picture']] = false;
 		}
 		
 		// Name components

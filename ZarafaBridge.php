@@ -635,17 +635,17 @@ class Zarafa_Bridge {
 			}
 		}
 		
-		// Create an attachment if necessary
+		// Remove existing attachment if necessary
 		if ($contactAttachment != -1) {
 			$this->logger->trace("removing existing contact picture");
 			$attach = mapi_message_deleteattach($contact, $contactAttachment);
 		}
-
-		// Create attachment
-		$attach = mapi_message_createattach($contact);
 		
 		if ($contactPicture !== NULL) {
 			$this->logger->debug("Saving contact picture as attachment");
+
+			// Create attachment
+			$attach = mapi_message_createattach($contact);
 			
 			// Update contact attachment properties
 			$properties = array(
@@ -661,16 +661,16 @@ class Zarafa_Bridge {
 				PR_ATTACH_EXTENSION_A => '.jpg',
 				PR_ATTACH_NUM => 1
 			);
+		}	
+
+		mapi_setprops($attach, $properties);
+		mapi_savechanges($attach);
 			
-			mapi_setprops($attach, $properties);
-			mapi_savechanges($attach);
-			
-			// Test
-			if (mapi_last_hresult() > 0) {
-				$this->logger->warn("Error saving contact picture: " . get_mapi_error_name());
-			} else {
-				$this->logger->trace("contact picture done");
-			}
+		// Test
+		if (mapi_last_hresult() > 0) {
+			$this->logger->warn("Error saving contact picture: " . get_mapi_error_name());
+		} else {
+			$this->logger->trace("contact picture done");
 		}
 	}
 	
