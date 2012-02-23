@@ -271,6 +271,11 @@ class VCardProducer implements IVCardProducer {
 			}
 		}
 		if ($photo != NULL) {
+			// SogoConnector does not like image/jpeg
+			if ($photoMime == 'image/jpeg') {
+				$photoMime = 'JPEG';
+			}
+		
 			$this->logger->trace("Adding contact picture to VCard");
 			$photoEncoded = base64_encode($photo);
 			$photoProperty = new Sabre_VObject_Property('PHOTO',$photoEncoded);

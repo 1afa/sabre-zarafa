@@ -38,7 +38,8 @@
 	define ('SABRE_AUTH_REALM', 'Zarafa SabreDAV CardDav');
 	
 	// Product ID sent in vcards
-	define ('VCARD_PRODUCT_ID', '-//SabreDav/ZarafaBackend/0.14');
+	define ('SABRE-ZARAFA-REV', '$Rev$');
+	define ('VCARD_PRODUCT_ID', '-//SabreDav/ZarafaBackend/0.15');
 	
 	// Choose VCard version
 	// Supported values:
@@ -132,7 +133,7 @@
 	
 	// VCard cache version. Change cache version to force generation of
 	// vcards from contact properties
-	define ('CACHE_VERSION', '1.' . VCARD_VERSION);
+	define ('CACHE_VERSION', '2.' . VCARD_VERSION);
 	
 	// Set default timezone
 	if (function_exists("date_default_timezone_set")) {
