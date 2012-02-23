@@ -26,6 +26,7 @@
 
 	// Load config and common
 	include (BASE_PATH . "config.inc.php");
+	include (BASE_PATH . "version.inc.php");
 	include (BASE_PATH . "common.inc.php");
 
 	// Logging
