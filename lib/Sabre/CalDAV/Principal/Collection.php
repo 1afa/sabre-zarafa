@@ -4,8 +4,8 @@
  * Principal collection
  *
  * This is an alternative collection to the standard ACL principal collection.
- * This collection adds support for the calendar-proxy-read and 
- * calendar-proxy-write sub-principals, as defined by the caldav-proxy 
+ * This collection adds support for the calendar-proxy-read and
+ * calendar-proxy-write sub-principals, as defined by the caldav-proxy
  * specification.
  *
  * @package Sabre
@@ -17,10 +17,10 @@
 class Sabre_CalDAV_Principal_Collection extends Sabre_DAVACL_AbstractPrincipalCollection {
 
     /**
-     * Returns a child object based on principal information 
-     * 
-     * @param array $principalInfo 
-     * @return Sabre_CalDAV_Principal_User 
+     * Returns a child object based on principal information
+     *
+     * @param array $principalInfo
+     * @return Sabre_CalDAV_Principal_User
      */
     public function getChildForPrincipal(array $principalInfo) {
 

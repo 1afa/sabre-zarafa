@@ -1,7 +1,7 @@
 <?php
 
 /**
- * InsufficientStorage 
+ * InsufficientStorage
  *
  * This Exception can be thrown, when for example a harddisk is full or a quota is exceeded
  *
@@ -14,7 +14,7 @@
 class Sabre_DAV_Exception_InsufficientStorage extends Sabre_DAV_Exception {
 
     /**
-     * Returns the HTTP statuscode for this exception 
+     * Returns the HTTP statuscode for this exception
      *
      * @return int
      */

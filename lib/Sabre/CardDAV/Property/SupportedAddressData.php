@@ -4,7 +4,7 @@
  * Supported-address-data property
  *
  * This property is a representation of the supported-address-data property
- * in the CardDAV namespace. 
+ * in the CardDAV namespace.
  *
  * @package Sabre
  * @subpackage CardDAV
@@ -16,15 +16,15 @@ class Sabre_CardDAV_Property_SupportedAddressData extends Sabre_DAV_Property {
 
     /**
      * supported versions
-     * 
-     * @var array 
+     *
+     * @var array
      */
     protected $supportedData = array();
-    
+
     /**
-     * Creates the property 
-     * 
-     * @param array $components 
+     * Creates the property
+     *
+     * @param array|null $supportedData
      */
     public function __construct(array $supportedData = null) {
 
@@ -35,22 +35,22 @@ class Sabre_CardDAV_Property_SupportedAddressData extends Sabre_DAV_Property {
             );
         }
 
-       $this->supportedData = $supportedData; 
+       $this->supportedData = $supportedData;
 
     }
-    
+
     /**
-     * Serializes the property in a DOMDocument 
-     * 
-     * @param Sabre_DAV_Server $server 
-     * @param DOMElement $node 
+     * Serializes the property in a DOMDocument
+     *
+     * @param Sabre_DAV_Server $server
+     * @param DOMElement $node
      * @return void
      */
     public function serialize(Sabre_DAV_Server $server,DOMElement $node) {
 
         $doc = $node->ownerDocument;
 
-        $prefix = 
+        $prefix =
             isset($server->xmlNamespaces[Sabre_CardDAV_Plugin::NS_CARDDAV]) ?
             $server->xmlNamespaces[Sabre_CardDAV_Plugin::NS_CARDDAV] :
             'card';

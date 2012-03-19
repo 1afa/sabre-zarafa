@@ -16,10 +16,10 @@
 class Sabre_CalDAV_Property_SupportedCalendarData extends Sabre_DAV_Property {
 
     /**
-     * Serializes the property in a DOMDocument 
-     * 
-     * @param Sabre_DAV_Server $server 
-     * @param DOMElement $node 
+     * Serializes the property in a DOMDocument
+     *
+     * @param Sabre_DAV_Server $server
+     * @param DOMElement $node
      * @return void
      */
     public function serialize(Sabre_DAV_Server $server,DOMElement $node) {
@@ -32,7 +32,7 @@ class Sabre_CalDAV_Property_SupportedCalendarData extends Sabre_DAV_Property {
         $caldata->setAttribute('content-type','text/calendar');
         $caldata->setAttribute('version','2.0');
 
-        $node->appendChild($caldata); 
+        $node->appendChild($caldata);
     }
 
 }

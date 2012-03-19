@@ -15,7 +15,7 @@
 class Sabre_DAV_Exception_Conflict extends Sabre_DAV_Exception {
 
     /**
-     * Returns the HTTP statuscode for this exception 
+     * Returns the HTTP statuscode for this exception
      *
      * @return int
      */

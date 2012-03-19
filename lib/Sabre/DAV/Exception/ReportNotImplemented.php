@@ -14,10 +14,10 @@
 class Sabre_DAV_Exception_ReportNotImplemented extends Sabre_DAV_Exception_NotImplemented {
 
     /**
-     * This method allows the exception to include additonal information into the WebDAV error response 
+     * This method allows the exception to include additional information into the WebDAV error response
      *
      * @param Sabre_DAV_Server $server
-     * @param DOMElement $errorNode 
+     * @param DOMElement $errorNode
      * @return void
      */
     public function serialize(Sabre_DAV_Server $server,DOMElement $errorNode) {

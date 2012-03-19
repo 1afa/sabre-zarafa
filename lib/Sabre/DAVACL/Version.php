@@ -2,7 +2,7 @@
 
 /**
  * This class contains the SabreDAV version constants.
- * 
+ *
  * @package Sabre
  * @subpackage DAVACL
  * @copyright Copyright (C) 2007-2012 Rooftop Solutions. All rights reserved.
@@ -14,7 +14,7 @@ class Sabre_DAVACL_Version {
     /**
      * Full version number
      */
-    const VERSION = '1.5.7';
+    const VERSION = '1.6.0';
 
     /**
      * Stability : alpha, beta, stable

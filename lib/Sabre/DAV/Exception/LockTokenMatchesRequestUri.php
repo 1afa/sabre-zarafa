@@ -1,10 +1,10 @@
 <?php
 
 /**
- * LockTokenMatchesRequestUri 
+ * LockTokenMatchesRequestUri
  *
- * This exception is thrown by UNLOCK if a supplied lock-token is invalid 
- * 
+ * This exception is thrown by UNLOCK if a supplied lock-token is invalid
+ *
  * @package Sabre
  * @subpackage DAV
  * @copyright Copyright (C) 2007-2012 Rooftop Solutions. All rights reserved.
@@ -23,10 +23,10 @@ class Sabre_DAV_Exception_LockTokenMatchesRequestUri extends Sabre_DAV_Exception
     }
 
     /**
-     * This method allows the exception to include additonal information into the WebDAV error response 
+     * This method allows the exception to include additional information into the WebDAV error response
      *
      * @param Sabre_DAV_Server $server
-     * @param DOMElement $errorNode 
+     * @param DOMElement $errorNode
      * @return void
      */
     public function serialize(Sabre_DAV_Server $server,DOMElement $errorNode) {

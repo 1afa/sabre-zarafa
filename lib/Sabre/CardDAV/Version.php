@@ -4,7 +4,7 @@
  * Version Class
  *
  * This class contains the Sabre_CardDAV version information
- * 
+ *
  * @package Sabre
  * @subpackage CardDAV 
  * @copyright Copyright (C) 2007-2012 Rooftop Solutions. All rights reserved.
@@ -16,7 +16,7 @@ class Sabre_CardDAV_Version {
     /**
      * Full version number
      */
-    const VERSION = '1.5.7';
+    const VERSION = '1.6.1';
 
     /**
      * Stability : alpha, beta, stable
