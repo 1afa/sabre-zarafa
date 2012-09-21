@@ -273,12 +273,11 @@ class Zarafa_CardDav_Backend extends Sabre_CardDAV_Backend_Abstract {
 				$this->logger->debug("Using contact URI: " . $contactProperties[PR_CARDDAV_URI]);
 				$uri = $contactProperties[PR_CARDDAV_URI];
 			} else {
-				// Generate a GUID and use it as URI - store in zarafa
-				$this->logger->debug("Generating a GUID for contact");
-				$uri = $this->bridge->generateRandomGuid() . ".vcf";
-				$contact = mapi_msgstore_openentry($store, $c[PR_ENTRYID], MAPI_MODIFY);
-				mapi_setprops ($contact, array(PR_CARDDAV_URI => $uri));
-				mapi_savechanges($contact);
+				// Create an URI from the EntryID:
+				$uri = $this->bridge->guidFromEntryID($c[PR_ENTRYID]) . '.vcf';
+				// Note: we do not write this change back to the database;
+				// if this is a public contact created by someone else, we
+				// do not have the permissions to write it.
 			}
 			
 			$cards[] = array(
@@ -532,7 +531,7 @@ class Zarafa_CardDav_Backend extends Sabre_CardDAV_Backend_Abstract {
 				}
 			} else {
 				// CardURI can be PR_ENTRYID .vcf
-				if ($this->bridge->entryIdToStr($c[PR_ENTRYID]) == substr($cardUri, 0, -4)) {
+				if ($this->bridge->guidFromEntryId($c[PR_ENTRYID]) == substr($cardUri, 0, -4)) {
 					$entryId = $c[PR_ENTRYID];
 					break; 
 				}
