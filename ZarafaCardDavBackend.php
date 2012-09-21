@@ -318,10 +318,10 @@ class Zarafa_CardDav_Backend extends Sabre_CardDAV_Backend_Abstract {
 			return false;
 		}
 		
-		$contactProperties = $this->bridge->getProperties($entryId);
+		$contactProperties = $this->bridge->getProperties($entryId, $store);
 		$card = array(
 			'id' => $contactProperties[PR_ENTRYID],
-			'carddata' => $this->bridge->getContactVCard($contactProperties[PR_ENTRYID], $store),
+			'carddata' => $this->bridge->getContactVCard($contactProperties, $store),
 			'uri' => $cardUri,
 			'lastmodified' => $contactProperties[PR_LAST_MODIFICATION_TIME]
 		);
