@@ -198,7 +198,7 @@ class Zarafa_Bridge {
 		if ($this->adressBooks === NULL) {
 			$this->logger->debug("Building list of address books");
 			$this->adressBooks = array();
-			$this->buildAdressBooks('', $this->rootFolder, $this->rootFolderId);
+			$this->buildAdressBooks('', $this->rootFolder, $this->rootFolderId, $this->store);
 		}
 		return $this->adressBooks;
 	}
@@ -207,7 +207,7 @@ class Zarafa_Bridge {
 	 * Build user list of adress books
 	 * Recursively find folders in Zarafa
 	 */
-	private function buildAdressBooks($prefix, $folder, $parentFolderId) {
+	private function buildAdressBooks($prefix, $folder, $parentFolderId, $store) {
 		$this->logger->trace("buildAdressBooks");
 		
 		$folderProperties = mapi_getprops($folder);
@@ -249,15 +249,18 @@ class Zarafa_Bridge {
 			'prefix'      => $prefix,
 			'description' => (isset($folderProperties[805568542]) ? $folderProperties[805568542] : ''),
 			'ctag'        => $ctag,
-			'parentId'	  => $parentFolderId
+			'parentId'    => $parentFolderId,
+			'store'       => $store
 		);
 		
 		// Get subfolders
 		$foldersTable = mapi_folder_gethierarchytable ($folder);
 		$folders      = mapi_table_queryallrows($foldersTable, array(PR_ENTRYID));
 		foreach ($folders as $f) {
-			$subFold = mapi_msgstore_openentry($this->store, $f[PR_ENTRYID]);
-			$this->buildAdressBooks ($prefix . $currentFolderName . "/", $subFold, $folderProperties[PR_ENTRYID]);
+			if (($subFold = mapi_msgstore_openentry($store, $f[PR_ENTRYID])) === FALSE) {
+				continue;
+			}
+			$this->buildAdressBooks ($prefix . $currentFolderName . "/", $subFold, $folderProperties[PR_ENTRYID], $store);
 		}
 	}
 	
@@ -289,6 +292,15 @@ class Zarafa_Bridge {
 		} 
 		
 		return pack("H*", $str);
+	}
+	public function storeFromAddressBookId($addressBookId)
+	{
+		if (isset($this->adressBooks[$addressBookId])
+		 && isset($this->adressBooks[$addressBookId]['store'])) {
+			return $this->adressBooks[$addressBookId]['store'];
+		}
+		$this->logger->warn("Cannot find store belonging to address book");
+		return FALSE;
 	}
 	
 	/**
@@ -330,11 +342,11 @@ class Zarafa_Bridge {
 	 * @param $contactId contact EntryID
 	 * @return VCard 4 UTF-8 encoded content
 	 */
-	public function getContactVCard($contactId) {
+	public function getContactVCard($contactId, $store) {
 
 		$this->logger->trace("getContactVCard(" . bin2hex($contactId) . ")");
 	
-		$contact = mapi_msgstore_openentry($this->store, $contactId);
+		$contact = mapi_msgstore_openentry($store, $contactId);
 		$contactProperties = $this->getProperties($contactId);
 		$p = $this->extendedProperties;
 

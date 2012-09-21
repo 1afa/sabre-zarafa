@@ -110,7 +110,10 @@ class Zarafa_CardDav_Backend extends Sabre_CardDAV_Backend_Abstract {
 			$this->logger->warn("Trying to update read-only address book");
 			return false;
 		}
-		
+		if (($store = $this->bridge->storeFromAddressBookId($addressBookId)) === FALSE) {
+			$this->logger->warn(__FUNCTION__.": store not found!");
+			return FALSE;
+		}
 		// Debug information
 		$dump = print_r($mutations, true);
 		$this->logger->debug("Mutations:\n$dump");
@@ -128,7 +131,7 @@ class Zarafa_CardDav_Backend extends Sabre_CardDAV_Backend_Abstract {
 		
 		// Do the mutations
 		$this->logger->trace("applying mutations");
-		$folder = mapi_msgstore_openentry($this->bridge->getStore(), $addressBookId);
+		$folder = mapi_msgstore_openentry($store, $addressBookId);
 		
 		if (mapi_last_hresult() > 0) {
 			$this->logger->fatal("Error opening addressbook: " . get_mapi_error_name());
@@ -218,12 +221,14 @@ class Zarafa_CardDav_Backend extends Sabre_CardDAV_Backend_Abstract {
 			$this->logger->warn("Cannot delete address book: permission denied by config");
 			return false;
 		}
-		
 		$folders = $this->bridge->getAdressBooks();
-		
+		if (($store = $this->bridge->storeFromAddressBookId($addressBookId)) === FALSE) {
+			$this->logger->warn(__FUNCTION__.": store not found!");
+			return FALSE;
+		}
 		$parentFolderId = $folders[$addressBookId]['parentId'];
-		$folder         = mapi_msgstore_openentry($this->bridge->getStore(), $addressBookId);
-		$parentFolder   = mapi_msgstore_openentry($this->bridge->getStore(), $parentFolderId);
+		$folder         = mapi_msgstore_openentry($store, $addressBookId);
+		$parentFolder   = mapi_msgstore_openentry($store, $parentFolderId);
 		
 		// Delete folder content
 		mapi_folder_emptyfolder($folder, DEL_ASSOCIATED);
@@ -251,10 +256,13 @@ class Zarafa_CardDav_Backend extends Sabre_CardDAV_Backend_Abstract {
 	
 		$cards = array();
 		
-		$folder = mapi_msgstore_openentry($this->bridge->getStore(), $addressbookId);
-		$contactsTable = mapi_folder_getcontentstable($folder);
-		$contacts = mapi_table_queryallrows($contactsTable);
-
+		if (FALSE === ($store = $this->bridge->storeFromAddressbookId($addressbookId))
+		 || FALSE === ($folder = mapi_msgstore_openentry($store, $addressbookId))
+		 || FALSE === ($contactsTable = mapi_folder_getcontentstable($folder))
+		 || FALSE === ($contacts = mapi_table_queryallrows($contactsTable))) {
+			$this->logger->warn("getCards failed early");
+			return $cards;
+		}
 		$i = 0;
 		foreach ($contacts as $c) {
 			$i++;
@@ -268,7 +276,7 @@ class Zarafa_CardDav_Backend extends Sabre_CardDAV_Backend_Abstract {
 				// Generate a GUID and use it as URI - store in zarafa
 				$this->logger->debug("Generating a GUID for contact");
 				$uri = $this->bridge->generateRandomGuid() . ".vcf";
-				$contact = mapi_msgstore_openentry($this->bridge->getStore(), $c[PR_ENTRYID], MAPI_MODIFY);
+				$contact = mapi_msgstore_openentry($store, $c[PR_ENTRYID], MAPI_MODIFY);
 				mapi_setprops ($contact, array(PR_CARDDAV_URI => $uri));
 				mapi_savechanges($contact);
 			}
@@ -299,7 +307,10 @@ class Zarafa_CardDav_Backend extends Sabre_CardDAV_Backend_Abstract {
 		// Init
 		$this->logger->info("getCard(" . bin2hex($addressBookId) . ", $cardUri)");
 
-		$folder = mapi_msgstore_openentry($this->bridge->getStore(), $addressBookId);
+		if (FALSE === ($store = $this->bridge->storeFromAddressBookId($addressBookId))) {
+			return FALSE;
+		}
+		$folder = mapi_msgstore_openentry($store, $addressBookId);
 		$entryId = $this->getContactEntryId($addressBookId, $cardUri);
 		
 		if ($entryId === 0) {
@@ -310,7 +321,7 @@ class Zarafa_CardDav_Backend extends Sabre_CardDAV_Backend_Abstract {
 		$contactProperties = $this->bridge->getProperties($entryId);
 		$card = array(
 			'id' => $contactProperties[PR_ENTRYID],
-			'carddata' => $this->bridge->getContactVCard($contactProperties[PR_ENTRYID]),
+			'carddata' => $this->bridge->getContactVCard($contactProperties[PR_ENTRYID], $store),
 			'uri' => $cardUri,
 			'lastmodified' => $contactProperties[PR_LAST_MODIFICATION_TIME]
 		);
@@ -333,8 +344,10 @@ class Zarafa_CardDav_Backend extends Sabre_CardDAV_Backend_Abstract {
 			$this->logger->warn("createCard failed: read-only");
 			return false;
 		}
-		
-		$folder = mapi_msgstore_openentry($this->bridge->getStore(), $addressBookId);
+		if (($store = $this->bridge->storeFromAddressBookId($addressBookId)) === FALSE) {
+			return FALSE;
+		}
+		$folder = mapi_msgstore_openentry($store, $addressBookId);
 		$contact = mapi_folder_createmessage($folder);
 	
 		if (mapi_last_hresult() != 0) {
@@ -407,9 +420,12 @@ class Zarafa_CardDav_Backend extends Sabre_CardDAV_Backend_Abstract {
 			$this->logger->warn("Cannot find contact");
 			return false;
 		}
-		
+		if (($store = $this->bridge->storeFromAddressBookId($addressBookId)) === FALSE) {
+			$this->logger->warn(__FUNCTION__.": store not found!");
+			return FALSE;
+		}
 		$mapiProperties = $this->bridge->vcardToMapiProperties($cardData);
-		$contact = mapi_msgstore_openentry($this->bridge->getStore(), $entryId);
+		$contact = mapi_msgstore_openentry($store, $entryId);
 		
 		if (SAVE_RAW_VCARD) {
 			// Save RAW vCard
@@ -468,10 +484,13 @@ class Zarafa_CardDav_Backend extends Sabre_CardDAV_Backend_Abstract {
 			$this->logger->warn("Cannot delete card: read-only");
 			return false;
 		}
-
-		$folder = mapi_msgstore_openentry($this->bridge->getStore(), $addressBookId);
+		if (($store = $this->bridge->storeFromAddressBookId($addressBookId)) === FALSE) {
+			$this->logger->warn(__FUNCTION__.": store not found!");
+			return FALSE;
+		}
+		$folder = mapi_msgstore_openentry($store, $addressBookId);
 		$entryId = $this->getContactEntryId($addressBookId, $cardUri);
-		
+
 		if ($entryId === 0) {
 			$this->logger->warn("Contact not found!");
 			return false;
@@ -495,8 +514,12 @@ class Zarafa_CardDav_Backend extends Sabre_CardDAV_Backend_Abstract {
 	protected function getContactEntryId($addressBookId, $cardUri) {
 		// Update object properties
 		$this->logger->trace("getContactEntryId($cardUri)");
-		
-		$folder = mapi_msgstore_openentry($this->bridge->getStore(), $addressBookId);
+
+		if (($store = $this->bridge->storeFromAddressBookId($addressBookId)) === FALSE) {
+			$this->logger->warn(__FUNCTION__.": store not found!");
+			return FALSE;
+		}
+		$folder = mapi_msgstore_openentry($store, $addressBookId);
 		$contactsTable = mapi_folder_getcontentstable($folder);
 		$contacts = mapi_table_queryallrows($contactsTable, array(PR_ENTRYID, PR_CARDDAV_URI, PR_SUBJECT));
 
