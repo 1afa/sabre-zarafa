@@ -221,6 +221,7 @@ class VCardParser implements IVCardParser {
 			'CELL'		 => 0,
 			'WORK,VOICE' => 0,
 			'WORK,FAX'   => 0,
+			'FAX'        => 0,
 			'PAGER'		 => 0,
 			'ISDN'		 => 0,
 			'WORK'		 => 0,
@@ -263,6 +264,7 @@ class VCardParser implements IVCardParser {
 			if ($type == 'IPHONE')			$pk = 'cellular_telephone_number';
 			if ($type == 'WORK,FAX') 		$pk = 'business_fax_number';
 			if ($type == 'HOME,FAX') 		$pk = 'home_fax_number';
+			if ($type == 'FAX')	 		$pk = 'primary_fax_number';
 			if ($type == 'PAGER')			$pk = 'pager_telephone_number';
 			if ($type == 'ISDN')			$pk = 'isdn_number';
 			if ($type == 'WORK')			$pk = 'company_telephone_number';
