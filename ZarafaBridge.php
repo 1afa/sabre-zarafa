@@ -304,7 +304,7 @@ class Zarafa_Bridge {
 			'id'          => $folderProperties[PR_ENTRYID],
 			'displayname' => $folderProperties[PR_DISPLAY_NAME],
 			'prefix'      => $prefix,
-			'description' => (isset($folderProperties[805568542]) ? $folderProperties[805568542] : ''),
+			'description' => (isset($folderProperties[PR_COMMENT]) ? $folderProperties[PR_COMMENT] : ''),
 			'ctag'        => $ctag,
 			'parentId'    => $parentFolderId,
 			'store'       => $store
