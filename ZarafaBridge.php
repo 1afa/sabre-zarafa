@@ -254,7 +254,7 @@ class Zarafa_Bridge {
 		
 		// Get subfolders
 		$foldersTable = mapi_folder_gethierarchytable ($folder);
-		$folders      = mapi_table_queryallrows($foldersTable);
+		$folders      = mapi_table_queryallrows($foldersTable, array(PR_ENTRYID));
 		foreach ($folders as $f) {
 			$subFold = mapi_msgstore_openentry($this->store, $f[PR_ENTRYID]);
 			$this->buildAdressBooks ($prefix . $currentFolderName . "/", $subFold, $folderProperties[PR_ENTRYID]);
