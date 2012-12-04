@@ -103,17 +103,13 @@ class Zarafa_Bridge {
 
 		// Find user store
 		$storesTable = mapi_getmsgstorestable($session);
-		$stores = mapi_table_queryallrows($storesTable, array(PR_ENTRYID, PR_MDB_PROVIDER));
-		for($i = 0; $i < count($stores); $i++){
-			if ($stores[$i][PR_MDB_PROVIDER] == ZARAFA_SERVICE_GUID) {
-				$storeEntryid = $stores[$i][PR_ENTRYID];
-				break;
-			}
-		}
+		mapi_table_restrict($storesTable, $this->restrict_propval(PR_MDB_PROVIDER, ZARAFA_SERVICE_GUID, RELOP_EQ));
 
-		if (!isset($storeEntryid)) {
+		$stores = mapi_table_queryallrows($storesTable, array(PR_ENTRYID));
+		if (!isset($stores[0]) || !isset($stores[0][PR_ENTRYID])) {
 			trigger_error("Default store not found", E_USER_ERROR);
 		}
+		$storeEntryid = $stores[0][PR_ENTRYID];
 
 		$this->store = mapi_openmsgstore($this->session, $storeEntryid);
 		$root = mapi_msgstore_openentry($this->store, null);
