@@ -250,47 +250,53 @@ class Zarafa_CardDav_Backend extends Sabre_CardDAV_Backend_Abstract {
      * @param mixed $addressbookId 
      * @return array 
      */
-    public function getCards($addressbookId) {
-
+	public function
+	getCards ($addressbookId)
+	{
 		$this->logger->info("getCards(" . bin2hex($addressbookId) . ")");
 	
 		$cards = array();
-		
-		if (FALSE === ($store = $this->bridge->storeFromAddressbookId($addressbookId))
-		 || FALSE === ($folder = mapi_msgstore_openentry($store, $addressbookId))
-		 || FALSE === ($contactsTable = mapi_folder_getcontentstable($folder))
-		 || FALSE === ($contacts = mapi_table_queryallrows($contactsTable))) {
-			$this->logger->warn("getCards failed early");
+		do {
+			if (($store = $this->bridge->storeFromAddressbookId($addressbookId)) === FALSE) {
+				break;
+			}
+			if (($folder = mapi_msgstore_openentry($store, $addressbookId)) === FALSE) {
+				break;
+			}
+			if (($contactsTable = mapi_folder_getcontentstable($folder)) === FALSE) {
+				break;
+			}
+			if (($contacts = mapi_table_queryallrows($contactsTable, Array(PR_ENTRYID, PR_CARDDAV_URI, PR_LAST_MODIFICATION_TIME))) === FALSE) {
+				break;
+			}
+			foreach ($contacts as $c)
+			{
+				// URI is based on PR_CARDDAV_URI or use ENTRYID
+				if (isset($c[PR_CARDDAV_URI])) {
+					$this->logger->debug("Using contact URI: " . $c[PR_CARDDAV_URI]);
+					$uri = $c[PR_CARDDAV_URI];
+				} else {
+					// Create an URI from the EntryID:
+					$uri = $this->bridge->guidFromEntryID($c[PR_ENTRYID]) . '.vcf';
+					// Note: we do not write this change back to the database;
+					// if this is a public contact created by someone else, we
+					// do not have the permissions to write it.
+				}
+				$cards[] = array(
+					'id' => $c[PR_ENTRYID],
+		//			'carddata' => $this->bridge->getContactVCard($contactProperties[PR_ENTRYID]),
+					'uri' => $uri,
+					'lastmodified' => $c[PR_LAST_MODIFICATION_TIME]
+				);
+			}
+			$dump = print_r ($cards, true);
+			$this->logger->trace("Addressbook cards\n$dump");
 			return $cards;
 		}
-		$i = 0;
-		foreach ($contacts as $c) {
-			$i++;
-			$contactProperties = $this->bridge->getProperties($c[PR_ENTRYID]);
-			
-			// URI is based on PR_CARDDAV_URI or use ENTRYID
-			if (isset($contactProperties[PR_CARDDAV_URI])) {
-				$this->logger->debug("Using contact URI: " . $contactProperties[PR_CARDDAV_URI]);
-				$uri = $contactProperties[PR_CARDDAV_URI];
-			} else {
-				// Create an URI from the EntryID:
-				$uri = $this->bridge->guidFromEntryID($c[PR_ENTRYID]) . '.vcf';
-				// Note: we do not write this change back to the database;
-				// if this is a public contact created by someone else, we
-				// do not have the permissions to write it.
-			}
-			
-			$cards[] = array(
-				'id' => $contactProperties[PR_ENTRYID],
-	//			'carddata' => $this->bridge->getContactVCard($contactProperties[PR_ENTRYID]),
-				'uri' => $uri, 
-				'lastmodified' => $contactProperties[PR_LAST_MODIFICATION_TIME]
-			);
-		}
-		
-		$dump = print_r ($cards, true);
-		$this->logger->trace("Addressbook cards\n$dump");
-		
+		while (0);
+
+		// If we're here, that's not good:
+		$this->logger->warn("getCards failed early");
 		return $cards;
 	}
 
