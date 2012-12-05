@@ -308,30 +308,40 @@ class Zarafa_CardDav_Backend extends Sabre_CardDAV_Backend_Abstract {
      * @param string $cardUri 
      * @return void
      */
-    public function getCard($addressBookId, $cardUri) {
+	public function
+	getCard ($addressBookId, $cardUri)
+	{
+		// Local result cache:
+		static $cache = Array();
 
-		// Init
 		$this->logger->info("getCard(" . bin2hex($addressBookId) . ", $cardUri)");
 
-		if (FALSE === ($store = $this->bridge->storeFromAddressBookId($addressBookId))) {
+		// Can we satisfy the request from the local cache?
+		if (isset($cache[$addressBookId])
+		 && isset($cache[$addressBookId][$cardUri])) {
+		   return $cache[$addressBookId][$cardUri];
+		}
+		// Else, do the actual lookup:
+		if (FALSE($store = $this->bridge->storeFromAddressBookId($addressBookId))) {
 			return FALSE;
 		}
 		$folder = mapi_msgstore_openentry($store, $addressBookId);
-		$entryId = $this->getContactEntryId($addressBookId, $cardUri);
-		
-		if ($entryId === 0) {
+		if (($entryId = $this->getContactEntryId($addressBookId, $cardUri)) === 0) {
 			$this->logger->warn("Contact not found!");
-			return false;
+			return FALSE;
 		}
-		
 		$contactProperties = $this->bridge->getProperties($entryId, $store);
-		$card = array(
+		$card = Array(
 			'id' => $contactProperties[PR_ENTRYID],
 			'carddata' => $this->bridge->getContactVCard($contactProperties, $store),
 			'uri' => $cardUri,
 			'lastmodified' => $contactProperties[PR_LAST_MODIFICATION_TIME]
 		);
-		
+		// Add to cache:
+		if (!isset($cache[$addressBookId])) {
+			$cache[$addressBookId] = Array();
+		}
+		$cache[$addressBookId][$cardUri] = $card;
 		return $card;
 	} 
 
