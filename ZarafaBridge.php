@@ -179,12 +179,17 @@ class Zarafa_Bridge {
 	 * Get connected user email address
 	 * @return email address
 	 */
-	public function getConnectedUserMailAddress() {
+	public function
+	getConnectedUserMailAddress ()
+	{
+		static $userinfo = FALSE;
 		$this->logger->trace("getConnectedUserMailAddress");
-		$userInfo = mapi_zarafa_getuser_by_name($this->store, $this->connectedUser);
-		
-		$this->logger->debug("User email address: " . $userInfo["emailaddress"]);
-		return $userInfo["emailaddress"];
+
+		if ($userinfo === FALSE) {
+			$userinfo = mapi_zarafa_getuser_by_name($this->store, $this->connectedUser);
+		}
+		$this->logger->debug("User email address: " . $userinfo["emailaddress"]);
+		return $userinfo['emailaddress'];
 	}
 	
 	/**
