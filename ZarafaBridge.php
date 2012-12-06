@@ -62,6 +62,7 @@ class Zarafa_Bridge {
 	protected $publicStore;
 	protected $rootFolder;
 	protected $rootFolderId;
+	protected $wastebasketId = FALSE;
 	protected $extendedProperties;
 	protected $connectedUser;
 	protected $adressBooks;
@@ -227,8 +228,13 @@ class Zarafa_Bridge {
 			$this->logger->debug('Could not find public store');
 			return FALSE;
 		}
+		// Find Deleted Folders ID:
+		$store_props = mapi_getprops($this->publicStore, array(PR_IPM_WASTEBASKET_ENTRYID, PR_IPM_PUBLIC_FOLDERS_ENTRYID));
+		if (isset($store_props[PR_IPM_WASTEBASKET_ENTRYID])) {
+			$this->wastebasketId = $store_props[PR_IPM_WASTEBASKET_ENTRYID];
+		}
 		// Open the public folder:
-		if (($publicFolder = mapi_msgstore_openentry($this->publicStore)) === FALSE) {
+		if (($publicFolder = mapi_msgstore_openentry($this->publicStore, $store_props[PR_IPM_PUBLIC_FOLDERS_ENTRYID])) === FALSE) {
 			$this->logger->debug('Could not open the public folder');
 			return FALSE;
 		}
