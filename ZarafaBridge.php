@@ -212,6 +212,9 @@ class Zarafa_Bridge {
 	 */
 	public function getPublicAddressBooks()
 	{
+		// NB: see also getAddressbookHierarchy() in
+		// ~/src/zarafa-7.1.1/php-webclient-ajax/server/core/class.operations.php
+
 		// Get message stores table; this generally returns the user's
 		// own store and the public one
 		$storesTable = mapi_getmsgstorestable($this->session);
@@ -243,6 +246,9 @@ class Zarafa_Bridge {
 			$this->logger->debug('Could not get hierarchy table');
 			return FALSE;
 		}
+		// Restrict to only IPF.Contact items that are non-hidden and non-deleted:
+		$this->restrict_table_contacts_nonhidden_nondeleted($hierarchyTable);
+
 		// Get EntryID's of all subfolders:
 		if (($subFolders = mapi_table_queryallrows($hierarchyTable, array(PR_ENTRYID))) === FALSE) {
 			$this->logger->debug('Could not query rows in hierarchy table');
@@ -318,9 +324,11 @@ class Zarafa_Bridge {
 			'store'       => $store
 		);
 		
-		// Get subfolders
 		$foldersTable = mapi_folder_gethierarchytable ($folder);
-		$folders      = mapi_table_queryallrows($foldersTable, array(PR_ENTRYID));
+
+		// Restrict table search to eligible folders:
+		$this->restrict_table_contacts_nonhidden_nondeleted($foldersTable);
+		$folders = mapi_table_queryallrows($foldersTable);
 		foreach ($folders as $f) {
 			if (($subFold = mapi_msgstore_openentry($store, $f[PR_ENTRYID])) === FALSE) {
 				continue;
@@ -332,7 +340,7 @@ class Zarafa_Bridge {
 	private function
 	get_deletion_restriction ()
 	{
-		if (!($trash_folder = mapi_msgstore_openentry($this->publicStore, $this->wastebasketId))) {
+		if (!$this->publicStore || !($trash_folder = mapi_msgstore_openentry($this->publicStore, $this->wastebasketId))) {
 			return Array();
 		}
 		// Get all contact folders from "Deleted Items" folder:
