@@ -280,10 +280,15 @@ class Zarafa_Bridge {
 		// of the folder.
 		$this->logger->trace("Computing CTag for address book " . $folderProperties[PR_DISPLAY_NAME]);
 		$ctag = $folderProperties[PR_LAST_MODIFICATION_TIME];
-		
-		$contactsTable = mapi_folder_getcontentstable($folder);
-		$contacts      = mapi_table_queryallrows($contactsTable, array(PR_LAST_MODIFICATION_TIME));
 
+		if (($contactsTable = mapi_folder_getcontentstable($folder)) === FALSE) {
+			return;
+		}
+		// Add search restriction: we only want contacts:
+		mapi_table_restrict($contactsTable, $this->restrict_propstring(PR_MESSAGE_CLASS, 'IPM.Contact'));
+		if (($contacts = mapi_table_queryallrows($contactsTable, array(PR_LAST_MODIFICATION_TIME))) === FALSE) {
+			return;
+		}
 		// Contact count
 		$contactCount = mapi_table_getrowcount($contactsTable);
 		$storedContactCount = isset($folderProperties[PR_CARDDAV_AB_CONTACT_COUNT]) ? $folderProperties[PR_CARDDAV_AB_CONTACT_COUNT] : 0;
