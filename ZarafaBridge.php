@@ -263,7 +263,92 @@ class Zarafa_Bridge {
 			$this->buildAdressBooks ($prefix . $currentFolderName . "/", $subFold, $folderProperties[PR_ENTRYID], $store);
 		}
 	}
-	
+
+	private function
+	get_deletion_restriction ()
+	{
+		if (!($trash_folder = mapi_msgstore_openentry($this->publicStore, $this->wastebasketId))) {
+			return Array();
+		}
+		// Get all contact folders from "Deleted Items" folder:
+		$trash_hier = mapi_folder_gethierarchytable($trash_folder, CONVENIENT_DEPTH);
+		mapi_table_restrict($trash_hier, $this->restrict_propstring(PR_CONTAINER_CLASS, 'IPF.Contact'));
+
+		$restr = Array();
+		if ($deleted_folders = mapi_table_queryallrows($trash_hier, array(PR_ENTRYID))) {
+			foreach ($deleted_folders as $folder) {
+				$restr[] = $this->restrict_propval(PR_ENTRYID, $folder[PR_ENTRYID], RELOP_NE);
+			}
+		}
+		return $restr;
+	}
+
+	private function
+	restrict_table_contacts_nonhidden_nondeleted ($hierarchy_table)
+	{
+		// Restriction for only IPF.Contact folder items:
+		$restr_contacts = $this->restrict_propstring(PR_CONTAINER_CLASS, 'IPF.Contact');
+
+		// Restriction for only nonhidden items:
+		$restr_nonhidden = $this->restrict_nonhidden();
+
+		// Restriction for only nondeleted items:
+		$restr_nondeleted = $this->get_deletion_restriction();
+
+		// Combine these restrictions into one big compound restriction:
+		if (count($restr_nondeleted) > 0) {
+			mapi_table_restrict($hierarchy_table, Array(RES_AND, Array(Array(RES_AND, Array(Array(RES_AND, $restr_nondeleted), $restr_nonhidden)), $restr_contacts)));
+		}
+		else {
+			mapi_table_restrict($hierarchy_table, Array(RES_AND, Array($restr_nonhidden, $restr_contacts)));
+		}
+	}
+
+	private function
+	restrict_propstring ($property, $value)
+	{
+		// Useful to restrict results to a string, like 'IPF.Contact'.
+		return Array
+			( RES_CONTENT
+			, Array
+				( FUZZYLEVEL => FL_PREFIX | FL_IGNORECASE
+				, ULPROPTAG  => $property
+				, VALUE      => array($property => $value)
+				)
+			);
+	}
+
+	public function
+	restrict_propval ($property, $value, $relop)
+	{
+		// $relop can be RELOP_EQ, RELOP_NE, etc
+		return Array
+			( RES_PROPERTY
+			, Array
+				( RELOP     => $relop
+				, ULPROPTAG => $property
+				, VALUE     => Array($property => $value)
+				)
+			);
+	}
+
+	private function
+	restrict_nonhidden ()
+	{
+		return
+		Array(	RES_OR,
+			Array(
+				Array(	RES_PROPERTY,
+					Array(	RELOP => RELOP_EQ,
+						ULPROPTAG => PR_ATTR_HIDDEN,
+						VALUE => Array(PR_ATTR_HIDDEN => FALSE)
+					)
+				),
+				Array(RES_NOT, Array(Array(RES_EXIST, Array(ULPROPTAG => PR_ATTR_HIDDEN))))
+			)
+		);
+	}
+
 	/**
 	 * Get properties from mapi
 	 * @param $entryId
