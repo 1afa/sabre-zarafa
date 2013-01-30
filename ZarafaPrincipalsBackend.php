@@ -58,38 +58,27 @@ class Zarafa_Principals_Backend implements Sabre_DAVACL_IPrincipalBackend {
      * @param string $prefixPath 
      * @return array 
      */
-    public function getPrincipalsByPrefix($prefixPath) {
+	public function
+	getPrincipalsByPrefix ($prefix_path)
+	{
+		$this->logger->info("getPrincipalsByPrefix($prefix_path)");
 
-		$this->logger->info("getPrincipalsByPrefix($prefixPath)");
-	
-		// Get connectedUser
-		$connectedUser = $this->bridge->getConnectedUser();
-		if ($connectedUser == '') {
-			// Not connected
-			$this->logger->warn("Not connected!");
+		if ($prefix_path !== 'principals') {
+			$this->logger->warn("Unknown prefix path: $prefix_path");
 			return array();
 		}
-		
-		// Build principals URIs
-		$uris = array(
-			"principals/$connectedUser"
-		);
-		
-		$principals = array();
-		
-		foreach ($uris as $uri) {
-			list($rowPrefix) = Sabre_DAV_URLUtil::splitPath($uri);
-            if ($rowPrefix !== $prefixPath) continue;
-			$principals[] = array(
-				'uri' => $uri,
-				'{DAV:}displayname' => $connectedUser,
-				'{http://sabredav.org/ns}email-address' => $this->bridge->getConnectedUserMailAddress()
-			);
+		if (FALSE($connected_user = $this->bridge->getConnectedUser())) {
+			$this->logger->warn('Not connected');
+			return array();
 		}
-		
-		return $principals;
-		
-    }
+		return array(
+			array(
+				'uri' => "principals/$connected_user",
+				'{DAV:}displayname' => $connected_user,
+				'{http://sabredav.org/ns}email-address' => $this->bridge->getConnectedUserMailAddress()
+			)
+		);
+	}
 
     /**
      * Returns a specific principal, specified by it's path.
@@ -99,39 +88,19 @@ class Zarafa_Principals_Backend implements Sabre_DAVACL_IPrincipalBackend {
      * @param string $path 
      * @return array 
      */
-    public function getPrincipalByPath($path) {
-		
+	public function
+	getPrincipalByPath ($path)
+	{
 		$this->logger->info("getPrincipalByPath($path)");
-		
-		// Get connectedUser
-		$connectedUser = $this->bridge->getConnectedUser();
-		if ($connectedUser == '') {
-			// Not connected
-			$this->logger->warn("getPrincipalsByPrefix - not connected");
-			return array();
-		}
-		
-		// Build principals URIs
-		$uris = array(
-			"principals/$connectedUser"
-		);
 
-		$principal = NULL;
-		
-		foreach ($uris as $uri) {
-			if ($uri == $path) {
-				$principal = array(
-					'id'  => $connectedUser,
-					'uri' => $uri,
-					'{DAV:}displayname' => $connectedUser,
-					'{http://sabredav.org/ns}email-address' => $this->bridge->getConnectedUserMailAddress()
-				);
+		foreach ($this->getPrincipalsByPrefix('principals') as $principal) {
+			if ($principal['uri'] === $path) {
+				return $principal;
 			}
 		}
-		
-		return $principal;
-    }
-	
+		return array();
+	}
+
     /**
      * Updates one ore more webdav properties on a principal.
      *
@@ -227,16 +196,16 @@ class Zarafa_Principals_Backend implements Sabre_DAVACL_IPrincipalBackend {
      * @param string $principal 
      * @return array 
      */
-    public function getGroupMemberSet($principal) {
-
+	public function
+	getGroupMemberSet ($principal)
+	{
 		$this->logger->info("getGroupMemberSet($principal)");
-	
-        $principal = $this->getPrincipalByPath($principal);
-        if (!$principal) throw new Sabre_DAV_Exception('Principal not found');
 
-		$result = array();
-		return $result;
-    }
+		if (count($this->getPrincipalByPath($principal)) == 0) {
+			throw new Sabre_DAV_Exception('Principal not found');
+		}
+		return array();
+	}
 
     /**
      * Returns the list of groups a principal is a member of 
@@ -244,16 +213,16 @@ class Zarafa_Principals_Backend implements Sabre_DAVACL_IPrincipalBackend {
      * @param string $principal 
      * @return array 
      */
-    public function getGroupMembership($principal) {
-
+	public function
+	getGroupMembership ($principal)
+	{
 		$this->logger->info("getGroupMembership($principal)");
 
-        $principal = $this->getPrincipalByPath($principal);
-        if (!$principal) throw new Sabre_DAV_Exception('Principal not found');
-
-		$result = array();
-		return $result;
-    }
+		if (count($this->getPrincipalByPath($principal)) == 0) {
+			throw new Sabre_DAV_Exception('Principal not found');
+		}
+		return array();
+	}
 
     /**
      * Updates the list of group members for a group principal.

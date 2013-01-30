@@ -65,7 +65,7 @@ class Zarafa_Bridge {
 	protected $rootFolderId;
 	protected $wastebasketId = FALSE;
 	protected $extendedProperties;
-	protected $connectedUser;
+	protected $connectedUser = FALSE;
 	protected $adressBooks;
 	private $logger;
 
