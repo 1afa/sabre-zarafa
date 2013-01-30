@@ -51,6 +51,8 @@
 	include_once "vcard/VCardParser4.php";
 	require_once "vcard/IVCardProducer.php";
 	include_once "vcard/VCardProducer.php";
+
+	require_once 'function.restrict.php';
 	
 /**
  * This is main class for Sabre backends
@@ -104,7 +106,7 @@ class Zarafa_Bridge {
 
 		// Find user store
 		$storesTable = mapi_getmsgstorestable($session);
-		mapi_table_restrict($storesTable, $this->restrict_propval(PR_MDB_PROVIDER, ZARAFA_SERVICE_GUID, RELOP_EQ));
+		mapi_table_restrict($storesTable, restrict_propval(PR_MDB_PROVIDER, ZARAFA_SERVICE_GUID, RELOP_EQ));
 
 		$stores = mapi_table_queryallrows($storesTable, array(PR_ENTRYID));
 		if (!isset($stores[0]) || !isset($stores[0][PR_ENTRYID])) {
@@ -223,7 +225,7 @@ class Zarafa_Bridge {
 
 		// Restrict stores table to just the one with the Zarafa public store GUID:
 		// To find the public store, we need to identify the provider:
-		mapi_table_restrict($storesTable, $this->restrict_propval(PR_MDB_PROVIDER, ZARAFA_STORE_PUBLIC_GUID, RELOP_EQ));
+		mapi_table_restrict($storesTable, restrict_propval(PR_MDB_PROVIDER, ZARAFA_STORE_PUBLIC_GUID, RELOP_EQ));
 		$stores = mapi_table_queryallrows($storesTable, array(PR_ENTRYID));
 
 		// Open public store, check for failure:
@@ -293,7 +295,7 @@ class Zarafa_Bridge {
 			return;
 		}
 		// Add search restriction: we only want contacts:
-		mapi_table_restrict($contactsTable, $this->restrict_propstring(PR_MESSAGE_CLASS, 'IPM.Contact'));
+		mapi_table_restrict($contactsTable, restrict_propstring(PR_MESSAGE_CLASS, 'IPM.Contact'));
 		if (($contacts = mapi_table_queryallrows($contactsTable, array(PR_LAST_MODIFICATION_TIME))) === FALSE) {
 			return;
 		}
@@ -347,12 +349,12 @@ class Zarafa_Bridge {
 		}
 		// Get all contact folders from "Deleted Items" folder:
 		$trash_hier = mapi_folder_gethierarchytable($trash_folder, CONVENIENT_DEPTH);
-		mapi_table_restrict($trash_hier, $this->restrict_propstring(PR_CONTAINER_CLASS, 'IPF.Contact'));
+		mapi_table_restrict($trash_hier, restrict_propstring(PR_CONTAINER_CLASS, 'IPF.Contact'));
 
 		$restr = Array();
 		if ($deleted_folders = mapi_table_queryallrows($trash_hier, array(PR_ENTRYID))) {
 			foreach ($deleted_folders as $folder) {
-				$restr[] = $this->restrict_propval(PR_ENTRYID, $folder[PR_ENTRYID], RELOP_NE);
+				$restr[] = restrict_propval(PR_ENTRYID, $folder[PR_ENTRYID], RELOP_NE);
 			}
 		}
 		return $restr;
@@ -362,66 +364,18 @@ class Zarafa_Bridge {
 	restrict_table_contacts_nonhidden_nondeleted ($hierarchy_table)
 	{
 		// Restriction for only IPF.Contact folder items:
-		$restr_contacts = $this->restrict_propstring(PR_CONTAINER_CLASS, 'IPF.Contact');
-
-		// Restriction for only nonhidden items:
-		$restr_nonhidden = $this->restrict_nonhidden();
+		$restr_contacts = restrict_propstring(PR_CONTAINER_CLASS, 'IPF.Contact');
 
 		// Restriction for only nondeleted items:
 		$restr_nondeleted = $this->get_deletion_restriction();
 
 		// Combine these restrictions into one big compound restriction:
 		if (count($restr_nondeleted) > 0) {
-			mapi_table_restrict($hierarchy_table, Array(RES_AND, Array(Array(RES_AND, Array(Array(RES_AND, $restr_nondeleted), $restr_nonhidden)), $restr_contacts)));
+			mapi_table_restrict($hierarchy_table, Array(RES_AND, Array(Array(RES_AND, Array(Array(RES_AND, $restr_nondeleted), restrict_nonhidden())), $restr_contacts)));
 		}
 		else {
-			mapi_table_restrict($hierarchy_table, Array(RES_AND, Array($restr_nonhidden, $restr_contacts)));
+			mapi_table_restrict($hierarchy_table, restrict_and(restrict_nonhidden(), $restr_contacts));
 		}
-	}
-
-	private function
-	restrict_propstring ($property, $value)
-	{
-		// Useful to restrict results to a string, like 'IPF.Contact'.
-		return Array
-			( RES_CONTENT
-			, Array
-				( FUZZYLEVEL => FL_PREFIX | FL_IGNORECASE
-				, ULPROPTAG  => $property
-				, VALUE      => array($property => $value)
-				)
-			);
-	}
-
-	public function
-	restrict_propval ($property, $value, $relop)
-	{
-		// $relop can be RELOP_EQ, RELOP_NE, etc
-		return Array
-			( RES_PROPERTY
-			, Array
-				( RELOP     => $relop
-				, ULPROPTAG => $property
-				, VALUE     => Array($property => $value)
-				)
-			);
-	}
-
-	private function
-	restrict_nonhidden ()
-	{
-		return
-		Array(	RES_OR,
-			Array(
-				Array(	RES_PROPERTY,
-					Array(	RELOP => RELOP_EQ,
-						ULPROPTAG => PR_ATTR_HIDDEN,
-						VALUE => Array(PR_ATTR_HIDDEN => FALSE)
-					)
-				),
-				Array(RES_NOT, Array(Array(RES_EXIST, Array(ULPROPTAG => PR_ATTR_HIDDEN))))
-			)
-		);
 	}
 
 	/**
