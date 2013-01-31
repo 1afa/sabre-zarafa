@@ -42,6 +42,8 @@ class Zarafa_CardDav_Backend extends Sabre_CardDAV_Backend_Abstract {
 	
 	protected $bridge;
 	private $logger;
+
+	private $uri_mapping = FALSE;
 	
     public function __construct($zarafaBridge) {
 		// Stores a reference to Zarafa Auth Backend so as to get the session
@@ -270,6 +272,9 @@ class Zarafa_CardDav_Backend extends Sabre_CardDAV_Backend_Abstract {
 			if (($contacts = mapi_table_queryallrows($contactsTable, Array(PR_ENTRYID, PR_CARDDAV_URI, PR_LAST_MODIFICATION_TIME))) === FALSE) {
 				break;
 			}
+			if (FALSE($this->uri_mapping)) {
+				$this->uri_mapping = array();
+			}
 			foreach ($contacts as $c)
 			{
 				// URI is based on PR_CARDDAV_URI or use ENTRYID
@@ -278,7 +283,7 @@ class Zarafa_CardDav_Backend extends Sabre_CardDAV_Backend_Abstract {
 					$uri = $c[PR_CARDDAV_URI];
 				} else {
 					// Create an URI from the EntryID:
-					$uri = $this->bridge->guidFromEntryID($c[PR_ENTRYID]) . '.vcf';
+					$uri = $this->bridge->entryid_to_uri($c[PR_ENTRYID]);
 					// Note: we do not write this change back to the database;
 					// if this is a public contact created by someone else, we
 					// do not have the permissions to write it.
@@ -289,6 +294,7 @@ class Zarafa_CardDav_Backend extends Sabre_CardDAV_Backend_Abstract {
 					'uri' => $uri,
 					'lastmodified' => $c[PR_LAST_MODIFICATION_TIME]
 				);
+				$this->uri_mapping[$uri] = $c[PR_ENTRYID];
 			}
 			$dump = print_r ($cards, true);
 			$this->logger->trace("Addressbook cards\n$dump");
@@ -326,7 +332,7 @@ class Zarafa_CardDav_Backend extends Sabre_CardDAV_Backend_Abstract {
 			return FALSE;
 		}
 		$folder = mapi_msgstore_openentry($store, $addressBookId);
-		if (($entryId = $this->getContactEntryId($addressBookId, $cardUri)) === 0) {
+		if (FALSE($entryId = $this->uri_to_entryid($addressBookId, $cardUri))) {
 			$this->logger->warn("Contact not found!");
 			return FALSE;
 		}
@@ -426,15 +432,11 @@ class Zarafa_CardDav_Backend extends Sabre_CardDAV_Backend_Abstract {
 
 		if (READ_ONLY) {
 			$this->logger->warn("Cannot update card: read-only");
-			return false;
+			return FALSE;
 		}
-		
-		// Update object properties
-		$entryId = $this->getContactEntryId($addressBookId, $cardUri);
-		
-		if ($entryId === 0) {
+		if (FALSE($entryId = $this->uri_to_entryid($addressBookId, $cardUri))) {
 			$this->logger->warn("Cannot find contact");
-			return false;
+			return FALSE;
 		}
 		if (($store = $this->bridge->storeFromAddressBookId($addressBookId)) === FALSE) {
 			$this->logger->warn(__FUNCTION__.": store not found!");
@@ -492,26 +494,25 @@ class Zarafa_CardDav_Backend extends Sabre_CardDAV_Backend_Abstract {
      * @param string $cardUri 
      * @return bool 
      */
-    public function deleteCard($addressBookId, $cardUri) {
-
+	public function
+	deleteCard ($addressBookId, $cardUri)
+	{
 		$this->logger->info("deleteCard($cardUri)");
 	
 		if (READ_ONLY) {
 			$this->logger->warn("Cannot delete card: read-only");
-			return false;
+			return FALSE;
 		}
-		if (($store = $this->bridge->storeFromAddressBookId($addressBookId)) === FALSE) {
+		if (FALSE($store = $this->bridge->storeFromAddressBookId($addressBookId))) {
 			$this->logger->warn(__FUNCTION__.": store not found!");
 			return FALSE;
 		}
 		$folder = mapi_msgstore_openentry($store, $addressBookId);
-		$entryId = $this->getContactEntryId($addressBookId, $cardUri);
 
-		if ($entryId === 0) {
+		if (FALSE($entryId = $this->uri_to_entryid($addressBookId, $cardUri))) {
 			$this->logger->warn("Contact not found!");
-			return false;
+			return FALSE;
 		}
-
 		// $folder = mapi_msgstore_openentry($this->bridge->getStore(), $addressBookId);
 		mapi_folder_deletemessages($folder, array($entryId));
 
@@ -528,37 +529,46 @@ class Zarafa_CardDav_Backend extends Sabre_CardDAV_Backend_Abstract {
 	 * @param $cardUri name of contact card to retrieve
 	 */
 	protected function
-	getContactEntryId ($addressBookId, $cardUri)
+	uri_to_entryid ($addressBookId, $cardUri)
 	{
-		// Local cache:
-		static $cache = Array();
+		$this->logger->trace("uri_to_entryid($cardUri)");
 
-		// Update object properties
-		$this->logger->trace("getContactEntryId($cardUri)");
-
-		// Can we satisfy this request from the cache?
-		if (isset($cache[$addressBookId])
-		 && isset($cache[$addressBookId][$cardUri])) {
-		   return $cache[$addressBookId][$cardUri];
-		}
-		if (($store = $this->bridge->storeFromAddressBookId($addressBookId)) === FALSE) {
-			$this->logger->warn(__FUNCTION__.": store not found!");
+		if (FALSE($this->uri_mapping) && FALSE($this->get_uri_mapping($addressBookId))) {
 			return FALSE;
 		}
-		$folder = mapi_msgstore_openentry($store, $addressBookId);
-		$contactsTable = mapi_folder_getcontentstable($folder);
-		$rows = mapi_table_queryallrows($contactsTable, array(PR_ENTRYID, PR_CARDDAV_URI));
-		$strip_extension = substr($cardUri, 0, -4);
-		foreach ($rows as $row) {
-			if ((isset($row[PR_CARDDAV_URI]) && $row[PR_CARDDAV_URI] == $cardUri)
-			  || $this->bridge->guidFromEntryId($row[PR_ENTRYID]) == $strip_extension) {
-				if (!isset($cache[$addressBookId])) {
-					$cache[$addressBookId] = Array();
-				}
-				$cache[$addressBookId][$cardUri] = $row[PR_ENTRYID];
-			}
+		return (isset($this->uri_mapping[$cardUri]))
+			? $this->uri_mapping[$cardUri]
+			: FALSE;
+	}
+
+	private function
+	get_uri_mapping ($addressbookId)
+	{
+		if (FALSE($store = $this->bridge->storeFromAddressbookId($addressbookId))) {
+			return FALSE;
 		}
-		return (isset($cache[$addressBookId][$cardUri])) ? $cache[$addressBookId][$cardUri] : 0;
+		if (FALSE($folder = mapi_msgstore_openentry($store, $addressbookId))) {
+			return FALSE;
+		}
+		if (FALSE($contactsTable = mapi_folder_getcontentstable($folder))) {
+			return FALSE;
+		}
+		if (FALSE($contacts = mapi_table_queryallrows($contactsTable, Array(PR_ENTRYID, PR_CARDDAV_URI)))) {
+			return FALSE;
+		}
+		if (FALSE($this->uri_mapping)) {
+			$this->uri_mapping = array();
+		}
+		foreach ($contacts as $contact)
+		{
+			$entryid = $contact[PR_ENTRYID];
+			$uri = (isset($contact[PR_CARDDAV_URI]))
+				? $contact[PR_CARDDAV_URI]
+				: $uri = $this->bridge->entryid_to_uri($entryid);
+
+			$this->uri_mapping[$uri] = $entryid;
+		}
+		return TRUE;
 	}
 }
 

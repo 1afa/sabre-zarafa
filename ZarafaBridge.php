@@ -419,13 +419,12 @@ class Zarafa_Bridge {
 		$this->logger->warn("Cannot find store belonging to address book");
 		return FALSE;
 	}
-	public function guidFromEntryID($entryId)
+
+	public function
+	entryid_to_uri ($entryid)
 	{
 		// GUID format: 8-4-4-4-12
-		$str = $this->entryIdToStr($entryId);
-
-		// Take MD5sum to convert to 32 byte hash:
-		$str = md5($str);
+		$str = md5($entryid);
 
 		// Split into chunks:
 		$chunk1 = substr($str,  0,  8);
@@ -434,8 +433,9 @@ class Zarafa_Bridge {
 		$chunk4 = substr($str, 16,  4);
 		$chunk5 = substr($str, 20, 12);
 
-		return "$chunk1-$chunk2-$chunk3-$chunk4-$chunk5";
+		return "$chunk1-$chunk2-$chunk3-$chunk4-$chunk5.vcf";
 	}
+
 	
 	/**
 	 * Convert vcard data to an array of MAPI properties
