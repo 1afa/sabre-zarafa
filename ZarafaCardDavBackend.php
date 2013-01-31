@@ -73,8 +73,11 @@ class Zarafa_CardDav_Backend extends Sabre_CardDAV_Backend_Abstract {
 		$this->logger->info("getAddressBooksForUser($principalUri)");
 		
 		$adressBooks = array();
-		
-		$folders = $this->bridge->getAdressBooks();
+
+		$folders = array_merge(
+			$this->bridge->get_folders_private(),
+			$this->bridge->get_folders_public()
+		);
 		foreach ($folders as $entryId => $f) {
 			$adressBooks[] = array(
 				'id'  => $entryId,
@@ -513,7 +516,6 @@ class Zarafa_CardDav_Backend extends Sabre_CardDAV_Backend_Abstract {
 			$this->logger->warn("Contact not found!");
 			return FALSE;
 		}
-		// $folder = mapi_msgstore_openentry($this->bridge->getStore(), $addressBookId);
 		mapi_folder_deletemessages($folder, array($entryId));
 
 		if (mapi_last_hresult() > 0) {

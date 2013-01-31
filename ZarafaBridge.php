@@ -53,7 +53,8 @@
 	include_once "vcard/VCardProducer.php";
 
 	require_once 'function.restrict.php';
-	
+	require_once 'class.zarafastore.php';
+
 /**
  * This is main class for Sabre backends
  */
@@ -61,14 +62,16 @@
 class Zarafa_Bridge {
 
 	protected $session;
-	protected $store;
 	protected $publicStore;
-	protected $rootFolder;
-	protected $rootFolderId;
 	protected $wastebasketId = FALSE;
 	protected $extendedProperties;
 	protected $connectedUser = FALSE;
 	protected $adressBooks;
+	private $folders_private = array();
+	private $folders_public = array();
+	private $stores_table = FALSE;
+	private $stores_private = array();
+	private $stores_public = array();
 	private $logger;
 
 	/**
@@ -96,7 +99,7 @@ class Zarafa_Bridge {
 			return false;
 		}
 
-		if ($session === FALSE) {
+		if (FALSE($session)) {
 			// Failed
 			return false;
 		}
@@ -104,27 +107,18 @@ class Zarafa_Bridge {
 		$this->logger->trace("Connected to zarafa server - init bridge");
 		$this->session = $session;
 
-		// Find user store
-		$storesTable = mapi_getmsgstorestable($session);
-		mapi_table_restrict($storesTable, restrict_propval(PR_MDB_PROVIDER, ZARAFA_SERVICE_GUID, RELOP_EQ));
-
-		$stores = mapi_table_queryallrows($storesTable, array(PR_ENTRYID));
-		if (!isset($stores[0]) || !isset($stores[0][PR_ENTRYID])) {
-			trigger_error("Default store not found", E_USER_ERROR);
+		if (FALSE($this->stores_table = mapi_getmsgstorestable($session))) {
+			$this->logger->warn('could not get messagestore table');
+			return FALSE;
 		}
-		$storeEntryid = $stores[0][PR_ENTRYID];
-
-		$this->store = mapi_openmsgstore($this->session, $storeEntryid);
-		$root = mapi_msgstore_openentry($this->store, null);
-		$rootProps = mapi_getprops($root, array(PR_IPM_CONTACT_ENTRYID));
-
-		// Store rootfolder
-		$this->rootFolder   = mapi_msgstore_openentry($this->store, $rootProps[PR_IPM_CONTACT_ENTRYID]);
-		$this->rootFolderId = $rootProps[PR_IPM_CONTACT_ENTRYID];
-
-		// Check for unicode
-		$this->isUnicodeStore($this->store);
-
+		if (FALSE($this->stores_get_private())) {
+			$this->logger->warn('could not get private stores');
+			return FALSE;
+		}
+		if (FALSE($this->stores_get_public())) {
+			$this->logger->warn('could not get public stores');
+			return FALSE;
+		}
 		// Load properties
 		$this->initProperties();
 		
@@ -147,21 +141,12 @@ class Zarafa_Bridge {
 	}
 	
 	/**
-	 * Get user store
-	 * @return user store
-	 */
-	public function getStore() {
-		$this->logger->trace("getStore");
-		return $this->store;
-	}
-	
-	/**
 	 * Get root folder
 	 * @return root folder
 	 */
 	public function getRootFolder() {
 		$this->logger->trace("getRootFolder");
-		return $this->rootFolder;
+		return $this->stores_private[0]->root_folder;	/* FIXME HACK */
 	}
 	
 	/**
@@ -188,157 +173,67 @@ class Zarafa_Bridge {
 		static $userinfo = FALSE;
 		$this->logger->trace("getConnectedUserMailAddress");
 
-		if ($userinfo === FALSE) {
-			$userinfo = mapi_zarafa_getuser_by_name($this->store, $this->connectedUser);
+		if (FALSE($userinfo)) {
+			$userinfo = $this->stores_private[0]->getuser_by_name($this->connectedUser);
 		}
 		$this->logger->debug("User email address: " . $userinfo["emailaddress"]);
 		return $userinfo['emailaddress'];
 	}
 	
-	/**
-	 * Get list of addressbooks
-	 */
-	public function getAdressBooks() {
-		$this->logger->trace("getAdressBooks");
-		
-		if ($this->adressBooks === NULL) {
-			$this->logger->debug("Building list of address books");
-			$this->adressBooks = array();
-			$this->buildAdressBooks('', $this->rootFolder, $this->rootFolderId, $this->store);
-
-			$this->logger->debug("Building list of public address books");
-			$this->getPublicAddressBooks();
-		}
-		return $this->adressBooks;
-	}
-	/**
-	 * Get list of public address books
-	 */
-	public function getPublicAddressBooks()
+	private function
+	stores_get_private ()
 	{
-		// NB: see also getAddressbookHierarchy() in
-		// ~/src/zarafa-7.1.1/php-webclient-ajax/server/core/class.operations.php
-
-		// Get message stores table; this generally returns the user's
-		// own store and the public one
-		$storesTable = mapi_getmsgstorestable($this->session);
-
-		// Restrict stores table to just the one with the Zarafa public store GUID:
-		// To find the public store, we need to identify the provider:
-		mapi_table_restrict($storesTable, restrict_propval(PR_MDB_PROVIDER, ZARAFA_STORE_PUBLIC_GUID, RELOP_EQ));
-		$stores = mapi_table_queryallrows($storesTable, array(PR_ENTRYID));
-
-		// Open public store, check for failure:
-		if (!isset($stores[0])
-		 || !isset($stores[0][PR_ENTRYID])
-		 || !($this->publicStore = mapi_openmsgstore($this->session, $stores[0][PR_ENTRYID]))) {
-			$this->logger->debug('Could not find public store');
+		if (FALSE(tbl_restrict_propval($this->stores_table, PR_MDB_PROVIDER, ZARAFA_SERVICE_GUID, RELOP_EQ))) {
 			return FALSE;
 		}
-		// Find Deleted Folders ID:
-		$store_props = mapi_getprops($this->publicStore, array(PR_IPM_WASTEBASKET_ENTRYID, PR_IPM_PUBLIC_FOLDERS_ENTRYID));
-		if (isset($store_props[PR_IPM_WASTEBASKET_ENTRYID])) {
-			$this->wastebasketId = $store_props[PR_IPM_WASTEBASKET_ENTRYID];
-		}
-		// Open the public folder:
-		if (($publicFolder = mapi_msgstore_openentry($this->publicStore, $store_props[PR_IPM_PUBLIC_FOLDERS_ENTRYID])) === FALSE) {
-			$this->logger->debug('Could not open the public folder');
+		if (FALSE($stores = mapi_table_queryallrows($this->stores_table, array(PR_ENTRYID)))) {
 			return FALSE;
 		}
-		// Get the hierarchy table, which contains the subfolders:
-		if (($hierarchyTable = mapi_folder_gethierarchytable($publicFolder, CONVENIENT_DEPTH)) === FALSE) {
-			$this->logger->debug('Could not get hierarchy table');
-			return FALSE;
-		}
-		// Restrict to only IPF.Contact items that are non-hidden and non-deleted:
-		$this->restrict_table_contacts_nonhidden_nondeleted($hierarchyTable);
-
-		// Get EntryID's of all subfolders:
-		if (($subFolders = mapi_table_queryallrows($hierarchyTable, array(PR_ENTRYID))) === FALSE) {
-			$this->logger->debug('Could not query rows in hierarchy table');
-			return FALSE;
-		}
-		// Loop over these subfolders, add them to the list of address books:
-		foreach ($subFolders as $subFolder)
-		{
-			$entryId = $subFolder[PR_ENTRYID];
-			if (($folder = mapi_msgstore_openentry($this->publicStore, $entryId)) === FALSE) {
+		foreach ($stores as $store) {
+			if (FALSE($handle = mapi_openmsgstore($this->session, $store[PR_ENTRYID]))) {
+				$this->logger->warn(__FUNCTION__.': failed to open private store');
 				continue;
 			}
-			// If folder does not contain contacts, skip it altogether
-			// (for some reason Zarafa maintains a number of empty, nonvisible public folders)
-			if (FALSE === ($folderProperties = mapi_getprops($folder))
-			 || FALSE === ($contactsTable = mapi_folder_getcontentstable($folder))
-			 || mapi_table_getrowcount($contactsTable) == 0) {
-				continue;
-			}
-			$this->buildAdressBooks('public/', $folder, $entryId, $this->publicStore);
+			$this->stores_private[] = new Zarafa_Store($store[PR_ENTRYID], $handle);
 		}
+		return TRUE;
 	}
-	
-	/**
-	 * Build user list of adress books
-	 * Recursively find folders in Zarafa
-	 */
-	private function buildAdressBooks($prefix, $folder, $parentFolderId, $store) {
-		$this->logger->trace("buildAdressBooks");
-		
-		$folderProperties = mapi_getprops($folder);
-		$currentFolderName = $this->to_charset($folderProperties[PR_DISPLAY_NAME]);
-		
-		// Compute CTag - issue 8: ctag should be the max of PR_LAST_MODIFICATION_TIME of contacts
-		// of the folder.
-		$this->logger->trace("Computing CTag for address book " . $folderProperties[PR_DISPLAY_NAME]);
-		$ctag = $folderProperties[PR_LAST_MODIFICATION_TIME];
 
-		if (($contactsTable = mapi_folder_getcontentstable($folder)) === FALSE) {
-			return;
+	private function
+	stores_get_public ()
+	{
+		if (FALSE(tbl_restrict_propval($this->stores_table, PR_MDB_PROVIDER, ZARAFA_STORE_PUBLIC_GUID, RELOP_EQ))) {
+			return FALSE;
 		}
-		// Add search restriction: we only want contacts:
-		mapi_table_restrict($contactsTable, restrict_propstring(PR_MESSAGE_CLASS, 'IPM.Contact'));
-		if (($contacts = mapi_table_queryallrows($contactsTable, array(PR_LAST_MODIFICATION_TIME))) === FALSE) {
-			return;
+		if (FALSE($stores = mapi_table_queryallrows($this->stores_table, array(PR_ENTRYID)))) {
+			return FALSE;
 		}
-		// Contact count
-		$contactCount = mapi_table_getrowcount($contactsTable);
-		$storedContactCount = isset($folderProperties[PR_CARDDAV_AB_CONTACT_COUNT]) ? $folderProperties[PR_CARDDAV_AB_CONTACT_COUNT] : 0;
-
-		$this->logger->trace("Contact count: $contactCount");
-		$this->logger->trace("Stored contact count: $storedContactCount");
-		
-		if ($contactCount <> $storedContactCount) {
-			$this->logger->trace("Contact count != stored contact count");
-		} else {
-			foreach ($contacts as $c) {
-				if ($c[PR_LAST_MODIFICATION_TIME] > $ctag) {
-					$ctag = $c[PR_LAST_MODIFICATION_TIME];
-					$this->logger->trace("Found new ctag: $ctag");
-				}
-			}
-		}
-		
-		// Add address book
-		$this->adressBooks[$folderProperties[PR_ENTRYID]] = array(
-			'id'          => $folderProperties[PR_ENTRYID],
-			'displayname' => $folderProperties[PR_DISPLAY_NAME],
-			'prefix'      => $prefix,
-			'description' => (isset($folderProperties[PR_COMMENT]) ? $folderProperties[PR_COMMENT] : ''),
-			'ctag'        => $ctag,
-			'parentId'    => $parentFolderId,
-			'store'       => $store
-		);
-		
-		$foldersTable = mapi_folder_gethierarchytable ($folder);
-
-		// Restrict table search to eligible folders:
-		$this->restrict_table_contacts_nonhidden_nondeleted($foldersTable);
-		$folders = mapi_table_queryallrows($foldersTable);
-		foreach ($folders as $f) {
-			if (($subFold = mapi_msgstore_openentry($store, $f[PR_ENTRYID])) === FALSE) {
+		foreach ($stores as $store) {
+			if (FALSE($handle = mapi_openmsgstore($this->session, $store[PR_ENTRYID]))) {
+				$this->logger->warn(__FUNCTION__.': failed to open public store');
 				continue;
 			}
-			$this->buildAdressBooks ($prefix . $currentFolderName . "/", $subFold, $folderProperties[PR_ENTRYID], $store);
+			$this->stores_public[] = new Zarafa_Store($store[PR_ENTRYID], $handle);
 		}
+		return TRUE;
+	}
+
+	public function
+	get_folders_private ()
+	{
+		foreach ($this->stores_private as $store) {
+			$this->folders_private = array_merge($this->folders_private, $store->folders);
+		}
+		return $this->folders_private;
+	}
+
+	public function
+	get_folders_public ()
+	{
+		foreach ($this->stores_public as $store) {
+			$this->folders_public = array_merge($this->folders_public, $store->folders);
+		}
+		return $this->folders_public;
 	}
 
 	private function
@@ -386,7 +281,7 @@ class Zarafa_Bridge {
 	getProperties ($entryId, $store)
 	{
 		$this->logger->trace("getProperties(" . bin2hex($entryId) . ")");
-		if (($mapiObject = mapi_msgstore_openentry($store, $entryId)) === FALSE) {
+		if (FALSE($mapiObject = mapi_msgstore_openentry($store, $entryId))) {
 			return FALSE;
 		}
 		return mapi_getprops($mapiObject);
@@ -412,9 +307,16 @@ class Zarafa_Bridge {
 	}
 	public function storeFromAddressBookId($addressBookId)
 	{
-		if (isset($this->adressBooks[$addressBookId])
-		 && isset($this->adressBooks[$addressBookId]['store'])) {
-			return $this->adressBooks[$addressBookId]['store'];
+		// FIXME: to be better solved later
+		foreach ($this->stores_private as $store) {
+			if (isset($store->folders[$addressBookId])) {
+				return $store->handle;
+			}
+		}
+		foreach ($this->stores_public as $store) {
+			if (isset($store->folders[$addressBookId])) {
+				return $store->handle;
+			}
 		}
 		$this->logger->warn("Cannot find store belonging to address book");
 		return FALSE;
@@ -702,7 +604,7 @@ class Zarafa_Bridge {
 		$properties["carddav_version"] = PR_CARDDAV_RAW_DATA_VERSION;
 		
 		// Ask Mapi to load those properties and store mapping.
-		$this->extendedProperties = getPropIdsFromStrings($this->store, $properties);
+		$this->extendedProperties = $this->stores_private[0]->get_propids_from_strings($properties);
 		
 		// Dump properties to debug
 		$dump = print_r ($this->extendedProperties, true);
@@ -747,19 +649,6 @@ class Zarafa_Bridge {
 		return sprintf("%04x%04x-%04x-%03x4-%04x-%04x%04x%04x", $data1a, $data1b, $data2, $data3, $data4a, $data4b, $data4c, $data4d);
 	}
 
-	/**
-	 * Check if store supports UTF-8 (zarafa 7+)
-	 * @param $store
-	 */
-	public function isUnicodeStore($store) {
-		$this->logger->trace("Testing store for unicode");
-		$supportmask = mapi_getprops($store, array(PR_STORE_SUPPORT_MASK));
-		if (isset($supportmask[PR_STORE_SUPPORT_MASK]) && ($supportmask[PR_STORE_SUPPORT_MASK] & STORE_UNICODE_OK)) {
-			define('STORE_SUPPORTS_UNICODE', true);
-			//setlocale to UTF-8 in order to support properties containing Unicode characters
-			setlocale(LC_CTYPE, "en_US.UTF-8");
-		}
-	}
 
 	/**
 	 * Assign a contact picture to a contact
@@ -821,20 +710,6 @@ class Zarafa_Bridge {
 		}
 	}
 	
-	/**
-	 * Convert string to UTF-8
-	 * you need to check unicode store to ensure valid values
-	 * @param $string string to convert
-	 */
-	public function to_charset($string)	{
-		//Zarafa 7 supports unicode chars, convert properties to utf-8 if it's another encoding
-		if (defined('STORE_SUPPORTS_UNICODE') && STORE_SUPPORTS_UNICODE == true) {
-			return $string;
-		}
-
-		return utf8_encode($string);
-
-	}
 }
 
 ?>
