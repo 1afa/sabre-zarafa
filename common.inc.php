@@ -41,4 +41,9 @@
 	define ('PR_CARDDAV_AB_CONTACT_COUNT',			mapi_prop_tag(PT_LONG,    CARDDAV_CUSTOM_PROPERTY_ID | 0x0003));
 	define ('PR_CARDDAV_RAW_DATA_VERSION',			mapi_prop_tag(PT_STRING8, CARDDAV_CUSTOM_PROPERTY_ID | 0x0004));
 
+	function FALSE ($expr)
+	{
+		return ($expr === FALSE);
+	}
+
 ?>
