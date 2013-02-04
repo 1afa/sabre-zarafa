@@ -25,6 +25,8 @@
  *
  */
 
+require_once 'class.zarafafolder.php';
+
 class Zarafa_Store
 {
 	public $entryid;
@@ -47,6 +49,16 @@ class Zarafa_Store
 
 		$this->is_unicode_store();
 		$this->get_folders();
+	}
+
+	public function
+	get_dav_folders ($principal_uri)
+	{
+		$ret = array();
+		foreach ($this->folders as $folder) {
+			$ret[] = $folder->folder_to_dav($principal_uri);
+		}
+		return $ret;
 	}
 
 	private function
@@ -72,40 +84,12 @@ class Zarafa_Store
 			if (FALSE($folder = mapi_msgstore_openentry($this->handle, $entryid))) {
 				continue;
 			}
-			$folderProperties = mapi_getprops($folder);
-			$currentFolderName = $this->to_charset($folderProperties[PR_DISPLAY_NAME]);
+			$node = new Zarafa_Folder($this, $folder, $entryid);
 
-			// Compute CTag - issue 8: ctag should be the max of PR_LAST_MODIFICATION_TIME of contacts
-			// of the folder.
-			$ctag = $folderProperties[PR_LAST_MODIFICATION_TIME];
-
-			if (FALSE($contactsTable = mapi_folder_getcontentstable($folder))) {
-				return;
+			if ($node->is_empty()) {
+				continue;
 			}
-			// Add search restriction: we only want contacts:
-			mapi_table_restrict($contactsTable, restrict_propstring(PR_MESSAGE_CLASS, 'IPM.Contact'));
-			if (FALSE($contacts = mapi_table_queryallrows($contactsTable, array(PR_LAST_MODIFICATION_TIME)))) {
-				return;
-			}
-			// Contact count
-			$contactCount = mapi_table_getrowcount($contactsTable);
-			$storedContactCount = isset($folderProperties[PR_CARDDAV_AB_CONTACT_COUNT]) ? $folderProperties[PR_CARDDAV_AB_CONTACT_COUNT] : 0;
-
-			if ($contactCount == $storedContactCount) {
-				foreach ($contacts as $c) {
-					if ($c[PR_LAST_MODIFICATION_TIME] > $ctag) {
-						$ctag = $c[PR_LAST_MODIFICATION_TIME];
-					}
-				}
-			}
-			// Add address book
-			$this->folders[$folderProperties[PR_ENTRYID]] = array(
-				'id'          => $folderProperties[PR_ENTRYID],
-				'displayname' => $folderProperties[PR_DISPLAY_NAME],
-				'description' => (isset($folderProperties[PR_COMMENT]) ? $folderProperties[PR_COMMENT] : ''),
-				'ctag'        => $ctag,
-				'store'       => $this->entryid
-			);
+			$this->folders[$entryid] = $node;
 		}
 	}
 
@@ -160,5 +144,4 @@ class Zarafa_Store
 			? $string
 			: utf8_encode($string);
 	}
-
 }

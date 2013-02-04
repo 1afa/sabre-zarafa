@@ -68,33 +68,19 @@ class Zarafa_CardDav_Backend extends Sabre_CardDAV_Backend_Abstract {
      * @param string $principalUri 
      * @return array 
      */
-    public function getAddressBooksForUser($principalUri) {
-		
+	public function
+	getAddressBooksForUser ($principalUri)
+	{
 		$this->logger->info("getAddressBooksForUser($principalUri)");
-		
-		$adressBooks = array();
 
 		$folders = array_merge(
-			$this->bridge->get_folders_private(),
-			$this->bridge->get_folders_public()
+			$this->bridge->get_folders_private($principalUri),
+			$this->bridge->get_folders_public($principalUri)
 		);
-		foreach ($folders as $entryId => $f) {
-			$adressBooks[] = array(
-				'id'  => $entryId,
-				'uri' =>  $f['displayname'],
-				'principaluri' => $principalUri,
-				'{DAV:}displayname' => $f['displayname'],
-				'{' . Sabre_CardDAV_Plugin::NS_CARDDAV . '}addressbook-description' => $f['description'],
-				'{http://calendarserver.org/ns/}getctag' => $f['ctag'],
-				'{' . Sabre_CardDAV_Plugin::NS_CARDDAV . '}supported-address-data' => 
-                    new Sabre_CardDAV_Property_SupportedAddressData()
-			);
-		}
-
-		$dump = print_r($adressBooks, true);
+		$dump = print_r($folders, true);
 		$this->logger->debug("Address books:\n$dump");
-		
-		return $adressBooks;
+
+		return $folders;
 	} 
 
     /**

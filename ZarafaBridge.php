@@ -219,19 +219,19 @@ class Zarafa_Bridge {
 	}
 
 	public function
-	get_folders_private ()
+	get_folders_private ($principal_uri)
 	{
 		foreach ($this->stores_private as $store) {
-			$this->folders_private = array_merge($this->folders_private, $store->folders);
+			$this->folders_private = array_merge($this->folders_private, $store->get_dav_folders($principal_uri));
 		}
 		return $this->folders_private;
 	}
 
 	public function
-	get_folders_public ()
+	get_folders_public ($principal_uri)
 	{
 		foreach ($this->stores_public as $store) {
-			$this->folders_public = array_merge($this->folders_public, $store->folders);
+			$this->folders_public = array_merge($this->folders_public, $store->get_dav_folders($principal_uri));
 		}
 		return $this->folders_public;
 	}
