@@ -270,71 +270,32 @@ class Zarafa_CardDav_Backend extends Sabre_CardDAV_Backend_Abstract {
 		return $folder->get_dav_card($uri);
 	} 
 
-    /**
-     * Creates a new card
-     * 
-     * @param mixed $addressBookId 
-     * @param string $cardUri 
-     * @param string $cardData 
-     * @return bool 
-     */
-    public function createCard($addressBookId, $cardUri, $cardData) {
-		$this->logger->info("createCard - $cardUri\n$cardData");
-		
+	/**
+	 * Creates a new card
+	 *
+	 * @param mixed $addressBookId
+	 * @param string $uri
+	 * @param string $data
+	 * @return string|null
+	 */
+	public function
+	createCard ($addressBookId, $uri, $data)
+	{
+		$this->logger->info("createCard - $uri\n$data");
+
 		if (READ_ONLY) {
-			$this->logger->warn("createCard failed: read-only");
-			return false;
-		}
-		if (FALSE($folder = $this->bridge->get_folder($addressBookId))) {
+			$this->logger->warn(__FUNCTION__.': cannot create card: read-only');
 			return FALSE;
 		}
-		$contact = mapi_folder_createmessage($folder->handle);
-	
-		if (mapi_last_hresult() != 0) {
-			$this->logger->fatal("MAPI error - cannot create contact: " . get_mapi_error_name());
-			return false;
+		if (FALSE($folder = $this->bridge->get_folder($addressBookId))) {
+			$this->logger->fatal(__FUNCTION__.': could not find folder');
+			return FALSE;
 		}
-	
-		$this->logger->trace("Getting properties from vcard");
-		$mapiProperties = $this->bridge->vcardToMapiProperties($cardData);
-		$mapiProperties[PR_CARDDAV_URI] = $cardUri;
-		
-		if (SAVE_RAW_VCARD) {
-			// Save RAW vCard
-			$this->logger->debug("Saving raw vcard");
-			$mapiProperties[PR_CARDDAV_RAW_DATA] = $cardData;
-			$mapiProperties[PR_CARDDAV_RAW_DATA_GENERATION_TIME] = time();
+		if (FALSE($folder->create_contact($uri, $data))) {
+			$this->logger->fatal(__FUNCTION__.': could not create card');
+			return FALSE;
 		}
-		
-		// Handle contact picture
-		$contactPicture = NULL;
-		if (isset($mapiProperties['ContactPicture'])) {
-			$this->logger->debug("Contact picture detected");
-			$contactPicture = $mapiProperties['ContactPicture'];
-			unset($mapiProperties['ContactPicture']);
-			$this->bridge->setContactPicture($contact, $contactPicture);
-		}
-		
-		// Do not set empty properties
-		$this->logger->trace("Removing empty properties");
-		foreach ($mapiProperties as $p => $v) {
-			if (empty($v)) {
-				unset($mapiProperties[$p]);
-			}
-		}
-		
-		// Add missing properties for new contacts
-		$this->logger->trace("Adding missing properties for new contacts");
-		$p = $this->bridge->getExtendedProperties();
-		$mapiProperties[$p["icon_index"]] = "512";
-		$mapiProperties[$p["message_class"]] = 'IPM.Contact';
-		$mapiProperties[PR_LAST_MODIFICATION_TIME] = time();
-		// message flags ?
-		
-		mapi_setprops($contact, $mapiProperties);
-		mapi_savechanges($contact);
-		
-		return mapi_last_hresult() == 0;
+		return NULL;
 	} 
 
 	/**

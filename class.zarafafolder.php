@@ -138,6 +138,51 @@ class Zarafa_Folder
 	}
 
 	public function
+	create_contact ($uri, $data)
+	{
+		if (FALSE($contact = mapi_folder_createmessage($this->handle))) {
+	//		$this->logger->fatal("MAPI error - cannot create contact: " . get_mapi_error_name());
+			return FALSE;
+		}
+	//	$this->logger->trace("Getting properties from vcard");
+		$mapiProperties = $this->bridge->vcardToMapiProperties($data);
+		$mapiProperties[PR_CARDDAV_URI] = $uri;
+
+		if (SAVE_RAW_VCARD) {
+	//		$this->logger->debug("Saving raw vcard");
+			$mapiProperties[PR_CARDDAV_RAW_DATA] = $data;
+			$mapiProperties[PR_CARDDAV_RAW_DATA_GENERATION_TIME] = time();
+		}
+		// Handle contact picture
+		$contactPicture = NULL;
+		if (isset($mapiProperties['ContactPicture'])) {
+	//		$this->logger->debug("Contact picture detected");
+			$contactPicture = $mapiProperties['ContactPicture'];
+			unset($mapiProperties['ContactPicture']);
+			$this->bridge->setContactPicture($contact, $contactPicture);
+		}
+		// Do not set empty properties
+	//	$this->logger->trace("Removing empty properties");
+		foreach ($mapiProperties as $p => $v) {
+			if (empty($v)) {
+				unset($mapiProperties[$p]);
+			}
+		}
+		// Add missing properties for new contacts
+	//	$this->logger->trace("Adding missing properties for new contacts");
+		$p = $this->bridge->getExtendedProperties();
+		$mapiProperties[$p['icon_index']] = "512";
+		$mapiProperties[$p['message_class']] = 'IPM.Contact';
+		$mapiProperties[PR_LAST_MODIFICATION_TIME] = time();
+		// message flags ?
+
+		mapi_setprops($contact, $mapiProperties);
+		mapi_savechanges($contact);
+
+		return (mapi_last_hresult() == 0);
+	}
+
+	public function
 	update_contact ($uri, $data)
 	{
 		if (FALSE($entryid = $this->uri_to_entryid($uri))) {
