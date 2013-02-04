@@ -25,6 +25,10 @@
  *
  */
 
+// Logging
+require_once 'log4php/Logger.php';
+Logger::configure('log4php.xml');
+
 class Zarafa_Folder
 {
 	private $name = FALSE;
@@ -39,6 +43,7 @@ class Zarafa_Folder
 	private $contacts = FALSE;
 	private $contacts_table = FALSE;
 	private $uri_mapping = FALSE;
+	private $logger;
 
 	public function
 	__construct (&$bridge, &$store, $handle, $entryid)
@@ -47,6 +52,7 @@ class Zarafa_Folder
 		$this->store = $store;
 		$this->handle = $handle;
 		$this->entryid = $entryid;
+		$this->logger = Logger::getLogger(__CLASS__);
 	}
 
 	public function
@@ -118,7 +124,7 @@ class Zarafa_Folder
 		}
 		// Otherwise do the actual lookup:
 		if (FALSE($entryid = $this->uri_to_entryid($uri))) {
-		//	$this->logger->fatal(__FUNCTION__.': cannot find card');
+			$this->logger->fatal(__FUNCTION__.': could not find contact');
 			return FALSE;
 		}
 		if (FALSE($contacts = $this->get_contacts($entryid))) {
@@ -133,7 +139,7 @@ class Zarafa_Folder
 			}
 			return $this->cards[$dav['uri']] = $dav;
 		}
-	//	$this->logger->fatal(__FUNCTION__.': cannot find card');
+		$this->logger->fatal(__FUNCTION__.': could not find contact');
 		return FALSE;
 	}
 
@@ -150,7 +156,7 @@ class Zarafa_Folder
 		// Check the mutations
 		foreach ($mutations as $m => $value) {
 			if (!in_array($m, $authorizedMutations)) {
-	//			$this->logger->warn("Unknown mutation: $m => $value");
+				$this->logger->warn("Unknown mutation: $m => $value");
 				return FALSE;
 			}
 		}
@@ -172,7 +178,7 @@ class Zarafa_Folder
 			$mapiProperties[805568542] = $description;
 		}
 		if (count($mapiProperties) == 0) {
-	//		$this->logger->info("No changes detected for addressbook");
+			$this->logger->info(__FUNCTION__.': no changes detected for folder');
 			return FALSE;
 		}
 		return $this->save_properties($this->handle, $mapiProperties);
@@ -182,35 +188,34 @@ class Zarafa_Folder
 	create_contact ($uri, $data)
 	{
 		if (FALSE($contact = mapi_folder_createmessage($this->handle))) {
-	//		$this->logger->fatal("MAPI error - cannot create contact: " . get_mapi_error_name());
+			$this->logger->fatal(__FUNCTION__.': MAPI error: cannot create contact: '.get_mapi_error_name());
 			return FALSE;
 		}
-	//	$this->logger->trace("Getting properties from vcard");
+		$this->logger->trace(__FUNCTION__.': getting properties from vcard');
 		$mapiProperties = $this->bridge->vcardToMapiProperties($data);
 		$mapiProperties[PR_CARDDAV_URI] = $uri;
 
 		if (SAVE_RAW_VCARD) {
-	//		$this->logger->debug("Saving raw vcard");
 			$mapiProperties[PR_CARDDAV_RAW_DATA] = $data;
 			$mapiProperties[PR_CARDDAV_RAW_DATA_GENERATION_TIME] = time();
 		}
 		// Handle contact picture
 		$contactPicture = NULL;
 		if (isset($mapiProperties['ContactPicture'])) {
-	//		$this->logger->debug("Contact picture detected");
+			$this->logger->debug(__FUNCTION__.': contact picture detected');
 			$contactPicture = $mapiProperties['ContactPicture'];
 			unset($mapiProperties['ContactPicture']);
 			$this->bridge->setContactPicture($contact, $contactPicture);
 		}
 		// Do not set empty properties
-	//	$this->logger->trace("Removing empty properties");
+		$this->logger->trace(__FUNCTION__.': removing empty properties');
 		foreach ($mapiProperties as $p => $v) {
 			if (empty($v)) {
 				unset($mapiProperties[$p]);
 			}
 		}
 		// Add missing properties for new contacts
-	//	$this->logger->trace("Adding missing properties for new contacts");
+		$this->logger->trace(__FUNCTION__.': adding missing properties for new contacts');
 		$p = $this->bridge->getExtendedProperties();
 		$mapiProperties[$p['icon_index']] = "512";
 		$mapiProperties[$p['message_class']] = 'IPM.Contact';
@@ -224,23 +229,22 @@ class Zarafa_Folder
 	update_contact ($uri, $data)
 	{
 		if (FALSE($entryid = $this->uri_to_entryid($uri))) {
-		//	$this->logger->fatal(__FUNCTION__.': cannot find contact');
+			$this->logger->fatal(__FUNCTION__.': could not find contact');
 			return FALSE;
 		}
 		if (FALSE($contact = mapi_msgstore_openentry($this->store->handle, $entryid))) {
-		//	$this->logger->fatal(__FUNCTION__.': cannot open contact object');
+			$this->logger->fatal(__FUNCTION__.': could not open contact object');
 			return FALSE;
 		}
 		$mapiProperties = $this->bridge->vcardToMapiProperties($data);
 
 		if (SAVE_RAW_VCARD) {
-		//	$this->logger->debug("Saving raw vcard");
 			$mapiProperties[PR_CARDDAV_RAW_DATA] = $data;
 			$mapiProperties[PR_CARDDAV_RAW_DATA_GENERATION_TIME] = time();
 		}
 		// Handle contact picture
 		if (array_key_exists('ContactPicture', $mapiProperties)) {
-		//	$this->logger->debug("Updating contact picture");
+			$this->logger->debug(__FUNCTION__.': updating contact picture');
 			$contactPicture = $mapiProperties['ContactPicture'];
 			unset($mapiProperties['ContactPicture']);
 			$this->bridge->setContactPicture($contact, $contactPicture);
@@ -257,7 +261,7 @@ class Zarafa_Folder
 		//	$dump = print_r ($nullProperties, true);
 		//	$this->logger->trace("Removing properties\n$dump");
 			if (FALSE(mapi_deleteprops($contact, $nullProperties))) {
-		//		$this->logger->warn(__FUNCTION__.': could not remove properties in backend');
+				$this->logger->fatal(__FUNCTION__.': could not remove properties in backend');
 				return FALSE;
 			}
 		}
@@ -277,10 +281,11 @@ class Zarafa_Folder
 	delete_contact ($uri)
 	{
 		if (FALSE($entryid = $this->uri_to_entryid($uri))) {
+			$this->logger->fatal(__FUNCTION__.': could not find contact');
 			return FALSE;
 		}
 		if (FALSE(mapi_folder_deletemessages($this->handle, array($entryid)))) {
-	//		$this->logger->fatal(__FUNCTION__.': could not delete contact');
+			$this->logger->fatal(__FUNCTION__.': could not delete contact');
 			return FALSE;
 		}
 		return TRUE;
@@ -429,11 +434,11 @@ class Zarafa_Folder
 	save_properties (&$handle, $properties)
 	{
 		if (FALSE(mapi_setprops($handle, $properties))) {
-	//		$this->logger->fatal(__FUNCTION__.': error applying mutations: '.get_mapi_error_name());
+			$this->logger->fatal(__FUNCTION__.': MAPI error when applying mutations: '.get_mapi_error_name());
 			return FALSE;
 		}
 		if (FALSE(mapi_savechanges($handle))) {
-	//		$this->logger->fatal(__FUNCTION__.': error saving changes to object: '.get_mapi_error_name());
+			$this->logger->fatal(__FUNCTION__.': MAPI error when saving changes to object: '.get_mapi_error_name());
 			return FALSE;
 		}
 		return TRUE;
