@@ -31,7 +31,7 @@ class Zarafa_Folder
 	private $ctag = FALSE;
 	private $props = FALSE;
 	private $store = FALSE;
-	private $handle = FALSE;
+	public $handle = FALSE;
 	private $entryid = FALSE;
 	private $rowcount = FALSE;
 	private $contacts = FALSE;

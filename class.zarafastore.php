@@ -105,6 +105,14 @@ class Zarafa_Store
 		return mapi_zarafa_getuser_by_name($this->handle, $name);
 	}
 
+	public function
+	get_folder ($entryid)
+	{
+		return (isset($this->folders[$entryid]))
+			? $this->folders[$entryid]
+			: FALSE;
+	}
+
 	private function
 	subtree_walk ($subtree_id, $restriction)
 	{

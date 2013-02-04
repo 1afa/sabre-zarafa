@@ -305,6 +305,22 @@ class Zarafa_Bridge {
 		
 		return pack("H*", $str);
 	}
+
+	public function
+	get_folder ($entryid)
+	{
+		foreach ($this->stores_private as $store) {
+			if (!FALSE($folder = $store->get_folder($entryid))) {
+				return $folder;
+			}
+		}
+		foreach ($this->stores_public as $store) {
+			if (!FALSE($folder = $store->get_folder($entryid))) {
+				return $folder;
+			}
+		}
+	}
+
 	public function storeFromAddressBookId($addressBookId)
 	{
 		// FIXME: to be better solved later
