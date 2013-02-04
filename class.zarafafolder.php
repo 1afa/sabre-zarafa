@@ -175,15 +175,7 @@ class Zarafa_Folder
 	//		$this->logger->info("No changes detected for addressbook");
 			return FALSE;
 		}
-		if (FALSE(mapi_setprops($this->handle, $mapiProperties))) {
-	//		$this->logger->fatal("Error applying mutations: " . get_mapi_error_name());
-			return false;
-		}
-		if (FALSE(mapi_savechanges($this->handle))) {
-	//		$this->logger->fatal("Error saving changes to addressbook: " . get_mapi_error_name());
-			return FALSE;
-		}
-		return TRUE;
+		return $this->save_properties($this->handle, $mapiProperties);
 	}
 
 	public function
@@ -225,10 +217,7 @@ class Zarafa_Folder
 		$mapiProperties[PR_LAST_MODIFICATION_TIME] = time();
 		// message flags ?
 
-		mapi_setprops($contact, $mapiProperties);
-		mapi_savechanges($contact);
-
-		return (mapi_last_hresult() == 0);
+		return $this->save_properties($contact, $mapiProperties);
 	}
 
 	public function
@@ -275,15 +264,7 @@ class Zarafa_Folder
 		// Set properties
 		$mapiProperties[PR_LAST_MODIFICATION_TIME] = time();
 
-		if (FALSE(mapi_setprops($contact, $mapiProperties))) {
-		//	$this->logger->warn(__FUNCTION__.': could not set properties in backend');
-			return FALSE;
-		}
-		if (FALSE(mapi_savechanges($contact))) {
-		//	$this->logger->warn(__FUNCTION__.': could not save changes to backend');
-			return FALSE;
-		}
-		return TRUE;
+		return $this->save_properties($contact, $mapiProperties);
 	}
 
 	/**
@@ -442,5 +423,19 @@ class Zarafa_Folder
 		return (isset($this->uri_mapping[$uri]))
 			? $this->uri_mapping[$uri]
 			: FALSE;
+	}
+
+	private function
+	save_properties (&$handle, $properties)
+	{
+		if (FALSE(mapi_setprops($handle, $properties))) {
+	//		$this->logger->fatal(__FUNCTION__.': error applying mutations: '.get_mapi_error_name());
+			return FALSE;
+		}
+		if (FALSE(mapi_savechanges($handle))) {
+	//		$this->logger->fatal(__FUNCTION__.': error saving changes to object: '.get_mapi_error_name());
+			return FALSE;
+		}
+		return TRUE;
 	}
 }
