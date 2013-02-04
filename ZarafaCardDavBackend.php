@@ -81,89 +81,35 @@ class Zarafa_CardDav_Backend extends Sabre_CardDAV_Backend_Abstract {
 		return $folders;
 	} 
 
-    /**
-     * Updates an addressbook's properties
-     *
-     * See Sabre_DAV_IProperties for a description of the mutations array, as 
-     * well as the return value. 
-     *
-     * @param mixed $addressBookId
-     * @param array $mutations
-     * @see Sabre_DAV_IProperties::updateProperties
-     * @return bool|array
-     */
-    public function updateAddressBook($addressBookId, array $mutations) {
-
+	/**
+	 * Updates an addressbook's properties
+	 *
+	 * See Sabre_DAV_IProperties for a description of the mutations array, as
+	 * well as the return value.
+	 *
+	 * @param mixed $addressBookId
+	 * @param array $mutations
+	 * @see Sabre_DAV_IProperties::updateProperties
+	 * @return bool|array
+	 */
+	public function
+	updateAddressBook ($addressBookId, array $mutations)
+	{
 		$this->logger->info("updateAddressBook(" . bin2hex($addressBookId). ")");
-	
+
 		if (READ_ONLY) {
-			$this->logger->warn("Trying to update read-only address book");
-			return false;
-		}
-		if (FALSE($folder = $this->bridge->get_folder($addressBookId))) {
-			$this->logger->warn(__FUNCTION__.": folder not found!");
+			$this->logger->warn(__FUNCTION__.': trying to update read-only address book');
 			return FALSE;
 		}
-		// Debug information
-		$dump = print_r($mutations, true);
-		$this->logger->debug("Mutations:\n$dump");
-		
-		// What we know to change
-		$authorizedMutations = array ('{DAV:}displayname', '{' . Sabre_CardDAV_Plugin::NS_CARDDAV . '}addressbook-description');
-		
-		// Check the mutations
-		foreach ($mutations as $m => $value) {
-			if (!in_array($m, $authorizedMutations)) {
-				$this->logger->warn("Unknown mutation: $m => $value");
-				return false;
-			}
+		if (FALSE($folder = $this->bridge->get_folder($addressBookId))) {
+			$this->logger->warn(__FUNCTION__.': folder not found');
+			return FALSE;
 		}
-		
-		// Do the mutations
-		$this->logger->trace("applying mutations");
-		
-		if (mapi_last_hresult() > 0) {
-			$this->logger->fatal("Error opening addressbook: " . get_mapi_error_name());
-			return false;
+		if (FALSE($folder->update_folder($mutations))) {
+			$this->logger->fatal(__FUNCTION__.': cannot apply mutations');
+			return FALSE;
 		}
-		
-		$mapiProperties = array();
-		
-		// Display Name
-		if (isset($mutations['{DAV:}displayname'])) {
-			$displayName = $mutations['{DAV:}displayname'];
-			if ($displayName == '') {
-				return false;
-			}
-			$mapiProperties[PR_DISPLAY_NAME] = $displayName;
-		}
-		
-		// Description
-		if (isset($mutations['{' . Sabre_CardDAV_Plugin::NS_CARDDAV . '}addressbook-description'])) {
-			$description = $mutations['{' . Sabre_CardDAV_Plugin::NS_CARDDAV . '}addressbook-description'];
-			$mapiProperties[805568542] = $description;
-		}
-		
-		// Apply changes
-		if (count($mapiProperties) > 0) {
-			mapi_setprops($folder->handle, $mapiProperties);
-			if (mapi_last_hresult() > 0) {
-				$this->logger->fatal("Error applying mutations: " . get_mapi_error_name());
-				return false;
-			}
-
-			mapi_savechanges($folder->handle);
-			if (mapi_last_hresult() > 0) {
-				$this->logger->fatal("Error saving changes to addressbook: " . get_mapi_error_name());
-				return false;
-			}
-
-			return true;
-		}
-
-		// No detected change
-		$this->logger->info("No changes detected for addressbook");
-		return false;
+		return TRUE;
 	}
 
     /**

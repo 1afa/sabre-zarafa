@@ -138,6 +138,55 @@ class Zarafa_Folder
 	}
 
 	public function
+	update_folder (array $mutations)
+	{
+	//	// Debug information
+	//	$dump = print_r($mutations, true);
+	//	$this->logger->debug("Mutations:\n$dump");
+
+		// What we know to change
+		$authorizedMutations = array ('{DAV:}displayname', '{' . Sabre_CardDAV_Plugin::NS_CARDDAV . '}addressbook-description');
+
+		// Check the mutations
+		foreach ($mutations as $m => $value) {
+			if (!in_array($m, $authorizedMutations)) {
+	//			$this->logger->warn("Unknown mutation: $m => $value");
+				return FALSE;
+			}
+		}
+		// Do the mutations
+	//	$this->logger->trace("applying mutations");
+		$mapiProperties = array();
+
+		// Display Name
+		if (isset($mutations['{DAV:}displayname'])) {
+			$displayName = $mutations['{DAV:}displayname'];
+			if ($displayName == '') {
+				return FALSE;
+			}
+			$mapiProperties[PR_DISPLAY_NAME] = $displayName;
+		}
+		// Description
+		if (isset($mutations['{' . Sabre_CardDAV_Plugin::NS_CARDDAV . '}addressbook-description'])) {
+			$description = $mutations['{' . Sabre_CardDAV_Plugin::NS_CARDDAV . '}addressbook-description'];
+			$mapiProperties[805568542] = $description;
+		}
+		if (count($mapiProperties) == 0) {
+	//		$this->logger->info("No changes detected for addressbook");
+			return FALSE;
+		}
+		if (FALSE(mapi_setprops($this->handle, $mapiProperties))) {
+	//		$this->logger->fatal("Error applying mutations: " . get_mapi_error_name());
+			return false;
+		}
+		if (FALSE(mapi_savechanges($this->handle))) {
+	//		$this->logger->fatal("Error saving changes to addressbook: " . get_mapi_error_name());
+			return FALSE;
+		}
+		return TRUE;
+	}
+
+	public function
 	create_contact ($uri, $data)
 	{
 		if (FALSE($contact = mapi_folder_createmessage($this->handle))) {
