@@ -43,8 +43,6 @@ class Zarafa_CardDav_Backend extends Sabre_CardDAV_Backend_Abstract {
 	protected $bridge;
 	private $logger;
 
-	private $uri_mapping = FALSE;
-	
     public function __construct($zarafaBridge) {
 		// Stores a reference to Zarafa Auth Backend so as to get the session
         $this->bridge = $zarafaBridge;
@@ -230,110 +228,46 @@ class Zarafa_CardDav_Backend extends Sabre_CardDAV_Backend_Abstract {
 		}
 	}
 
-    /**
-     * Returns all cards for a specific addressbook id. 
-     *
-     * This method should return the following properties for each card:
-     *   * carddata - raw vcard data
-     *   * uri - Some unique url
-     *   * lastmodified - A unix timestamp
+	/**
+	 * Returns all cards for a specific addressbook id.
+	 *
+	 * This method should return the following properties for each card:
+	 *   * carddata - raw vcard data
+	 *   * uri - Some unique url
+	 *   * lastmodified - A unix timestamp
 
-     * @param mixed $addressbookId 
-     * @return array 
-     */
+	 * @param mixed $addressBookId
+	 * @return array
+	 */
 	public function
-	getCards ($addressbookId)
+	getCards ($addressBookId)
 	{
-		$this->logger->info("getCards(" . bin2hex($addressbookId) . ")");
+		$this->logger->info("getCards(" . bin2hex($addressBookId) . ")");
 	
-		$cards = array();
-		do {
-			if (FALSE($folder = $this->bridge->get_folder($addressbookId))) {
-				break;
-			}
-			if (($contactsTable = mapi_folder_getcontentstable($folder->handle)) === FALSE) {
-				break;
-			}
-			if (($contacts = mapi_table_queryallrows($contactsTable, Array(PR_ENTRYID, PR_CARDDAV_URI, PR_LAST_MODIFICATION_TIME))) === FALSE) {
-				break;
-			}
-			if (FALSE($this->uri_mapping)) {
-				$this->uri_mapping = array();
-			}
-			foreach ($contacts as $c)
-			{
-				// URI is based on PR_CARDDAV_URI or use ENTRYID
-				if (isset($c[PR_CARDDAV_URI])) {
-					$this->logger->debug("Using contact URI: " . $c[PR_CARDDAV_URI]);
-					$uri = $c[PR_CARDDAV_URI];
-				} else {
-					// Create an URI from the EntryID:
-					$uri = $this->bridge->entryid_to_uri($c[PR_ENTRYID]);
-					// Note: we do not write this change back to the database;
-					// if this is a public contact created by someone else, we
-					// do not have the permissions to write it.
-				}
-				$cards[] = array(
-					'id' => $c[PR_ENTRYID],
-		//			'carddata' => $this->bridge->getContactVCard($contactProperties[PR_ENTRYID]),
-					'uri' => $uri,
-					'lastmodified' => $c[PR_LAST_MODIFICATION_TIME]
-				);
-				$this->uri_mapping[$uri] = $c[PR_ENTRYID];
-			}
-			$dump = print_r ($cards, true);
-			$this->logger->trace("Addressbook cards\n$dump");
-			return $cards;
+		if (FALSE($folder = $this->bridge->get_folder($addressBookId))) {
+			$this->logger->warn(__FUNCTION__.': could not find folder');
+			return Array();
 		}
-		while (0);
-
-		// If we're here, that's not good:
-		$this->logger->warn("getCards failed early");
-		return $cards;
+		return $folder->get_dav_cards();
 	}
 
-    /**
-     * Returns a specfic card
-     * 
-     * @param mixed $addressBookId 
-     * @param string $cardUri 
-     * @return void
-     */
+	/**
+	 * Returns a specfic card
+	 *
+	 * @param mixed $addressBookId
+	 * @param string $cardUri
+	 * @return void
+	 */
 	public function
-	getCard ($addressBookId, $cardUri)
+	getCard ($addressBookId, $uri)
 	{
-		// Local result cache:
-		static $cache = Array();
+		$this->logger->info("getCard(" . bin2hex($addressBookId) . ", $uri)");
 
-		$this->logger->info("getCard(" . bin2hex($addressBookId) . ", $cardUri)");
-
-		// Can we satisfy the request from the local cache?
-		if (isset($cache[$addressBookId])
-		 && isset($cache[$addressBookId][$cardUri])) {
-		   return $cache[$addressBookId][$cardUri];
+		if (FALSE($folder = $this->bridge->get_folder($addressBookId))) {
+			$this->logger->warn(__FUNCTION__.': could not find folder');
+			return Array();
 		}
-		// Else, do the actual lookup:
-		if (FALSE($store = $this->bridge->storeFromAddressBookId($addressBookId))) {
-			return FALSE;
-		}
-		$folder = mapi_msgstore_openentry($store, $addressBookId);
-		if (FALSE($entryId = $this->uri_to_entryid($addressBookId, $cardUri))) {
-			$this->logger->warn("Contact not found!");
-			return FALSE;
-		}
-		$contactProperties = $this->bridge->getProperties($entryId, $store);
-		$card = Array(
-			'id' => $contactProperties[PR_ENTRYID],
-			'carddata' => $this->bridge->getContactVCard($contactProperties, $store),
-			'uri' => $cardUri,
-			'lastmodified' => $contactProperties[PR_LAST_MODIFICATION_TIME]
-		);
-		// Add to cache:
-		if (!isset($cache[$addressBookId])) {
-			$cache[$addressBookId] = Array();
-		}
-		$cache[$addressBookId][$cardUri] = $card;
-		return $card;
+		return $folder->get_dav_card($uri);
 	} 
 
     /**
@@ -403,148 +337,57 @@ class Zarafa_CardDav_Backend extends Sabre_CardDAV_Backend_Abstract {
 		return mapi_last_hresult() == 0;
 	} 
 
-    /**
-     * Updates a card
-     * 
-     * @param mixed $addressBookId 
-     * @param string $cardUri 
-     * @param string $cardData 
-     * @return bool 
-     */
-    public function updateCard($addressBookId, $cardUri, $cardData) {
-		$this->logger->info("updateCard - $cardUri");
-
-		if (READ_ONLY) {
-			$this->logger->warn("Cannot update card: read-only");
-			return FALSE;
-		}
-		if (FALSE($entryId = $this->uri_to_entryid($addressBookId, $cardUri))) {
-			$this->logger->warn("Cannot find contact");
-			return FALSE;
-		}
-		if (($store = $this->bridge->storeFromAddressBookId($addressBookId)) === FALSE) {
-			$this->logger->warn(__FUNCTION__.": store not found!");
-			return FALSE;
-		}
-		$mapiProperties = $this->bridge->vcardToMapiProperties($cardData);
-		$contact = mapi_msgstore_openentry($store, $entryId);
-		
-		if (SAVE_RAW_VCARD) {
-			// Save RAW vCard
-			$this->logger->debug("Saving raw vcard");
-			$mapiProperties[PR_CARDDAV_RAW_DATA] = $cardData;
-			$mapiProperties[PR_CARDDAV_RAW_DATA_GENERATION_TIME] = time();
-		} else {
-			$this->logger->trace("Saving raw vcard skiped by config");
-		}
-
-		// Handle contact picture
-		if (array_key_exists('ContactPicture', $mapiProperties)) {
-			$this->logger->debug("Updating contact picture");
-			$contactPicture = $mapiProperties['ContactPicture'];
-			unset($mapiProperties['ContactPicture']);
-			$this->bridge->setContactPicture($contact, $contactPicture);
-		}
-		
-		// Remove NULL properties
-		if (CLEAR_MISSING_PROPERTIES) {
-			$this->logger->debug("Clearing missing properties");
-			$nullProperties = array();
-			foreach ($mapiProperties as $p => $v) {
-				if ($v == NULL) {
-					$nullProperties[] = $p;
-					unset($mapiProperties[$p]);
-				}
-			}
-			$dump = print_r ($nullProperties, true);
-			$this->logger->trace("Removing properties\n$dump");
-			mapi_deleteprops($contact, $nullProperties);
-		}
-		
-		// Set properties
-		$mapiProperties[PR_LAST_MODIFICATION_TIME] = time();
-		mapi_setprops ($contact, $mapiProperties);
-		
-		// Save changes to backend
-		mapi_savechanges($contact);
-		
-		return mapi_last_hresult() == 0;
-	}
-
-    /**
-     * Deletes a card
-     * 
-     * @param mixed $addressBookId 
-     * @param string $cardUri 
-     * @return bool 
-     */
+	/**
+	 * Updates a card
+	 *
+	 * @param mixed $addressBookId
+	 * @param string $uri
+	 * @param string $data
+	 * @return string|null
+	 */
 	public function
-	deleteCard ($addressBookId, $cardUri)
+	updateCard ($addressBookId, $uri, $data)
 	{
-		$this->logger->info("deleteCard($cardUri)");
-	
+		$this->logger->info("updateCard - $uri");
+
 		if (READ_ONLY) {
-			$this->logger->warn("Cannot delete card: read-only");
+			$this->logger->warn(__FUNCTION__.': cannot update card: read-only');
 			return FALSE;
 		}
 		if (FALSE($folder = $this->bridge->get_folder($addressBookId))) {
-			$this->logger->warn(__FUNCTION__.": store not found!");
+			$this->logger->warn(__FUNCTION__.': cannot find folder');
 			return FALSE;
 		}
-		if (FALSE($entryId = $this->uri_to_entryid($addressBookId, $cardUri))) {
-			$this->logger->warn("Contact not found!");
+		if (FALSE($folder->update_contact($uri, $data))) {
+			$this->logger->warn(__FUNCTION__.': failed to update card');
 			return FALSE;
 		}
-		mapi_folder_deletemessages($folder->handle, array($entryId));
-
-		if (mapi_last_hresult() > 0) {
-			return false;
-		}
-
-		return true;
+		return NULL;
 	}
 
 	/**
-	 * Translate ($addressBookId, $cardUri) to entry id
-	 * @param $addressBookId address book to search contact in
-	 * @param $cardUri name of contact card to retrieve
+	 * Deletes a card
+	 *
+	 * @param mixed $addressBookId
+	 * @param string $uri
+	 * @return bool
 	 */
-	protected function
-	uri_to_entryid ($addressBookId, $cardUri)
+	public function
+	deleteCard ($addressBookId, $uri)
 	{
-		$this->logger->trace("uri_to_entryid($cardUri)");
+		$this->logger->info("deleteCard($uri)");
 
-		if (FALSE($this->uri_mapping) && FALSE($this->get_uri_mapping($addressBookId))) {
+		if (READ_ONLY) {
+			$this->logger->warn(__FUNCTION__.': cannot delete card: read-only');
 			return FALSE;
 		}
-		return (isset($this->uri_mapping[$cardUri]))
-			? $this->uri_mapping[$cardUri]
-			: FALSE;
-	}
-
-	private function
-	get_uri_mapping ($addressbookId)
-	{
-		if (FALSE($folder = $this->bridge->get_folder($addressbookId))) {
+		if (FALSE($folder = $this->bridge->get_folder($addressBookId))) {
+			$this->logger->warn(__FUNCTION__.': cannot find folder');
 			return FALSE;
 		}
-		if (FALSE($contactsTable = mapi_folder_getcontentstable($folder->handle))) {
+		if (FALSE($folder->delete_contact($uri))) {
+			$this->logger->warn(__FUNCTION__.': failed to delete card');
 			return FALSE;
-		}
-		if (FALSE($contacts = mapi_table_queryallrows($contactsTable, Array(PR_ENTRYID, PR_CARDDAV_URI)))) {
-			return FALSE;
-		}
-		if (FALSE($this->uri_mapping)) {
-			$this->uri_mapping = array();
-		}
-		foreach ($contacts as $contact)
-		{
-			$entryid = $contact[PR_ENTRYID];
-			$uri = (isset($contact[PR_CARDDAV_URI]))
-				? $contact[PR_CARDDAV_URI]
-				: $uri = $this->bridge->entryid_to_uri($entryid);
-
-			$this->uri_mapping[$uri] = $entryid;
 		}
 		return TRUE;
 	}

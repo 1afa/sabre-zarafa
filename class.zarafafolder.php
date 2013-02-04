@@ -31,15 +31,19 @@ class Zarafa_Folder
 	private $ctag = FALSE;
 	private $props = FALSE;
 	private $store = FALSE;
+	private $cards = FALSE;
+	private $bridge = FALSE;
 	public $handle = FALSE;
 	private $entryid = FALSE;
 	private $rowcount = FALSE;
 	private $contacts = FALSE;
 	private $contacts_table = FALSE;
+	private $uri_mapping = FALSE;
 
 	public function
-	__construct (&$store, $handle, $entryid)
+	__construct (&$bridge, &$store, $handle, $entryid)
 	{
+		$this->bridge = $bridge;
 		$this->store = $store;
 		$this->handle = $handle;
 		$this->entryid = $entryid;
@@ -62,6 +66,149 @@ class Zarafa_Folder
 			'{http://calendarserver.org/ns/}getctag' => $this->get_ctag(),
 			'{' . Sabre_CardDAV_Plugin::NS_CARDDAV . '}supported-address-data' => new Sabre_CardDAV_Property_SupportedAddressData()
 		);
+	}
+
+	private function
+	contact_to_dav ($contact)
+	{
+		$uri = (isset($contact[PR_CARDDAV_URI]))
+			? $contact[PR_CARDDAV_URI]
+			: $this->bridge->entryid_to_uri($contact[PR_ENTRYID]);
+
+		return array(
+			'id' => $contact[PR_ENTRYID],
+			'carddata' => $this->bridge->getContactVCard($contact, $this->store->handle),
+			'uri' => $uri,
+			'lastmodified' => $contact[PR_LAST_MODIFICATION_TIME]
+		);
+	}
+
+	public function
+	get_dav_cards ()
+	{
+		// Can we serve the cards from our own cache?
+		if (!FALSE($this->cards)) {
+			return $this->cards;
+		}
+		// Otherwise do the actual lookup:
+		if (FALSE($contacts = $this->get_contacts())) {
+			return array();
+		}
+		if (FALSE($this->uri_mapping)) {
+			$this->uri_mapping = array();
+		}
+		$this->cards = array();
+		foreach ($contacts as $contact)
+		{
+			if (FALSE($dav = $this->contact_to_dav($contact))) {
+				continue;
+			}
+			$this->cards[$dav['uri']] = $dav;
+			$this->uri_mapping[$dav['uri']] = $dav['id'];
+		}
+		return $this->cards;
+	}
+
+	public function
+	get_dav_card ($uri)
+	{
+		// Can we serve the card from our own cache?
+		if (!FALSE($this->cards) && isset($this->cards[$uri])) {
+			return $this->cards[$uri];
+		}
+		// Otherwise do the actual lookup:
+		if (FALSE($entryid = $this->uri_to_entryid($uri))) {
+		//	$this->logger->fatal(__FUNCTION__.': cannot find card');
+			return FALSE;
+		}
+		if (FALSE($contacts = $this->get_contacts($entryid))) {
+			return array();
+		}
+		if (FALSE($this->cards)) {
+			$this->cards = array();
+		}
+		foreach ($contacts as $contact) {
+			if (FALSE($dav = $this->contact_to_dav($contact))) {
+				continue;
+			}
+			return $this->cards[$dav['uri']] = $dav;
+		}
+	//	$this->logger->fatal(__FUNCTION__.': cannot find card');
+		return FALSE;
+	}
+
+	public function
+	update_contact ($uri, $data)
+	{
+		if (FALSE($entryid = $this->uri_to_entryid($uri))) {
+		//	$this->logger->fatal(__FUNCTION__.': cannot find contact');
+			return FALSE;
+		}
+		if (FALSE($contact = mapi_msgstore_openentry($this->store->handle, $entryid))) {
+		//	$this->logger->fatal(__FUNCTION__.': cannot open contact object');
+			return FALSE;
+		}
+		$mapiProperties = $this->bridge->vcardToMapiProperties($data);
+
+		if (SAVE_RAW_VCARD) {
+		//	$this->logger->debug("Saving raw vcard");
+			$mapiProperties[PR_CARDDAV_RAW_DATA] = $data;
+			$mapiProperties[PR_CARDDAV_RAW_DATA_GENERATION_TIME] = time();
+		}
+		// Handle contact picture
+		if (array_key_exists('ContactPicture', $mapiProperties)) {
+		//	$this->logger->debug("Updating contact picture");
+			$contactPicture = $mapiProperties['ContactPicture'];
+			unset($mapiProperties['ContactPicture']);
+			$this->bridge->setContactPicture($contact, $contactPicture);
+		}
+		if (CLEAR_MISSING_PROPERTIES) {
+		//	$this->logger->debug("Clearing missing properties");
+			$nullProperties = array();
+			foreach ($mapiProperties as $p => $v) {
+				if ($v == NULL) {
+					$nullProperties[] = $p;
+					unset($mapiProperties[$p]);
+				}
+			}
+		//	$dump = print_r ($nullProperties, true);
+		//	$this->logger->trace("Removing properties\n$dump");
+			if (FALSE(mapi_deleteprops($contact, $nullProperties))) {
+		//		$this->logger->warn(__FUNCTION__.': could not remove properties in backend');
+				return FALSE;
+			}
+		}
+		// Set properties
+		$mapiProperties[PR_LAST_MODIFICATION_TIME] = time();
+
+		if (FALSE(mapi_setprops($contact, $mapiProperties))) {
+		//	$this->logger->warn(__FUNCTION__.': could not set properties in backend');
+			return FALSE;
+		}
+		if (FALSE(mapi_savechanges($contact))) {
+		//	$this->logger->warn(__FUNCTION__.': could not save changes to backend');
+			return FALSE;
+		}
+		return TRUE;
+	}
+
+	/**
+	 * Deletes a contact
+	 *
+	 * @param string $cardUri
+	 * @return bool
+	 */
+	public function
+	delete_contact ($uri)
+	{
+		if (FALSE($entryid = $this->uri_to_entryid($uri))) {
+			return FALSE;
+		}
+		if (FALSE(mapi_folder_deletemessages($this->handle, array($entryid)))) {
+	//		$this->logger->fatal(__FUNCTION__.': could not delete contact');
+			return FALSE;
+		}
+		return TRUE;
 	}
 
 	public function
@@ -131,7 +278,7 @@ class Zarafa_Folder
 	get_contacts ($specific_id = FALSE)
 	{
 		// Do we happen to have the data in our cache?
-		if (FALSE($this->contacts)) {
+		if (!FALSE($this->contacts)) {
 			// If no specific ID requested, return everything:
 			if (FALSE($specific_id)) {
 				return $this->contacts;
@@ -158,5 +305,48 @@ class Zarafa_Folder
 		}
 		tbl_restrict_none($table);
 		return $ret;
+	}
+
+	private function
+	get_uri_mapping ()
+	{
+		// Do we already have a cached URI mapping?
+		if (!FALSE($this->uri_mapping)) {
+			return $this->uri_mapping;
+		}
+		// For all entries in this folder, generate a mapping from EntryID to URI:
+		// If $this->contacts is already set, then swell; else do a cheap lookup:
+		if (FALSE($contacts = $this->contacts)) {
+			if (FALSE($table = $this->get_contacts_table())) {
+				return FALSE;
+			}
+			mapi_table_restrict($table, restrict_propstring(PR_MESSAGE_CLASS, 'IPM.Contact'));
+			$contacts = mapi_table_queryallrows($table, array(PR_ENTRYID, PR_CARDDAV_URI));
+			tbl_restrict_none($table);
+			if (FALSE($contacts)) {
+				return FALSE;
+			}
+		}
+		$this->uri_mapping = array();
+		foreach ($contacts as $contact) {
+			$entryid = $contact[PR_ENTRYID];
+			$uri = (isset($contact[PR_CARDDAV_URI]))
+				? $contact[PR_CARDDAV_URI]
+				: $this->bridge->entryid_to_uri($entryid);
+
+			$this->uri_mapping[$uri] = $entryid;
+		}
+		return TRUE;
+	}
+
+	private function
+	uri_to_entryid ($uri)
+	{
+		if (FALSE($this->uri_mapping) && FALSE($this->get_uri_mapping())) {
+			return FALSE;
+		}
+		return (isset($this->uri_mapping[$uri]))
+			? $this->uri_mapping[$uri]
+			: FALSE;
 	}
 }

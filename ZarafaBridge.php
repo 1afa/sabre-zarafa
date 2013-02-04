@@ -194,7 +194,7 @@ class Zarafa_Bridge {
 				$this->logger->warn(__FUNCTION__.': failed to open private store');
 				continue;
 			}
-			$this->stores_private[] = new Zarafa_Store($store[PR_ENTRYID], $handle);
+			$this->stores_private[] = new Zarafa_Store($this, $store[PR_ENTRYID], $handle);
 		}
 		return TRUE;
 	}
@@ -213,7 +213,7 @@ class Zarafa_Bridge {
 				$this->logger->warn(__FUNCTION__.': failed to open public store');
 				continue;
 			}
-			$this->stores_public[] = new Zarafa_Store($store[PR_ENTRYID], $handle);
+			$this->stores_public[] = new Zarafa_Store($this, $store[PR_ENTRYID], $handle);
 		}
 		return TRUE;
 	}
@@ -342,6 +342,7 @@ class Zarafa_Bridge {
 	entryid_to_uri ($entryid)
 	{
 		// GUID format: 8-4-4-4-12
+		// Take MD5sum to convert to 32 byte hash:
 		$str = md5($entryid);
 
 		// Split into chunks:

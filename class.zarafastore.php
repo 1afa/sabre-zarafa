@@ -29,6 +29,7 @@ require_once 'class.zarafafolder.php';
 
 class Zarafa_Store
 {
+	private $bridge;
 	public $entryid;
 	public $handle;
 	public $root;
@@ -38,8 +39,9 @@ class Zarafa_Store
 	public $root_folder;
 
 	public function
-	__construct ($entryid, $handle)
+	__construct (&$bridge, $entryid, $handle)
 	{
+		$this->bridge = $bridge;
 		$this->entryid = $entryid;
 		$this->handle = $handle;
 
@@ -84,7 +86,7 @@ class Zarafa_Store
 			if (FALSE($folder = mapi_msgstore_openentry($this->handle, $entryid))) {
 				continue;
 			}
-			$node = new Zarafa_Folder($this, $folder, $entryid);
+			$node = new Zarafa_Folder($this->bridge, $this, $folder, $entryid);
 
 			if ($node->is_empty()) {
 				continue;
