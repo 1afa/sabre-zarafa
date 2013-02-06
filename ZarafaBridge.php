@@ -61,12 +61,11 @@
  
 class Zarafa_Bridge {
 
-	protected $session;
+	protected $session = FALSE;
 	protected $publicStore;
 	protected $wastebasketId = FALSE;
 	protected $extendedProperties;
 	protected $connectedUser = FALSE;
-	protected $adressBooks;
 	private $folders_private = array();
 	private $folders_public = array();
 	private $stores_table = FALSE;
@@ -87,48 +86,36 @@ class Zarafa_Bridge {
 	 * @param $user user login
 	 * @param $password user password
 	 */
-	public function connect($user, $password) {
-	
+	public function
+	connect ($user, $password)
+	{
 		$this->logger->debug("connect($user," . md5($password) . ")");
-		$this->session = NULL;
-		
-		try {
-			$session = mapi_logon_zarafa($user, $password, ZARAFA_SERVER);
-		} catch (Exception $e) {
-			$this->logger->debug("connection failed: " . get_mapi_error_name());
-			return false;
+
+		if (FALSE($this->session = mapi_logon_zarafa($user, $password, ZARAFA_SERVER))) {
+			$this->logger->debug(__FUNCTION__.': connection failed: '.get_mapi_error_name());
+			return FALSE;
 		}
+		$this->logger->trace(__FUNCTION__.': connected to zarafa server - init bridge');
 
-		if (FALSE($session)) {
-			// Failed
-			return false;
-		}
-
-		$this->logger->trace("Connected to zarafa server - init bridge");
-		$this->session = $session;
-
-		if (FALSE($this->stores_table = mapi_getmsgstorestable($session))) {
-			$this->logger->warn('could not get messagestore table');
+		if (FALSE($this->stores_table = mapi_getmsgstorestable($this->session))) {
+			$this->logger->warn(__FUNCTION__.': could not get messagestore table');
 			return FALSE;
 		}
 		if (FALSE($this->stores_get_private())) {
-			$this->logger->warn('could not get private stores');
+			$this->logger->warn(__FUNCTION__.': could not get private stores');
 			return FALSE;
 		}
 		if (FALSE($this->stores_get_public())) {
-			$this->logger->warn('could not get public stores');
+			$this->logger->warn(__FUNCTION__.': could not get public stores');
 			return FALSE;
 		}
 		// Load properties
 		$this->initProperties();
-		
+
 		// Store username for principals
 		$this->connectedUser = $user;
-		
-		// Set protected variable to NULL.
-		$this->adressBooks = NULL;
-		
-		return true;
+
+		return TRUE;
 	}
 	
 	/**
@@ -663,7 +650,19 @@ class Zarafa_Bridge {
 		$hasattachProp = mapi_getprops($contact, array(PR_HASATTACH));
 		if ($hasattachProp) {
 			$attachmentTable = mapi_message_getattachmenttable($contact);
-			$attachments = mapi_table_queryallrows($attachmentTable, array(PR_ATTACH_NUM, PR_ATTACH_SIZE, PR_ATTACH_LONG_FILENAME, PR_ATTACH_FILENAME, PR_ATTACHMENT_HIDDEN, PR_DISPLAY_NAME, PR_ATTACH_METHOD, PR_ATTACH_CONTENT_ID, PR_ATTACH_MIME_TAG, PR_ATTACHMENT_CONTACTPHOTO, PR_EC_WA_ATTACHMENT_HIDDEN_OVERRIDE));
+			$attachments = mapi_table_queryallrows($attachmentTable, array(
+				PR_ATTACH_NUM,
+				PR_ATTACH_SIZE,
+				PR_ATTACH_LONG_FILENAME,
+				PR_ATTACH_FILENAME,
+				PR_ATTACHMENT_HIDDEN,
+				PR_DISPLAY_NAME,
+				PR_ATTACH_METHOD,
+				PR_ATTACH_CONTENT_ID,
+				PR_ATTACH_MIME_TAG,
+				PR_ATTACHMENT_CONTACTPHOTO,
+				PR_EC_WA_ATTACHMENT_HIDDEN_OVERRIDE
+			));
 			foreach ($attachments as $attachmentRow) {
 				if (isset($attachmentRow[PR_ATTACHMENT_CONTACTPHOTO]) && $attachmentRow[PR_ATTACHMENT_CONTACTPHOTO]) {
 					$contactAttachment = $attachmentRow[PR_ATTACH_NUM];
@@ -671,7 +670,6 @@ class Zarafa_Bridge {
 				}
 			}
 		}
-		
 		// Remove existing attachment if necessary
 		if ($contactAttachment != -1) {
 			$this->logger->trace("removing existing contact picture");
