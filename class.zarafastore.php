@@ -115,6 +115,26 @@ class Zarafa_Store
 			: FALSE;
 	}
 
+	public function
+	delete_folder ($parentid, $entryid, $folder_handle)
+	{
+		if (!isset($this->folders[$entryid])) {
+			return FALSE;
+		}
+		if (FALSE($parent_handle = mapi_msgstore_openentry($this->handle, $parentid))) {
+			return FALSE;
+		}
+		// Delete folder content
+		if (FALSE(mapi_folder_emptyfolder($folder_handle, DEL_ASSOCIATED))) {
+			return FALSE;
+		}
+		if (FALSE(mapi_folder_deletefolder($parent_handle, $entryid))) {
+			return FALSE;
+		}
+		unset($this->folders[$entryid]);
+		return TRUE;
+	}
+
 	private function
 	subtree_walk ($subtree_id, $restriction)
 	{

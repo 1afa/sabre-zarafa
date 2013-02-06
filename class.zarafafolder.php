@@ -185,6 +185,16 @@ class Zarafa_Folder
 	}
 
 	public function
+	delete_folder ()
+	{
+		if (FALSE($props = $this->get_props()) || !isset($props[PR_PARENT_ENTRYID])) {
+			$this->logger->fatal(__FUNCTION__.': could not get parent ID');
+			return FALSE;
+		}
+		return $this->store->delete_folder($props[PR_PARENT_ENTRYID], $this->entryid, $this->handle);
+	}
+
+	public function
 	create_contact ($uri, $data)
 	{
 		if (FALSE($contact = mapi_folder_createmessage($this->handle))) {

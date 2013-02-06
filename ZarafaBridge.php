@@ -321,23 +321,6 @@ class Zarafa_Bridge {
 		}
 	}
 
-	public function storeFromAddressBookId($addressBookId)
-	{
-		// FIXME: to be better solved later
-		foreach ($this->stores_private as $store) {
-			if (isset($store->folders[$addressBookId])) {
-				return $store->handle;
-			}
-		}
-		foreach ($this->stores_public as $store) {
-			if (isset($store->folders[$addressBookId])) {
-				return $store->handle;
-			}
-		}
-		$this->logger->warn("Cannot find store belonging to address book");
-		return FALSE;
-	}
-
 	public function
 	entryid_to_uri ($entryid)
 	{

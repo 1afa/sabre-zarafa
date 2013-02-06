@@ -142,36 +142,26 @@ class Zarafa_CardDav_Backend extends Sabre_CardDAV_Backend_Abstract {
 		}
 	}
 
-    /**
-     * Deletes an entire addressbook and all its contents
-     *
-     * @param mixed $addressBookId 
-     * @return void
-     */
-    public function deleteAddressBook($addressBookId) {
-
+	/**
+	 * Deletes an entire addressbook and all its contents
+	 *
+	 * @param mixed $addressBookId
+	 * @return void
+	 */
+	public function
+	deleteAddressBook ($addressBookId)
+	{
 		$this->logger->info("deleteAddressBook(" . bin2hex($addressBookId) . ")");
 	
 		if (READ_ONLY || !ALLOW_DELETE_FOLDER) {
-			$this->logger->warn("Cannot delete address book: permission denied by config");
-			return false;
-		}
-		$folders = $this->bridge->getAdressBooks();
-		if (($store = $this->bridge->storeFromAddressBookId($addressBookId)) === FALSE) {
-			$this->logger->warn(__FUNCTION__.": store not found!");
+			$this->logger->warn(__FUNCTION__.': Cannot delete address book: permission denied by config');
 			return FALSE;
 		}
-		$parentFolderId = $folders[$addressBookId]['parentId'];
-		$folder         = mapi_msgstore_openentry($store, $addressBookId);
-		$parentFolder   = mapi_msgstore_openentry($store, $parentFolderId);
-		
-		// Delete folder content
-		mapi_folder_emptyfolder($folder, DEL_ASSOCIATED);
-		mapi_folder_deletefolder($parentFolder, $addressBookId);
-
-		if (mapi_last_hresult() > 0) {
-			$this->logger->fatal("Error deleting addressbook: " . get_mapi_error_name());
+		if (FALSE($folder = $this->bridge->get_folder($addressBookId))) {
+			$this->logger->warn(__FUNCTION__.': could not find folder');
+			return FALSE;
 		}
+		return $folder->delete_folder();
 	}
 
 	/**
