@@ -315,7 +315,7 @@ class VCardParser implements IVCardParser {
 					$pCountry = 'other_address_country';
 					break;
 				default:
-					debug ("Unknwon address type $type - skipping");
+					$this->logger->debug("Unknown address type '$type' - skipping");
 					continue;
 			}
 			
