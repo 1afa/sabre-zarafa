@@ -488,5 +488,3 @@ class VCardParser implements IVCardParser {
 	}
 
 }
-
-?>

@@ -239,5 +239,3 @@ class Zarafa_Principals_Backend implements Sabre_DAVACL_IPrincipalBackend {
     }
 
 }
-
-?>

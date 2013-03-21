@@ -709,5 +709,3 @@ class Zarafa_Bridge {
 	}
 	
 }
-
-?>

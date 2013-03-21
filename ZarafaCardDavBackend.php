@@ -289,5 +289,3 @@ class Zarafa_CardDav_Backend extends Sabre_CardDAV_Backend_Abstract {
 		return TRUE;
 	}
 }
-
-?>

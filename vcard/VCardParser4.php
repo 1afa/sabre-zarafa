@@ -43,5 +43,3 @@ class VCardParser4 extends VCardParser {
 	}
 
 }
-
-?>

@@ -27,4 +27,3 @@
 	
 	define ('SABRE_ZARAFA_REV', '$Format:%h$');
 	define ('SABRE_ZARAFA_DATE', '$Format:%ci$');
-?>

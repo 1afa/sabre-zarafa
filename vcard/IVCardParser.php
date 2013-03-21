@@ -34,5 +34,3 @@ interface IVCardParser {
 	public function vObjectToProperties($vcard, &$properties);
 
 }
-
-?>

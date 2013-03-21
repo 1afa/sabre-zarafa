@@ -105,5 +105,3 @@
 	$log->info("Producer: " . VCARD_PRODUCT_ID );
 	$log->info("Revision: " . (SABRE_ZARAFA_REV + 1) . ' - ' . SABRE_ZARAFA_DATE);
 	$server->exec();	
-	
-?>

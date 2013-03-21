@@ -36,5 +36,3 @@ interface IVCardProducer {
 	public function propertiesToVObject($contact, &$vcard);
 
 }
-
-?>

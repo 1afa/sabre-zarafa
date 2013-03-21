@@ -337,5 +337,3 @@ class VCardProducer implements IVCardProducer {
 	}
 
 }
-
-?>
