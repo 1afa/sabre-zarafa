@@ -89,7 +89,7 @@ class Zarafa_Bridge {
 	public function
 	connect ($user, $password)
 	{
-		$this->logger->debug("connect($user, <password>");
+		$this->logger->debug(__FUNCTION__."($user, <password>");
 
 		if (FALSE($this->session = mapi_logon_zarafa($user, $password, ZARAFA_SERVER))) {
 			$this->logger->debug(__FUNCTION__.': connection failed: '.get_mapi_error_name());
@@ -123,7 +123,7 @@ class Zarafa_Bridge {
 	 * @return MAPI session
 	 */
 	public function getMapiSession() {
-		$this->logger->trace("getMapiSession");
+		$this->logger->trace(__FUNCTION__);
 		return $this->session;
 	}
 	
@@ -136,7 +136,7 @@ class Zarafa_Bridge {
 	{
 		// This function gets the *first* private store.
 		// What happens when the user has more than one?
-		$this->logger->trace('get_private_store');
+		$this->logger->trace(__FUNCTION__);
 		return (isset($this->stores_private[0]))
 			? $this->stores_private[0]
 			: FALSE;
@@ -147,12 +147,12 @@ class Zarafa_Bridge {
 	 * @return connected user
 	 */
 	public function getConnectedUser() {
-		$this->logger->trace("getConnectedUser");
+		$this->logger->trace(__FUNCTION__);
 		return $this->connectedUser;
 	}
 	
 	public function getExtendedProperties() {
-		$this->logger->trace("getExtendedProperties");
+		$this->logger->trace(__FUNCTION__);
 		return $this->extendedProperties;
 	}
 	
@@ -163,8 +163,9 @@ class Zarafa_Bridge {
 	public function
 	getConnectedUserMailAddress ()
 	{
+		$this->logger->trace(__FUNCTION__);
+
 		static $userinfo = FALSE;
-		$this->logger->trace("getConnectedUserMailAddress");
 
 		if (FALSE($userinfo)) {
 			$userinfo = $this->stores_private[0]->getuser_by_name($this->connectedUser);
@@ -176,6 +177,8 @@ class Zarafa_Bridge {
 	private function
 	stores_get_private ()
 	{
+		$this->logger->trace(__FUNCTION__);
+
 		if (FALSE(tbl_restrict_propval($this->stores_table, PR_MDB_PROVIDER, ZARAFA_SERVICE_GUID, RELOP_EQ))) {
 			return FALSE;
 		}
@@ -195,6 +198,8 @@ class Zarafa_Bridge {
 	private function
 	stores_get_public ()
 	{
+		$this->logger->trace(__FUNCTION__);
+
 		if (FALSE(tbl_restrict_propval($this->stores_table, PR_MDB_PROVIDER, ZARAFA_STORE_PUBLIC_GUID, RELOP_EQ))) {
 			return FALSE;
 		}
@@ -214,6 +219,8 @@ class Zarafa_Bridge {
 	public function
 	get_folders_private ($principal_uri)
 	{
+		$this->logger->trace(__FUNCTION__."($principal_uri)");
+
 		foreach ($this->stores_private as $store) {
 			$this->folders_private = array_merge($this->folders_private, $store->get_dav_folders($principal_uri));
 		}
@@ -223,6 +230,8 @@ class Zarafa_Bridge {
 	public function
 	get_folders_public ($principal_uri)
 	{
+		$this->logger->trace(__FUNCTION__."($principal_uri)");
+
 		foreach ($this->stores_public as $store) {
 			$this->folders_public = array_merge($this->folders_public, $store->get_dav_folders($principal_uri));
 		}
@@ -232,6 +241,8 @@ class Zarafa_Bridge {
 	private function
 	get_deletion_restriction ()
 	{
+		$this->logger->trace(__FUNCTION__);
+
 		if (!$this->publicStore || !($trash_folder = mapi_msgstore_openentry($this->publicStore, $this->wastebasketId))) {
 			return Array();
 		}
@@ -251,6 +262,8 @@ class Zarafa_Bridge {
 	private function
 	restrict_table_contacts_nonhidden_nondeleted ($hierarchy_table)
 	{
+		$this->logger->trace(__FUNCTION__);
+
 		// Restriction for only IPF.Contact folder items:
 		$restr_contacts = restrict_propstring(PR_CONTAINER_CLASS, 'IPF.Contact');
 
@@ -273,7 +286,7 @@ class Zarafa_Bridge {
 	public function
 	getProperties ($entryId, $store)
 	{
-		$this->logger->trace("getProperties(" . bin2hex($entryId) . ")");
+		$this->logger->trace(__FUNCTION__.'('.bin2hex($entryId).')');
 		if (FALSE($mapiObject = mapi_msgstore_openentry($store, $entryId))) {
 			return FALSE;
 		}
@@ -338,7 +351,7 @@ class Zarafa_Bridge {
 	 * @return array
 	 */
 	public function vcardToMapiProperties($vcardData) {
-		$this->logger->trace("vcardToMapiProperties");
+		$this->logger->trace(__FUNCTION__);
 
 		$this->logger->debug("VCARD:\n" . $vcardData);
 		$vObject = Sabre_VObject_Reader::read($vcardData);
@@ -376,7 +389,7 @@ class Zarafa_Bridge {
 	{
 		$contactId = $contactProperties[PR_ENTRYID];
 
-		$this->logger->trace("getContactVCard(" . bin2hex($contactId) . ")");
+		$this->logger->trace(__FUNCTION__.'(' . bin2hex($contactId).')');
 	
 		$contact = mapi_msgstore_openentry($store, $contactId);
 		$p = $this->extendedProperties;
@@ -461,7 +474,7 @@ class Zarafa_Bridge {
 	 * Init properties to read contact data
 	 */
 	protected function initProperties() {
-		$this->logger->trace("initProperties");
+		$this->logger->trace(__FUNCTION__);
 		
 		$properties = array();
 		$properties["subject"] = PR_SUBJECT;
@@ -612,7 +625,7 @@ class Zarafa_Bridge {
 	 */
 	public function generateRandomGuid() {
 		
-		$this->logger->trace("generateRandomGuid");
+		$this->logger->trace(__FUNCTION__);
 		
 		/*
 		if (function_exists('uuid_create')) {
@@ -649,7 +662,7 @@ class Zarafa_Bridge {
 	 * @param contactPicture must be a valid jpeg file. If contactPicture is NULL will remove contact picture from contact if exists
 	 */
 	public function setContactPicture(&$contact, $contactPicture) {
-		$this->logger->trace("setContactPicture");
+		$this->logger->trace(__FUNCTION__);
 		
 		// Find if contact picture is already set
 		$contactAttachment = -1;
