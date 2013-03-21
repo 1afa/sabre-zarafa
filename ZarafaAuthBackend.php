@@ -40,7 +40,7 @@
 		
 		// Implements
 		protected function validateUserPass($username, $password) {
-			$this->logger->debug("validateUserPass($username," . md5($password) .  ")");
+			$this->logger->debug("validateUserPass($username, <password>)");
 			$connect = $this->bridge->connect($username, $password);
 			if (!$connect) {
 				$this->logger->warn("Connection failed for $username");

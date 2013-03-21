@@ -89,7 +89,7 @@ class Zarafa_Bridge {
 	public function
 	connect ($user, $password)
 	{
-		$this->logger->debug("connect($user," . md5($password) . ")");
+		$this->logger->debug("connect($user, <password>");
 
 		if (FALSE($this->session = mapi_logon_zarafa($user, $password, ZARAFA_SERVER))) {
 			$this->logger->debug(__FUNCTION__.': connection failed: '.get_mapi_error_name());
