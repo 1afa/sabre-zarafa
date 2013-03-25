@@ -169,10 +169,15 @@ class VCardProducer implements IVCardProducer {
 		} 
 		
 		// older syntax - may be needed by some clients so keep it!
-		$this->setVCard($vCard, 'X-MS-ASSISTANT',  $contactProperties, $p['assistant']);
-		$this->setVCard($vCard, 'X-MS-MANAGER',    $contactProperties, $p['manager_name']);
-		$this->setVCard($vCard, 'X-MS-SPOUSE',     $contactProperties, $p['spouse_name']);
-		
+		$map = array
+			( 'X-MS-ASSISTANT' => 'assistant'
+			, 'X-MS-MANAGER'   => 'manager_name'
+			, 'X-MS-SPOUSE'    => 'spouse_name'
+			);
+		foreach ($map as $prop_vcard => $prop_mapi) {
+			$this->setVCard($vCard, $prop_vcard, $contactProperties, $p[$prop_mapi]);
+		}
+
 		// Dates
 		if (isset($contactProperties[$p['birthday']]) && ($contactProperties[$p['birthday']] > 0))
 			$vCard->add('BDAY', date(DATE_PATTERN, $contactProperties[$p['birthday']]));
@@ -187,25 +192,34 @@ class VCardProducer implements IVCardProducer {
 		
 		// Telephone numbers
 		// webaccess can handle 19 telephone numbers...
-		$this->setVCard($vCard,'TEL;TYPE=HOME,VOICE', $contactProperties,$p['home_telephone_number']);
-		$this->setVCard($vCard,'TEL;TYPE=HOME,VOICE', $contactProperties,$p['home2_telephone_number']);
-		$this->setVCard($vCard,'TEL;TYPE=CELL',		  $contactProperties,$p['cellular_telephone_number']);
-		$this->setVCard($vCard,'TEL;TYPE=WORK,VOICE', $contactProperties,$p['office_telephone_number']);
-		$this->setVCard($vCard,'TEL;TYPE=WORK,VOICE', $contactProperties,$p['business2_telephone_number']);
-		$this->setVCard($vCard,'TEL;TYPE=WORK,FAX',   $contactProperties,$p['business_fax_number']);
-		$this->setVCard($vCard,'TEL;TYPE=HOME,FAX',   $contactProperties,$p['home_fax_number']);
-		$this->setVCard($vCard,'TEL;TYPE=PAGER',      $contactProperties,$p['pager_telephone_number']);
-		$this->setVCard($vCard,'TEL;TYPE=ISDN',       $contactProperties,$p['isdn_number']);
-		$this->setVCard($vCard,'TEL;TYPE=WORK',       $contactProperties,$p['company_telephone_number']);
-		$this->setVCard($vCard,'TEL;TYPE=CAR',        $contactProperties,$p['car_telephone_number']);
-		$this->setVCard($vCard,'TEL;TYPE=SECR',		  $contactProperties,$p['assistant_telephone_number']);
+		$map = array
+			( 'TEL;TYPE=HOME,VOICE' => 'home_telephone_number'
+			, 'TEL;TYPE=HOME,VOICE' => 'home2_telephone_number'
+			, 'TEL;TYPE=CELL'       => 'cellular_telephone_number'
+			, 'TEL;TYPE=WORK,VOICE' => 'office_telephone_number'
+			, 'TEL;TYPE=WORK,VOICE' => 'business2_telephone_number'
+			, 'TEL;TYPE=WORK,FAX'   => 'business_fax_number'
+			, 'TEL;TYPE=HOME,FAX'   => 'home_fax_number'
+			, 'TEL;TYPE=PAGER'      => 'pager_telephone_number'
+			, 'TEL;TYPE=ISDN'       => 'isdn_number'
+			, 'TEL;TYPE=WORK'       => 'company_telephone_number'
+			, 'TEL;TYPE=CAR'        => 'car_telephone_number'
+			, 'TEL;TYPE=SECR'       => 'assistant_telephone_number'
+			);
+		foreach ($map as $prop_vcard => $prop_mapi) {
+			$this->setVCard($vCard, $prop_vcard, $contactProperties, $p[$prop_mapi]);
+		}
 
 		// There are unmatched telephone numbers in zarafa, use them!
-		$unmatchedProperties = array("callback_telephone_number", "other_telephone_number", "primary_fax_number",
-									 "primary_telephone_number", "radio_telephone_number", "telex_telephone_number",
-									 "ttytdd_telephone_number"
-									);
-		
+		$unmatchedProperties = array
+			( 'callback_telephone_number'
+			, 'other_telephone_number'
+			, 'primary_fax_number'
+			, 'primary_telephone_number'
+			, 'radio_telephone_number'
+			, 'telex_telephone_number'
+			, 'ttytdd_telephone_number'
+			);
 		if (in_array(DEFAULT_TELEPHONE_NUMBER_PROPERTY, $unmatchedProperties)) {
 			// unmatched found a match!
 			$this->setVCard($vCard, 'TEL', $contactProperties, $p[DEFAULT_TELEPHONE_NUMBER_PROPERTY]);
@@ -222,9 +236,10 @@ class VCardProducer implements IVCardProducer {
 				$emailProperty = new Sabre_VObject_Property('EMAIL', $contactProperties[$p["email_address_$i"]]);
 				
 				// Get display name
-				$dn = isset($contactProperties[$p["email_address_display_name_$i"]]) ? $contactProperties[$p["email_address_display_name_$i"]]
-																					 : $contactProperties[$p['display_name']];
-				
+				$dn = isset($contactProperties[$p["email_address_display_name_$i"]])
+				          ? $contactProperties[$p["email_address_display_name_$i"]]
+				          : $contactProperties[$p['display_name']];
+
 				$emailProperty->offsetSet("X-CN", '"' . $dn . '"');
 				$vCard->add($emailProperty);
 			}
@@ -252,8 +267,19 @@ class VCardProducer implements IVCardProducer {
 		$photoMime = '';
 		if (isset($contactProperties[PR_HASATTACH]) && $contactProperties[PR_HASATTACH]) {
 			$attachmentTable = mapi_message_getattachmenttable($contact);
-			$attachments = mapi_table_queryallrows($attachmentTable, array(PR_ATTACH_NUM, PR_ATTACH_SIZE, PR_ATTACH_LONG_FILENAME, PR_ATTACH_FILENAME, PR_ATTACHMENT_HIDDEN, PR_DISPLAY_NAME, PR_ATTACH_METHOD, PR_ATTACH_CONTENT_ID, PR_ATTACH_MIME_TAG, PR_ATTACHMENT_CONTACTPHOTO, PR_EC_WA_ATTACHMENT_HIDDEN_OVERRIDE));
-			
+			$attachments = mapi_table_queryallrows($attachmentTable, array
+				( PR_ATTACH_NUM
+				, PR_ATTACH_SIZE
+				, PR_ATTACH_LONG_FILENAME
+				, PR_ATTACH_FILENAME
+				, PR_ATTACHMENT_HIDDEN
+				, PR_DISPLAY_NAME
+				, PR_ATTACH_METHOD
+				, PR_ATTACH_CONTENT_ID
+				, PR_ATTACH_MIME_TAG
+				, PR_ATTACHMENT_CONTACTPHOTO
+				, PR_EC_WA_ATTACHMENT_HIDDEN_OVERRIDE
+				));
 			$dump = print_r ($attachments, true);
 			$this->logger->trace("Contact attachments:\n$dump");
 			
