@@ -128,12 +128,18 @@ class Zarafa_Bridge {
 	}
 	
 	/**
-	 * Get root folder
-	 * @return root folder
+	 * Get private store
+	 * @return ZarafaStore|FALSE
 	 */
-	public function getRootFolder() {
-		$this->logger->trace("getRootFolder");
-		return $this->stores_private[0]->root_folder;	/* FIXME HACK */
+	public function
+	get_private_store()
+	{
+		// This function gets the *first* private store.
+		// What happens when the user has more than one?
+		$this->logger->trace('get_private_store');
+		return (isset($this->stores_private[0]))
+			? $this->stores_private[0]
+			: FALSE;
 	}
 	
 	/**

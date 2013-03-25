@@ -36,7 +36,6 @@ class Zarafa_Store
 	public $root_props;
 	public $folders = array();
 	public $is_unicode;
-	public $root_folder;
 
 	public function
 	__construct (&$bridge, $entryid, $handle)
@@ -47,7 +46,6 @@ class Zarafa_Store
 
 		$this->root = mapi_msgstore_openentry($this->handle, NULL);
 		$this->root_props = mapi_getprops($this->root, array(PR_IPM_CONTACT_ENTRYID));
-		$this->root_folder = mapi_msgstore_openentry($this->handle, NULL);
 
 		$this->is_unicode_store();
 		$this->get_folders();
@@ -113,6 +111,30 @@ class Zarafa_Store
 		return (isset($this->folders[$entryid]))
 			? $this->folders[$entryid]
 			: FALSE;
+	}
+
+	public function
+	create_folder ($properties)
+	{
+		// For now, create new folders in the root only:
+		if (FALSE($this->root)) {
+			return FALSE;
+		}
+		$displayname = isset($properties['{DAV:}displayname']) ? $properties['{DAV:}displayname'] : '';
+		$description = isset($properties['{' . Sabre_CardDAV_Plugin::NS_CARDDAV . '}addressbook-description']) ? $properties['{' . Sabre_CardDAV_Plugin::NS_CARDDAV . '}addressbook-description'] : '';
+
+		// FIXME: does this even work? According to the docs, mapi_folder_createfolder() returns a boolean...
+		if (FALSE($folder = mapi_folder_createfolder($this->root, $displayname, $description, MAPI_UNICODE | OPEN_IF_EXISTS, FOLDER_GENERIC))) {
+			return FALSE;
+		}
+		if (FALSE(mapi_setprops($folder, array(PR_CONTAINER_CLASS => 'IPF.Contact')))) {
+			return FALSE;
+		}
+		if (FALSE(mapi_savechanges($folder))) {
+			return FALSE;
+		}
+		// FIXME add folder to internal cache?
+		return TRUE;
 	}
 
 	public function

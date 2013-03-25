@@ -112,34 +112,30 @@ class Zarafa_CardDav_Backend extends Sabre_CardDAV_Backend_Abstract {
 		return TRUE;
 	}
 
-    /**
-     * Creates a new address book 
-     *
-     * @param string $principalUri 
-     * @param string $url Just the 'basename' of the url. 
-     * @param array $properties 
-     * @return void
-     */
-    public function createAddressBook($principalUri, $url, array $properties) {
-		$this->logger->info("createAddressBook($principalUri, $url)");
-		
-		if (READ_ONLY) {
-			$this->logger->warn("Cannot create address book: read-only");
-			return false;
-		}
-		
-		$rootFolder = $this->bridge->getRootFolder();
-		$displayName = isset($properties['{DAV:}displayname']) ? $properties['{DAV:}displayname'] : '';
-		$description = isset($properties['{' . Sabre_CardDAV_Plugin::NS_CARDDAV . '}addressbook-description']) ? $properties['{' . Sabre_CardDAV_Plugin::NS_CARDDAV . '}addressbook-description'] : '';
-		
-		$subFolder = mapi_folder_createfolder($rootFolder, $displayName, $description, MAPI_UNICODE | OPEN_IF_EXISTS, FOLDER_GENERIC);
-		mapi_setprops ($subFolder, array (907214878 => 'IPF.Contact'));
-		mapi_savechanges($subFolder);
+	/**
+	 * Creates a new address book
+	 *
+	 * @param string $principalUri
+	 * @param string $url Just the 'basename' of the url.
+	 * @param array $properties
+	 * @return bool
+	 */
+	public function
+	createAddressBook ($principalUri, $url, array $properties)
+	{
+		$this->logger->trace(__FUNCTION__."($principalUri, $url, (properties))");
 
-		if (mapi_last_hresult() > 0) {
-			$this->logger->fatal("Error saving changes to addressbook: " . get_mapi_error_name());
-			return false;
+		// FIXME: we don't actually do anything with the principal URI or the
+		// url; we just create a folder in the root of the user's private store.
+		if (READ_ONLY) {
+			$this->logger->warn(__FUNCTION__.': cannot create address book: read-only');
+			return FALSE;
 		}
+		if (FALSE($store = $this->bridge->get_private_store())) {
+			$this->logger->warn(__FUNCTION__.': could not find private store');
+			return FALSE;
+		}
+		return $store->create_folder($properties);
 	}
 
 	/**
