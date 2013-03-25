@@ -248,10 +248,9 @@ class VCardProducer implements IVCardProducer {
 		}
 
 		// Contact picture?
-		$hasattachProp = mapi_getprops($contact, array(PR_HASATTACH));
 		$photo = NULL;
 		$photoMime = '';
-		if (isset($hasattachProp[PR_HASATTACH])&& $hasattachProp[PR_HASATTACH]) {
+		if (isset($contactProperties[PR_HASATTACH]) && $contactProperties[PR_HASATTACH]) {
 			$attachmentTable = mapi_message_getattachmenttable($contact);
 			$attachments = mapi_table_queryallrows($attachmentTable, array(PR_ATTACH_NUM, PR_ATTACH_SIZE, PR_ATTACH_LONG_FILENAME, PR_ATTACH_FILENAME, PR_ATTACHMENT_HIDDEN, PR_DISPLAY_NAME, PR_ATTACH_METHOD, PR_ATTACH_CONTENT_ID, PR_ATTACH_MIME_TAG, PR_ATTACHMENT_CONTACTPHOTO, PR_EC_WA_ATTACHMENT_HIDDEN_OVERRIDE));
 			
