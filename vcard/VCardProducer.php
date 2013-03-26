@@ -263,53 +263,8 @@ class VCardProducer implements IVCardProducer {
 		}
 
 		// Contact picture?
-		$photo = NULL;
-		$photoMime = '';
-		if (isset($contactProperties[PR_HASATTACH]) && $contactProperties[PR_HASATTACH]) {
-			$attachmentTable = mapi_message_getattachmenttable($contact);
-			$attachments = mapi_table_queryallrows($attachmentTable, array
-				( PR_ATTACH_NUM
-				, PR_ATTACH_SIZE
-				, PR_ATTACH_LONG_FILENAME
-				, PR_ATTACH_FILENAME
-				, PR_ATTACHMENT_HIDDEN
-				, PR_DISPLAY_NAME
-				, PR_ATTACH_METHOD
-				, PR_ATTACH_CONTENT_ID
-				, PR_ATTACH_MIME_TAG
-				, PR_ATTACHMENT_CONTACTPHOTO
-				, PR_EC_WA_ATTACHMENT_HIDDEN_OVERRIDE
-				));
-			$dump = print_r ($attachments, true);
-			$this->logger->trace("Contact attachments:\n$dump");
-			
-			foreach ($attachments as $attachmentRow) {
-				if (isset($attachmentRow[PR_ATTACHMENT_CONTACTPHOTO]) && $attachmentRow[PR_ATTACHMENT_CONTACTPHOTO]) {
-					$attach = mapi_message_openattach($contact, $attachmentRow[PR_ATTACH_NUM]);
-					$photo = mapi_attach_openbin($attach,PR_ATTACH_DATA_BIN);
-					if (isset($attachmentRow[PR_ATTACH_MIME_TAG])) {
-						$photoMime = $attachmentRow[PR_ATTACH_MIME_TAG];
-					} else {
-						$photoMime = 'image/jpeg';
-					}
-					break;
-				}
-			}
-		}
-		if ($photo != NULL) {
-			// SogoConnector does not like image/jpeg
-			if ($photoMime == 'image/jpeg') {
-				$photoMime = 'JPEG';
-			}
-		
-			$this->logger->trace("Adding contact picture to VCard");
-			$photoEncoded = base64_encode($photo);
-			$photoProperty = new Sabre_VObject_Property('PHOTO',$photoEncoded);
-			$photoProperty->offsetSet('TYPE', $photoMime);
-			$photoProperty->offsetSet('ENCODING','b');
-			$vCard->add($photoProperty);
-		}
-		
+		$this->get_contact_picture($vCard, $contact, $contactProperties);
+
 		// Misc
 		if (!isset($contactProperties[PR_CARDDAV_URI])) {
 			// Create an URI from the EntryID:
@@ -320,7 +275,55 @@ class VCardProducer implements IVCardProducer {
 		$vCard->add('PRODID', VCARD_PRODUCT_ID);
 		$vCard->add('REV', date('c',$contactProperties[$p['last_modification_time']]));
 	}
-	
+
+	private function
+	get_contact_picture (&$vCard, $contact, $props)
+	{
+		if (!isset($props[PR_HASATTACH]) || !$props[PR_HASATTACH]) {
+			return;
+		}
+		if (FALSE($attachment_table = mapi_message_getattachmenttable($contact))
+		 || FALSE($attachments = mapi_table_queryallrows($attachment_table, array
+			( PR_ATTACH_NUM
+			, PR_ATTACH_SIZE
+			, PR_ATTACH_LONG_FILENAME
+			, PR_ATTACH_FILENAME
+			, PR_ATTACHMENT_HIDDEN
+			, PR_DISPLAY_NAME
+			, PR_ATTACH_METHOD
+			, PR_ATTACH_CONTENT_ID
+			, PR_ATTACH_MIME_TAG
+			, PR_ATTACHMENT_CONTACTPHOTO
+			, PR_EC_WA_ATTACHMENT_HIDDEN_OVERRIDE
+			)))) {
+			return;
+		}
+		$photo = FALSE;
+		foreach ($attachments as $attachment) {
+			if (!isset($attachment[PR_ATTACHMENT_CONTACTPHOTO]) || !$attachment[PR_ATTACHMENT_CONTACTPHOTO]) {
+				continue;
+			}
+			if (FALSE($handle = mapi_message_openattach($contact, $attachment[PR_ATTACH_NUM]))
+			 || FALSE($photo = mapi_attach_openbin($handle, PR_ATTACH_DATA_BIN))) {
+				continue;
+			}
+			$mime = (isset($attachment[PR_ATTACH_MIME_TAG])) ? $attachment[PR_ATTACH_MIME_TAG] : 'image/jpeg';
+			break;
+		}
+		if (FALSE($photo)) {
+			return;
+		}
+		// SogoConnector does not like image/jpeg
+		if ($mime == 'image/jpeg') {
+			$mime = 'JPEG';
+		}
+		$this->logger->trace("Adding contact picture to VCard");
+		$photoProperty = new Sabre_VObject_Property('PHOTO', base64_encode($photo));
+		$photoProperty->offsetSet('TYPE', $mime);
+		$photoProperty->offsetSet('ENCODING', 'b');
+		$vCard->add($photoProperty);
+	}
+
 	/**
 	 * Helper function to set a vObject property
 	 */
