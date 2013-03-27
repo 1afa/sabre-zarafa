@@ -89,16 +89,16 @@ class Zarafa_Bridge {
 	public function
 	connect ($user, $password)
 	{
-		$this->logger->debug(__FUNCTION__."($user, <password>");
+		$this->logger->trace(__FUNCTION__."($user, <password>)");
 
 		if (FALSE($this->session = mapi_logon_zarafa($user, $password, ZARAFA_SERVER))) {
 			$this->logger->debug(__FUNCTION__.': connection failed: '.get_mapi_error_name());
 			return FALSE;
 		}
-		$this->logger->trace(__FUNCTION__.': connected to zarafa server - init bridge');
+		$this->logger->debug(__FUNCTION__.': connected to zarafa server - init bridge');
 
 		if (FALSE($this->stores_table = mapi_getmsgstorestable($this->session))) {
-			$this->logger->warn(__FUNCTION__.': could not get messagestore table');
+			$this->logger->fatal(__FUNCTION__.': could not get messagestore table');
 			return FALSE;
 		}
 		if (FALSE($this->stores_get_private())) {
@@ -170,7 +170,7 @@ class Zarafa_Bridge {
 		if (FALSE($userinfo)) {
 			$userinfo = $this->stores_private[0]->getuser_by_name($this->connectedUser);
 		}
-		$this->logger->debug("User email address: " . $userinfo["emailaddress"]);
+		$this->logger->debug("User email address: {$userinfo['emailaddress']}");
 		return $userinfo['emailaddress'];
 	}
 	
@@ -361,7 +361,7 @@ class Zarafa_Bridge {
 		$majorVersion = substr($version, 0, 1);
 		
 		$objectClass = "VCardParser$majorVersion";
-		$this->logger->debug("Using $objectClass to parse vcard data");
+		$this->logger->trace("Using $objectClass to parse vcard data");
 		$parser = new $objectClass($this);
 		
 		$properties = array();
@@ -441,12 +441,12 @@ class Zarafa_Bridge {
 		$targetCharset = (VCARD_CHARSET == '') ? $producer->getDefaultCharset() : VCARD_CHARSET;
 		
 		if ($targetCharset != 'utf-8') {
-			$this->logger->debug("Converting from UTF-8 to $targetCharset");
+			$this->logger->trace("Converting from UTF-8 to $targetCharset");
 			$vCardData = iconv("UTF-8", $targetCharset, $vCardData);
 		}
 		
 		if (SAVE_RAW_VCARD) {
-			$this->logger->debug("Saving vcard to contact properties");
+			$this->logger->trace("Saving vcard to contact properties");
 			// Check if raw vCard is up-to-date
 			mapi_setprops($contact, array(
 					PR_CARDDAV_RAW_DATA => $vCardData,
@@ -455,13 +455,12 @@ class Zarafa_Bridge {
 			));
 
 			if (mapi_last_hresult() > 0) {
-				$this->logger->warn("Error setting contact properties: " . get_mapi_error_name());
-			} 
-
+				$this->logger->error("Error setting contact properties: " . get_mapi_error_name());
+			}
 			mapi_savechanges($contact);
 			
 			if (mapi_last_hresult() > 0) {
-				$this->logger->warn("Error saving vcard to contact: " . get_mapi_error_name());
+				$this->logger->error("Error saving vcard to contact: " . get_mapi_error_name());
 			} else {
 				$this->logger->trace("VCard successfully added to contact properties");
 			}
@@ -721,7 +720,7 @@ class Zarafa_Bridge {
 			
 		// Test
 		if (mapi_last_hresult() > 0) {
-			$this->logger->warn("Error saving contact picture: " . get_mapi_error_name());
+			$this->logger->error("Error saving contact picture: " . get_mapi_error_name());
 		} else {
 			$this->logger->trace("contact picture done");
 		}
