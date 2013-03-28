@@ -44,7 +44,7 @@ writable. If your server runs as the user `apache`:
     # chown apache:apache /var/www/htdocs/sabre-zarafa/debug.txt
     # chmod 0640 /var/www/htdocs/sabre-zarafa/debug.txt
 
-### Web server config
+### Sabre-Zarafa configuration
 
 Sabre-Zarafa needs additional configuration in `config.inc.php`. You must set
 `CARDDAV_ROOT_URI` to the proper value. This is the path from the root of the
@@ -60,21 +60,21 @@ vcards for instance) and should be used only for testing.
 If you prefer to only use read operations and not make any edits to the
 database, set `READ_ONLY` to `true`.
 
-#### Running in the root of the webserver
+### Running from the root of the webserver
 
 According to the SabreDAV documentation, you get the least issues if you run
-the service straight from the root of the webserver. Your URLs will look like:
-
-    http://example.com/addressbooks/username/foldername
-
-You can run this on port 80, but for CardDAV, it makes some sense to use port
-8008, since that's what OSX Addressbook uses by default. To configure Apache to
-listen to port 8008 and use a virtual host to serve Sabre-Zarafa, put something
-like the following configuration in `httpd.conf`:
+the service straight from the root of the webserver. You can run it on port 80,
+but for CardDAV, it makes some sense to use port 8008, since that's what OSX
+Addressbook uses by default. To configure Apache to listen to port 8008 and use
+a virtual host to serve Sabre-Zarafa, put something like the following
+configuration in `httpd.conf`:
 
     Listen 8008
 
     <VirtualHost *:8008>
+
+        # ...general server options, enable PHP parsing, etc...
+
         DocumentRoot /var/www/htdocs/sabre-zarafa
         <Directory /var/www/htdocs/sabre-zarafa>
             DirectoryIndex server.php
@@ -82,12 +82,11 @@ like the following configuration in `httpd.conf`:
             RewriteBase /
 
             # If the request does not reference an actual plain file or
-            # directory (such as server.php or images/stylesheets), interpret
-            # it as a "virtual path" and pass it to server.php:
+            # directory (such as server.php), interpret it as a "virtual path"
+            # and pass it to server.php:
             RewriteCond %{REQUEST_FILENAME} !-f
             RewriteCond %{REQUEST_FILENAME} !-d
             RewriteRule ^.*$ /server.php
-
         </Directory>
 
         # Files and directories writable by the server should never be public:
@@ -101,23 +100,22 @@ like the following configuration in `httpd.conf`:
 
 Don't forget to edit `config.inc.php` and change `CARDDAV_ROOT_URI` to `/`.
 
-#### Running in a subdirectory
+### Running from a subdirectory
 
 You can also run Sabre-Zarafa in a subdirectory of your webserver. In that
-case, you can use a variant of this configuration:
+case, use a variant of this configuration:
 
     <Directory /var/www/htdocs/sabre-zarafa>
         DirectoryIndex server.php
         RewriteEngine On
         RewriteBase /sabre-zarafa
 
-        # If the request does not reference an actual plain file or
-        # directory (such as server.php or images/stylesheets), interpret
-        # it as a "virtual path" and pass it to server.php:
+        # If the request does not reference an actual plain file or directory
+        # (such as server.php), interpret it as a "virtual path" and pass it to
+        # server.php:
         RewriteCond %{REQUEST_FILENAME} !-f
         RewriteCond %{REQUEST_FILENAME} !-d
         RewriteRule ^.*$ /sabre-zarafa/server.php
-
     </Directory>
 
     # Files and directories writable by the server should never be public:
