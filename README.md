@@ -4,6 +4,18 @@ The aim of this project is to provide a full CardDav backend for
 [SabreDAV](http://code.google.com/p/sabredav) to connect with
 [Zarafa](http://www.zarafa.com) groupware.
 
+Sabre-Zarafa is a backend for the SabreDAV server. SabreDAV is a generic DAV
+server that processes CardDAV, CalDAV and WebDAV requests. It handles all the
+intricate parts of the DAV protocols and client communication, but doesn't know
+anything about databases or stores. It defers the responsibility for providing
+abstract objects like "cards" and "address books" to backend software like
+Sabre-Zarafa, which is free to implement retrieval and storage however it
+likes.
+
+Sabre-Zarafa knows nothing about DAV, but does know how to get data from the
+Zarafa server and convert it to VCard format. Together, the SabreDAV frontend
+and the Sabre-Zarafa backend combine to form a Zarafa-based CardDAV server.
+
 ## License
 
 Sabre-Zarafa is licensed under the terms of the [GNU Affero General Public
@@ -14,36 +26,116 @@ License, version 3](http://www.gnu.org/licenses/agpl-3.0.html).
 ### Introduction
 
 This installs as any [SabreDAV](http://code.google.com/p/sabredav) server.
+Unpack the source into a directory. This manual will assume
+`/var/www/htdocs/sabre-zarafa` as the root.
 
-### Details
-
-Copy the provided source to your webserver.
 [SabreDAV](http://code.google.com/p/sabredav) is already included in the
-project source so you do not need to get it separately.
+project source so you do not need to get it separately. Currently, Sabre-Zarafa
+is written for the SabreDAV 1.6.x API. You can swap out the included version of
+SabreDAV with a newer one from the 1.6 series by simply copying the relevant
+bits of the SabreDAV package over the included parts in `/lib`.
 
-__Warning__: the `data` directory needs to be writable by the web server. This
-directory is used to store locks needed by DAV protocol. The file `debug.txt`
-must also be writable by webserver processes.
+The webserver needs to write to the `data` directory, since it is used by
+SabreDAV to store DAV locks. The log file, called `debug.txt`, should also be
+writable. If your server runs as the user `apache`:
 
-Edit `config.php` to setup your domain name. This should work without setting
-it but it is better for SabreDAV to work. You can also adjust other settings,
-some are highly experimental (non-UTF8 vcards for instance) and should be used
-only for testing.
+    # chown apache:apache /var/www/htdocs/sabre-zarafa/data
+    # chmod 0750 /var/www/htdocs/sabre-zarafa/data
+    # chown apache:apache /var/www/htdocs/sabre-zarafa/debug.txt
+    # chmod 0640 /var/www/htdocs/sabre-zarafa/debug.txt
 
-You then need to redirect all requets to `server.php`. To do this you can use
-`mod_rewrite`:
+### Web server config
 
-    <Directory /var/www/mail.host/sabre-zarafa>
+Sabre-Zarafa needs additional configuration in `config.inc.php`. You must set
+`CARDDAV_ROOT_URI` to the proper value. This is the path from the root of the
+webserver to Sabre-Zarafa. If Sabre-Zarafa is installed in the webserver root,
+then use `/`. If Sabre-Zarafa is installed in `/var/www/htdocs/sabre-zarafa`
+and `/var/www/htdocs` is the server root, then put `/sabre-zarafa`. If you're
+not using `mod_redirect` to redirect requests to `server.php`, use
+`/sabre-zarafa/server.php`.
+
+You can also adjust other settings, some are highly experimental (non-UTF8
+vcards for instance) and should be used only for testing.
+
+If you prefer to only use read operations and not make any edits to the
+database, set `READ_ONLY` to `true`.
+
+#### Running in the root of the webserver
+
+According to the SabreDAV documentation, you get the least issues if you run
+the service straight from the root of the webserver. Your URLs will look like:
+
+    http://example.com/addressbooks/username/foldername
+
+You can run this on port 80, but for CardDAV, it makes some sense to use port
+8008, since that's what OSX Addressbook uses by default. To configure Apache to
+listen to port 8008 and use a virtual host to serve Sabre-Zarafa, put something
+like the following configuration in `httpd.conf`:
+
+    Listen 8008
+
+    <VirtualHost *:8008>
+        DocumentRoot /var/www/htdocs/sabre-zarafa
+        <Directory /var/www/htdocs/sabre-zarafa>
+            DirectoryIndex server.php
+            RewriteEngine On
+            RewriteBase /
+
+            # If the request does not reference an actual plain file or
+            # directory (such as server.php or images/stylesheets), interpret
+            # it as a "virtual path" and pass it to server.php:
+            RewriteCond %{REQUEST_FILENAME} !-f
+            RewriteCond %{REQUEST_FILENAME} !-d
+            RewriteRule ^.*$ /server.php
+
+        </Directory>
+
+        # Files and directories writable by the server should never be public:
+        <Directory /var/www/htdocs/sabre-zarafa/data>
+            Deny from all
+        </Directory>
+        <Files /var/www/htdocs/sabre-zarafa/debug.txt>
+            Deny from all
+        </Files>
+    </VirtualHost>
+
+Don't forget to edit `config.inc.php` and change `CARDDAV_ROOT_URI` to `/`.
+
+#### Running in a subdirectory
+
+You can also run Sabre-Zarafa in a subdirectory of your webserver. In that
+case, you can use a variant of this configuration:
+
+    <Directory /var/www/htdocs/sabre-zarafa>
         DirectoryIndex server.php
         RewriteEngine On
         RewriteBase /sabre-zarafa
+
+        # If the request does not reference an actual plain file or
+        # directory (such as server.php or images/stylesheets), interpret
+        # it as a "virtual path" and pass it to server.php:
         RewriteCond %{REQUEST_FILENAME} !-f
         RewriteCond %{REQUEST_FILENAME} !-d
         RewriteRule ^.*$ /sabre-zarafa/server.php
+
     </Directory>
 
-Please note that the authentification backend use Basic auth. Some clients will
-only work with Basic auth if the host uses SSL.
+    # Files and directories writable by the server should never be public:
+    <Directory /var/www/htdocs/sabre-zarafa/data>
+        Deny from all
+    </Directory>
+    <Files /var/www/htdocs/sabre-zarafa/debug.txt>
+        Deny from all
+    </Files>
+
+Edit `config.inc.php` and change `CARDDAV_ROOT_URI` to `/sabre-zarafa`.
+
+### Authentication
+
+Please note that the authentification backend uses Basic auth. Some clients
+will only work with Basic auth if the host uses SSL. It is not possible to use
+Digest authentication, because Sabre-Zarafa needs the plaintext password to log
+in to the Zarafa server.
 
 Some detailed information about SabreDAV setup are available in [SabreDAV
 documentation](http://code.google.com/p/sabredav/wiki/Introduction). Do not
