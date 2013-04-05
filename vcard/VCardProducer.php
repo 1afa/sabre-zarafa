@@ -179,14 +179,15 @@ class VCardProducer implements IVCardProducer {
 		}
 
 		// Dates
-		if (isset($contactProperties[$p['birthday']]) && ($contactProperties[$p['birthday']] > 0))
+		if (isset($contactProperties[$p['birthday']])) {
 			$vCard->add('BDAY', date(DATE_PATTERN, $contactProperties[$p['birthday']]));
-		
-		if (isset($contactProperties[$p['wedding_anniversary']]) && ($contactProperties[$p['wedding_anniversary']] > 0)) {
+		}
+		if (isset($contactProperties[$p['wedding_anniversary']])) {
 			if ($this->version >= 4) {
 				$vCard->add('ANNIVERSARY', date(DATE_PATTERN, $contactProperties[$p['wedding_anniversary']]));
-			} else {
-				$vCard->add('X-ANNIVERSARY', 		   date(DATE_PATTERN, $contactProperties[$p['wedding_anniversary']]));
+			}
+			else {
+				$vCard->add('X-ANNIVERSARY', date(DATE_PATTERN, $contactProperties[$p['wedding_anniversary']]));
 			}
 		}
 		
