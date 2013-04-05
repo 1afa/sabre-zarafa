@@ -81,6 +81,7 @@ class VCardParser implements IVCardParser {
 			$properties[$p['profession']] = NULL;
 			$properties[$p['office_location']] = NULL;
 			$properties[$p['company_name']] = NULL;
+			$properties[$p['department_name']] = NULL;
 			$properties[$p['birthday']] = NULL;
 			$properties[$p['wedding_anniversary']] = NULL;
 			$properties[$p['home_telephone_number']] = NULL;
@@ -136,7 +137,7 @@ class VCardParser implements IVCardParser {
 		$sortAs = '';
 		if (isset($vcard->n)) {
 			$this->logger->trace("N: " . $vcard->n);
-			$nameInfo = VCardParser::splitCompundProperty($vcard->n->value);
+			$nameInfo = VCardParser::splitCompoundProperty($vcard->n->value);
 			$dump = print_r($nameInfo, true);
 			$this->logger->trace("Name info\n$dump");
 			
@@ -169,8 +170,9 @@ class VCardParser implements IVCardParser {
 		if (isset($vcard->role))			$properties[$p['profession']] = $vcard->role->value;
 		if (isset($vcard->office))			$properties[$p['office_location']] = $vcard->office->value;
 		if (isset($vcard->org)) {
-			$orgInfo = VCardParser::splitCompundProperty($vcard->org->value);
-			$properties[$p['company_name']] = $orgInfo[0];
+			$orgInfo = VCardParser::splitCompoundProperty($vcard->org->value);
+			if (isset($orgInfo[0])) $properties[$p['company_name']] = $orgInfo[0];
+			if (isset($orgInfo[1])) $properties[$p['department_name']] = $orgInfo[1];
 		}
 
 		if (isset($vcard->fn)) {
@@ -321,7 +323,7 @@ class VCardParser implements IVCardParser {
 					continue 2;
 			}
 			
-			$addressComponents = VCardParser::splitCompundProperty($address->value);
+			$addressComponents = VCardParser::splitCompoundProperty($address->value);
 
 			$dump = print_r($addressComponents, true);
 			$this->logger->trace("Address components:\n$dump");
@@ -484,7 +486,7 @@ class VCardParser implements IVCardParser {
 	 * @param $propertyValue
 	 * @return array
 	 */
-	public static function splitCompundProperty($propertyValue) {
+	public static function splitCompoundProperty($propertyValue) {
 		// Do not split \;
 		return preg_split("/(?!\\\\);/", $propertyValue);
 	}

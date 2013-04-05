@@ -126,17 +126,24 @@ class VCardProducer implements IVCardProducer {
 		$contactInfos[] = isset($contactProperties[$p['middle_name']])         ? $contactProperties[$p['middle_name']] : '';
 		$contactInfos[] = isset($contactProperties[$p['display_name_prefix']]) ? $contactProperties[$p['display_name_prefix']] : '';
 		$contactInfos[] = isset($contactProperties[$p['generation']])          ? $contactProperties[$p['generation']] : '';
-		
+
 		$element = new Sabre_VObject_Property("N");
 		$element->setValue(implode(';', $contactInfos));
 		// $element->offsetSet("SORT-AS", '"' . $contactProperties[$p['fileas']] . '"');
 		$vCard->add($element);
-		
+
+		// Add ORG:<company>;<department>
+		$orgdata = array();
+		$orgdata[] = (isset($contactProperties[$p['company_name']])) ? $contactProperties[$p['company_name']] : '';
+		$orgdata[] = (isset($contactProperties[$p['department_name']])) ? $contactProperties[$p['department_name']] : '';
+		$element = new Sabre_VObject_Property('ORG');
+		$element->setValue(implode(';', $orgdata));
+		$vCard->add($element);
+
 		$this->setVCard($vCard, 'SORT-AS',         $contactProperties, $p['fileas']);
 		$this->setVCard($vCard, 'NICKNAME',        $contactProperties, $p['nickname']);
 		$this->setVCard($vCard, 'TITLE',           $contactProperties, $p['title']);
 		$this->setVCard($vCard, 'ROLE',            $contactProperties, $p['profession']);
-		$this->setVCard($vCard, 'ORG',             $contactProperties, $p['company_name']);
 		$this->setVCard($vCard, 'OFFICE',          $contactProperties, $p['office_location']);
 
 		if ($this->version >= 4) {
