@@ -343,7 +343,7 @@ class VCardProducer implements IVCardProducer {
 		$p = $this->bridge->getExtendedProperties();
 		
 		$address = array();
-		if (isset($contactProperties[$p[$propertyPrefix ."_address"]])) {
+		if (isset($p["{$propertyPrefix}_address"])) {
 			$address[] = '';	// post office box
 			$address[] = '';	// extended address
 			$address[] = isset($contactProperties[$p[$propertyPrefix . '_address_street']])      ? $contactProperties[$p[$propertyPrefix . '_address_street']] : '';
