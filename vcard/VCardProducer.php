@@ -83,7 +83,7 @@ class VCardProducer implements IVCardProducer {
 		$contactProperties =  mapi_getprops($contact); // $this->bridge->getProperties($contactId);
 		
 		$dump = print_r($contactProperties, true);
-		$this->logger->trace("Contact properties:\n$contactProperties");
+		$this->logger->trace("Contact properties:\n$dump");
 		
 		// Version check
 		switch ($this->version) {
