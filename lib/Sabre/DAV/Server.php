@@ -139,6 +139,15 @@ class Sabre_DAV_Server {
         'Sabre_DAV_ICollection' => '{DAV:}collection',
     );
 
+    /**
+     * If this setting is turned off, SabreDAV's version number will be hidden
+     * from various places.
+     *
+     * Some people feel this is a good security measure.
+     *
+     * @var bool
+     */
+    static public $exposeVersion = true;
 
     /**
      * Sets up the server
@@ -205,16 +214,24 @@ class Sabre_DAV_Server {
             $error->setAttribute('xmlns:s',self::NS_SABREDAV);
             $DOM->appendChild($error);
 
-            $error->appendChild($DOM->createElement('s:exception',get_class($e)));
-            $error->appendChild($DOM->createElement('s:message',$e->getMessage()));
+            $h = function($v) {
+
+                return htmlspecialchars($v, ENT_NOQUOTES, 'UTF-8');
+
+            };
+
+            $error->appendChild($DOM->createElement('s:exception',$h(get_class($e))));
+            $error->appendChild($DOM->createElement('s:message',$h($e->getMessage())));
             if ($this->debugExceptions) {
-                $error->appendChild($DOM->createElement('s:file',$e->getFile()));
-                $error->appendChild($DOM->createElement('s:line',$e->getLine()));
-                $error->appendChild($DOM->createElement('s:code',$e->getCode()));
-                $error->appendChild($DOM->createElement('s:stacktrace',$e->getTraceAsString()));
+                $error->appendChild($DOM->createElement('s:file',$h($e->getFile())));
+                $error->appendChild($DOM->createElement('s:line',$h($e->getLine())));
+                $error->appendChild($DOM->createElement('s:code',$h($e->getCode())));
+                $error->appendChild($DOM->createElement('s:stacktrace',$h($e->getTraceAsString())));
 
             }
-            $error->appendChild($DOM->createElement('s:sabredav-version',Sabre_DAV_Version::VERSION));
+            if (self::$exposeVersion) {
+                $error->appendChild($DOM->createElement('s:sabredav-version',$h(Sabre_DAV_Version::VERSION)));
+            }
 
             if($e instanceof Sabre_DAV_Exception) {
 
@@ -357,7 +374,6 @@ class Sabre_DAV_Server {
     }
 
 
-
     /**
      * Subscribe to an event.
      *
@@ -476,7 +492,9 @@ class Sabre_DAV_Server {
         $this->httpResponse->setHeader('DAV',implode(', ',$features));
         $this->httpResponse->setHeader('MS-Author-Via','DAV');
         $this->httpResponse->setHeader('Accept-Ranges','bytes');
-        $this->httpResponse->setHeader('X-Sabre-Version',Sabre_DAV_Version::VERSION);
+        if (self::$exposeVersion) {
+            $this->httpResponse->setHeader('X-Sabre-Version',Sabre_DAV_Version::VERSION);
+        }
         $this->httpResponse->setHeader('Content-Length',0);
         $this->httpResponse->sendStatus(200);
 
@@ -1772,7 +1790,14 @@ class Sabre_DAV_Server {
                     $etag = $node->getETag();
                     if ($etag===$ifMatchItem) {
                         $haveMatch = true;
+                    } else {
+                        // Evolution has a bug where it sometimes prepends the "
+                        // with a \. This is our workaround.
+                        if (str_replace('\\"','"', $ifMatchItem) === $etag) {
+                            $haveMatch = true;
+                        }
                     }
+
                 }
                 if (!$haveMatch) {
                      throw new Sabre_DAV_Exception_PreconditionFailed('An If-Match header was specified, but none of the specified the ETags matched.','If-Match');

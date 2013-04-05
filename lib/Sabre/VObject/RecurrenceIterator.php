@@ -300,7 +300,8 @@ class Sabre_VObject_RecurrenceIterator implements Iterator {
      * You should pass a VCALENDAR component, as well as the UID of the event
      * we're going to traverse.
      *
-     * @param Sabre_VObject_Component $comp
+     * @param Sabre_VObject_Component $vcal
+     * @param string|null $uid
      */
     public function __construct(Sabre_VObject_Component $vcal, $uid=null) {
 
@@ -336,6 +337,8 @@ class Sabre_VObject_RecurrenceIterator implements Iterator {
             $this->endDate = clone $this->startDate;
             if (isset($this->baseEvent->DURATION)) {
                 $this->endDate->add(Sabre_VObject_DateTimeParser::parse($this->baseEvent->DURATION->value));
+            } elseif ($this->baseEvent->DTSTART->getDateType()===Sabre_VObject_Property_DateTime::DATE) {
+                $this->endDate->modify('+1 day');
             }
         }
         $this->currentDate = clone $this->startDate;
@@ -495,7 +498,7 @@ class Sabre_VObject_RecurrenceIterator implements Iterator {
         unset($event->RDATE);
         unset($event->EXRULE);
 
-        $event->DTSTART->setDateTime($this->currentDate, $event->DTSTART->getDateType());
+        $event->DTSTART->setDateTime($this->getDTStart(), $event->DTSTART->getDateType());
         if (isset($event->DTEND)) {
             $event->DTEND->setDateTime($this->getDtEnd(), $event->DTSTART->getDateType());
         }
@@ -560,7 +563,7 @@ class Sabre_VObject_RecurrenceIterator implements Iterator {
      */
     public function fastForward(DateTime $dt) {
 
-        while($this->valid() && $this->getDTEnd() < $dt) {
+        while($this->valid() && $this->getDTEnd() <= $dt) {
             $this->next();
         }
 
@@ -631,7 +634,7 @@ class Sabre_VObject_RecurrenceIterator implements Iterator {
 
             // Checking overriden events
             foreach($this->overriddenEvents as $index=>$event) {
-                if ($index > $previousStamp && $index < $currentStamp) {
+                if ($index > $previousStamp && $index <= $currentStamp) {
 
                     // We're moving the 'next date' aside, for later use.
                     $this->nextDate = clone $this->currentDate;
@@ -719,6 +722,12 @@ class Sabre_VObject_RecurrenceIterator implements Iterator {
         // First day of the week:
         $firstDay = $this->dayMap[$this->weekStart];
 
+        $time = array(
+            $this->currentDate->format('H'),
+            $this->currentDate->format('i'),
+            $this->currentDate->format('s')
+        );
+
         // Increasing the 'current day' until we find our next
         // occurrence.
         while(true) {
@@ -737,12 +746,14 @@ class Sabre_VObject_RecurrenceIterator implements Iterator {
                 // are not already on this first day of this week.
                 if($this->currentDate->format('w') != $firstDay) {
                     $this->currentDate->modify('last ' . $this->dayNames[$this->dayMap[$this->weekStart]]);
+                    $this->currentDate->setTime($time[0],$time[1],$time[2]);
                 }
             }
 
             // We have a match
             if (in_array($currentDay ,$recurrenceDays)) {
                 $this->currentDate->modify($this->dayNames[$currentDay]);
+                $this->currentDate->setTime($time[0],$time[1],$time[2]);
                 break;
             }
 
@@ -814,9 +825,40 @@ class Sabre_VObject_RecurrenceIterator implements Iterator {
      */
     protected function nextYearly() {
 
+        $currentMonth = $this->currentDate->format('n');
+        $currentYear = $this->currentDate->format('Y');
+        $currentDayOfMonth = $this->currentDate->format('j');
+
+        // No sub-rules, so we just advance by year
         if (!$this->byMonth) {
+
+            // Unless it was a leap day!
+            if ($currentMonth==2 && $currentDayOfMonth==29) {
+
+                $counter = 0;
+                do {
+                    $counter++;
+                    // Here we increase the year count by the interval, until
+                    // we hit a date that's also in a leap year.
+                    //
+                    // We could just find the next interval that's dividable by
+                    // 4, but that would ignore the rule that there's no leap
+                    // year every year that's dividable by a 100, but not by
+                    // 400. (1800, 1900, 2100). So we just rely on the datetime
+                    // functions instead.
+                    $nextDate = clone $this->currentDate;
+                    $nextDate->modify('+ ' . ($this->interval*$counter) . ' years');
+                } while ($nextDate->format('n')!=2);
+                $this->currentDate = $nextDate;
+
+                return;
+
+            }
+
+            // The easiest form
             $this->currentDate->modify('+' . $this->interval . ' years');
             return;
+
         }
 
         $currentMonth = $this->currentDate->format('n');
@@ -868,8 +910,8 @@ class Sabre_VObject_RecurrenceIterator implements Iterator {
 
         } else {
 
-            // no byDay or byMonthDay, so we can just loop through the
-            // months.
+            // These are the 'byMonth' rules, if there are no byDay or
+            // byMonthDay sub-rules.
             do {
 
                 $currentMonth++;
@@ -879,6 +921,7 @@ class Sabre_VObject_RecurrenceIterator implements Iterator {
                 }
             } while (!in_array($currentMonth, $this->byMonth));
             $this->currentDate->setDate($currentYear, $currentMonth, $currentDayOfMonth);
+
             return;
 
         }
@@ -925,7 +968,11 @@ class Sabre_VObject_RecurrenceIterator implements Iterator {
                 $offset = (int)substr($day,0,-2);
 
                 if ($offset>0) {
-                    $byDayResults[] = $dayHits[$offset-1];
+                    // It is possible that the day does not exist, such as a
+                    // 5th or 6th wednesday of the month.
+                    if (isset($dayHits[$offset-1])) {
+                        $byDayResults[] = $dayHits[$offset-1];
+                    }
                 } else {
 
                     // if it was negative we count from the end of the array

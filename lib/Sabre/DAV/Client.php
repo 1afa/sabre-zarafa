@@ -11,17 +11,59 @@
  * @package Sabre
  * @subpackage DAVClient
  * @copyright Copyright (C) 2007-2012 Rooftop Solutions. All rights reserved.
- * @author Evert Pot (http://www.rooftopsolutions.nl/) 
+ * @author Evert Pot (http://www.rooftopsolutions.nl/)
  * @license http://code.google.com/p/sabredav/wiki/License Modified BSD License
  */
 class Sabre_DAV_Client {
 
+    /**
+     * The propertyMap is a key-value array.
+     *
+     * If you use the propertyMap, any {DAV:}multistatus responses with the
+     * properties listed in this array, will automatically be mapped to a
+     * respective class.
+     *
+     * The {DAV:}resourcetype property is automatically added. This maps to
+     * Sabre\DAV\Property\ResourceType
+     *
+     * @var array
+     */
     public $propertyMap = array();
 
     protected $baseUri;
     protected $userName;
     protected $password;
     protected $proxy;
+    protected $trustedCertificates;
+
+    /**
+     * Basic authentication
+     */
+    const AUTH_BASIC = 1;
+
+    /**
+     * Digest authentication
+     */
+    const AUTH_DIGEST = 2;
+
+    /**
+     * The authentication type we're using.
+     *
+     * This is a bitmask of AUTH_BASIC and AUTH_DIGEST.
+     *
+     * If DIGEST is used, the client makes 1 extra request per request, to get
+     * the authentication tokens.
+     *
+     * @var int
+     */
+    protected $authType;
+
+    /**
+     * Indicates if SSL verification is enabled or not.
+     *
+     * @var boolean
+     */
+    private $verifyPeer;
 
     /**
      * Constructor
@@ -46,7 +88,7 @@ class Sabre_DAV_Client {
             'baseUri',
             'userName',
             'password',
-            'proxy'
+            'proxy',
         );
 
         foreach($validSettings as $validSetting) {
@@ -55,8 +97,35 @@ class Sabre_DAV_Client {
             }
         }
 
+        if (isset($settings['authType'])) {
+            $this->authType = $settings['authType'];
+        } else {
+            $this->authType = self::AUTH_BASIC | self::AUTH_DIGEST;
+        }
+
         $this->propertyMap['{DAV:}resourcetype'] = 'Sabre_DAV_Property_ResourceType';
 
+    }
+
+    /**
+     * Add trusted root certificates to the webdav client.
+     *
+     * The parameter certificates should be a absolute path to a file
+     * which contains all trusted certificates
+     *
+     * @param string $certificates
+     */
+    public function addTrustedCertificates($certificates) {
+        $this->trustedCertificates = $certificates;
+    }
+
+    /**
+     * Enables/disables SSL peer verification
+     *
+     * @param boolean $value
+     */
+    public function setVerifyPeer($value) {
+        $this->verifyPeer = $value;
     }
 
     /**
@@ -115,13 +184,13 @@ class Sabre_DAV_Client {
         if ($depth===0) {
             reset($result);
             $result = current($result);
-            return $result[200];
+            return isset($result[200])?$result[200]:array();
         }
 
         $newResult = array();
         foreach($result as $href => $statusList) {
 
-            $newResult[$href] = $statusList[200];
+            $newResult[$href] = isset($statusList[200])?$statusList[200]:array();
 
         }
 
@@ -251,13 +320,18 @@ class Sabre_DAV_Client {
             CURLOPT_MAXREDIRS => 5,
         );
 
+        if($this->verifyPeer !== null) {
+            $curlSettings[CURLOPT_SSL_VERIFYPEER] = $this->verifyPeer;
+        }
+
+        if($this->trustedCertificates) {
+            $curlSettings[CURLOPT_CAINFO] = $this->trustedCertificates;
+        }
+
         switch ($method) {
-            case 'PUT':
-                $curlSettings[CURLOPT_PUT] = true;
-                break;
             case 'HEAD' :
 
-                // do not read body with HEAD requests (this is neccessary because cURL does not ignore the body with HEAD
+                // do not read body with HEAD requests (this is necessary because cURL does not ignore the body with HEAD
                 // requests when the Content-Length header is given - which in turn is perfectly valid according to HTTP
                 // specs...) cURL does unfortunately return an error in this case ("transfer closed transfer closed with
                 // ... bytes remaining to read") this can be circumvented by explicitly telling cURL to ignore the
@@ -285,8 +359,15 @@ class Sabre_DAV_Client {
             $curlSettings[CURLOPT_PROXY] = $this->proxy;
         }
 
-        if ($this->userName) {
-            $curlSettings[CURLOPT_HTTPAUTH] = CURLAUTH_BASIC | CURLAUTH_DIGEST;
+        if ($this->userName && $this->authType) {
+            $curlType = 0;
+            if ($this->authType & self::AUTH_BASIC) {
+                $curlType |= CURLAUTH_BASIC;
+            }
+            if ($this->authType & self::AUTH_DIGEST) {
+                $curlType |= CURLAUTH_DIGEST;
+            }
+            $curlSettings[CURLOPT_HTTPAUTH] = $curlType;
             $curlSettings[CURLOPT_USERPWD] = $this->userName . ':' . $this->password;
         }
 

@@ -28,7 +28,7 @@ class Sabre_VObject_DateTimeParser {
     static public function parseDateTime($dt,DateTimeZone $tz = null) {
 
         // Format is YYYYMMDD + "T" + hhmmss
-        $result = preg_match('/^([1-3][0-9]{3})([0-1][0-9])([0-3][0-9])T([0-2][0-9])([0-5][0-9])([0-5][0-9])([Z]?)$/',$dt,$matches);
+        $result = preg_match('/^([1-4][0-9]{3})([0-1][0-9])([0-3][0-9])T([0-2][0-9])([0-5][0-9])([0-5][0-9])([Z]?)$/',$dt,$matches);
 
         if (!$result) {
             throw new Sabre_DAV_Exception_BadRequest('The supplied iCalendar datetime value is incorrect: ' . $dt);
@@ -54,7 +54,7 @@ class Sabre_VObject_DateTimeParser {
     static public function parseDate($date) {
 
         // Format is YYYYMMDD
-        $result = preg_match('/^([1-3][0-9]{3})([0-1][0-9])([0-3][0-9])$/',$date,$matches);
+        $result = preg_match('/^([1-4][0-9]{3})([0-1][0-9])([0-3][0-9])$/',$date,$matches);
 
         if (!$result) {
             throw new Sabre_DAV_Exception_BadRequest('The supplied iCalendar date value is incorrect: ' . $date);
@@ -77,14 +77,57 @@ class Sabre_VObject_DateTimeParser {
      */
     static public function parseDuration($duration, $asString = false) {
 
+        $result = preg_match('/^(?P<plusminus>\+|-)?P((?P<week>\d+)W)?((?P<day>\d+)D)?(T((?P<hour>\d+)H)?((?P<minute>\d+)M)?((?P<second>\d+)S)?)?$/', $duration, $matches);
+        if (!$result) {
+            throw new Sabre_DAV_Exception_BadRequest('The supplied iCalendar duration value is incorrect: ' . $duration);
+        }
+
         if (!$asString) {
             $invert = false;
-            if (substr($duration,0,1)==='-') {
+            if ($matches['plusminus']==='-') {
                 $invert = true;
-                $duration = substr($duration,1);
             }
-                // DateInterval actually supports a superset of the iCalendar
-                // duration property, so we can pass it as-is.
+
+
+            $parts = array(
+                'week',
+                'day',
+                'hour',
+                'minute',
+                'second',
+            );
+            foreach($parts as $part) {
+                $matches[$part] = isset($matches[$part])&&$matches[$part]?(int)$matches[$part]:0;
+            }
+
+
+            // We need to re-construct the $duration string, because weeks and
+            // days are not supported by DateInterval in the same string.
+            $duration = 'P';
+            $days = $matches['day'];
+            if ($matches['week']) {
+                $days+=$matches['week']*7;
+            }
+            if ($days)
+                $duration.=$days . 'D';
+
+            if ($matches['minute'] || $matches['second'] || $matches['hour']) {
+                $duration.='T';
+
+                if ($matches['hour'])
+                    $duration.=$matches['hour'].'H';
+
+                if ($matches['minute'])
+                    $duration.=$matches['minute'].'M';
+
+                if ($matches['second'])
+                    $duration.=$matches['second'].'S';
+
+            }
+
+            if ($duration==='P') {
+                $duration = 'PT0S';
+            }
             $iv = new DateInterval($duration);
             if ($invert) $iv->invert = true;
 
@@ -92,10 +135,7 @@ class Sabre_VObject_DateTimeParser {
 
         }
 
-        $result = preg_match('/^(?P<plusminus>\+|-)?P((?P<week>\d+)W)?((?P<day>\d+)D)?(T((?P<hour>\d+)H)?((?P<minute>\d+)M)?((?P<second>\d+)S)?)?$/', $duration, $matches);
-        if (!$result) {
-            throw new Sabre_DAV_Exception_BadRequest('The supplied iCalendar duration value is incorrect: ' . $duration);
-        }
+
 
         $parts = array(
             'week',
@@ -113,6 +153,7 @@ class Sabre_VObject_DateTimeParser {
         }
 
         $newDur = ($matches['plusminus']==='-'?'-':'+') . trim($newDur);
+        if ($newDur === '+') { $newDur = '+0 seconds'; };
         return $newDur;
 
     }
