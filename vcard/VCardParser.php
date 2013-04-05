@@ -316,7 +316,9 @@ class VCardParser implements IVCardParser {
 					break;
 				default:
 					$this->logger->debug("Unknown address type '$type' - skipping");
-					continue;
+					// 'continue' in PHP would break from the switch, not the for-loop;
+					// need to break two levels to proceed to the next foreach() iteration:
+					continue 2;
 			}
 			
 			$addressComponents = VCardParser::splitCompundProperty($address->value);
