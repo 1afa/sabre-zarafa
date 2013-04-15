@@ -121,7 +121,7 @@ class Zarafa_Store
 			return FALSE;
 		}
 		$displayname = isset($properties['{DAV:}displayname']) ? $properties['{DAV:}displayname'] : '';
-		$description = isset($properties['{' . Sabre_CardDAV_Plugin::NS_CARDDAV . '}addressbook-description']) ? $properties['{' . Sabre_CardDAV_Plugin::NS_CARDDAV . '}addressbook-description'] : '';
+		$description = isset($properties['{' . Sabre\CardDAV\Plugin::NS_CARDDAV . '}addressbook-description']) ? $properties['{' . Sabre\CardDAV\Plugin::NS_CARDDAV . '}addressbook-description'] : '';
 
 		// FIXME: does this even work? According to the docs, mapi_folder_createfolder() returns a boolean...
 		if (FALSE($folder = mapi_folder_createfolder($this->root, $displayname, $description, MAPI_UNICODE | OPEN_IF_EXISTS, FOLDER_GENERIC))) {

@@ -38,7 +38,7 @@ require_once("mapi/mapidefs.php");
 require_once("mapi/mapitags.php");
 require_once("mapi/mapiguid.php");
 	
-class Zarafa_CardDav_Backend extends Sabre_CardDAV_Backend_Abstract {
+class Zarafa_CardDav_Backend extends Sabre\CardDAV\Backend\AbstractBackend {
 	
 	protected $bridge;
 	private $logger;
@@ -277,7 +277,7 @@ class Zarafa_CardDav_Backend extends Sabre_CardDAV_Backend_Abstract {
 	exc_forbidden ($msg)
 	{
 		$this->logger->fatal($msg);
-		throw new Sabre_DAV_Exception_Forbidden($msg);
+		throw new Sabre\DAV\Exception\Forbidden($msg);
 		return FALSE;
 	}
 
@@ -285,7 +285,7 @@ class Zarafa_CardDav_Backend extends Sabre_CardDAV_Backend_Abstract {
 	exc_notfound ($msg)
 	{
 		$this->logger->fatal($msg);
-		throw new Sabre_DAV_Exception_NotFound($msg);
+		throw new Sabre\DAV\Exception\NotFound($msg);
 		return FALSE;
 	}
 }

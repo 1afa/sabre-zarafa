@@ -27,7 +27,7 @@
 	include_once ("log4php/Logger.php");
 	Logger::configure("log4php.xml");
  
-	class Zarafa_Auth_Basic_Backend extends Sabre_DAV_Auth_Backend_AbstractBasic {
+	class Zarafa_Auth_Basic_Backend extends Sabre\DAV\Auth\Backend\AbstractBasic {
 		
 		protected $bridge;
 		private $logger;

@@ -50,14 +50,14 @@
 	// Include Zarafa SabreDav Bridge
 	include ("./ZarafaBridge.php");
 	
-	//Sabre DAV
-	include("Sabre/autoload.php");
-	
+	// SabreDAV
+	include('lib/SabreDAV/vendor/autoload.php');
+
 	// Custom classes to tie together SabreDav and Zarafa
 	include "ZarafaAuthBackend.php";			// Authentification
 	include "ZarafaCardDavBackend.php";			// CardDav
 	include "ZarafaPrincipalsBackend.php";		// Principals
-	
+
 	function checkMapiError($msg) {
 		global $log;
 		if (mapi_last_hresult() != 0) {
@@ -78,30 +78,30 @@
 
 	// Setting up the directory tree // 
 	$nodes = array(
-		new Sabre_DAVACL_PrincipalCollection($principalBackend),
-		new Sabre_CardDAV_AddressBookRoot($principalBackend, $carddavBackend)
+		new Sabre\DAVACL\PrincipalCollection($principalBackend),
+		new Sabre\CardDAV\AddressBookRoot($principalBackend, $carddavBackend)
 	);
 
 	// The object tree needs in turn to be passed to the server class
 	$log->trace("Starting server");
-	$server = new Sabre_DAV_Server($nodes);
+	$server = new Sabre\DAV\Server($nodes);
 	$server->setBaseUri(CARDDAV_ROOT_URI);
 
 	// Required plugins 
 	$log->trace("Adding plugins");
-	$server->addPlugin(new Sabre_DAV_Auth_Plugin($authBackend, SABRE_AUTH_REALM));
-	$server->addPlugin(new Sabre_CardDAV_Plugin());
-	$server->addPlugin(new Sabre_DAVACL_Plugin());
+	$server->addPlugin(new Sabre\DAV\Auth\Plugin($authBackend, SABRE_AUTH_REALM));
+	$server->addPlugin(new Sabre\CardDAV\Plugin());
+	$server->addPlugin(new Sabre\DAVACL\Plugin());
 
 	// Optional plugins
 	if (SABRE_DAV_BROWSER_PLUGIN) {
 		// Do not allow POST
-		$server->addPlugin(new Sabre_DAV_Browser_Plugin(false));
+		$server->addPlugin(new Sabre\DAV\Browser\Plugin(false));
 	}
 	
 	// Start server
 	$log->trace("Server exec");
-	$log->info("SabreDAV version " . Sabre_DAV_Version::VERSION . '-' . Sabre_DAV_Version::STABILITY);
+	$log->info("SabreDAV version " . Sabre\DAV\Version::VERSION . '-' . Sabre\DAV\Version::STABILITY);
 	$log->info("Producer: " . VCARD_PRODUCT_ID );
 	$log->info("Revision: " . (SABRE_ZARAFA_REV + 1) . ' - ' . SABRE_ZARAFA_DATE);
-	$server->exec();	
+	$server->exec();

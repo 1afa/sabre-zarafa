@@ -127,7 +127,7 @@ class VCardProducer implements IVCardProducer {
 		$contactInfos[] = isset($contactProperties[$p['display_name_prefix']]) ? $contactProperties[$p['display_name_prefix']] : '';
 		$contactInfos[] = isset($contactProperties[$p['generation']])          ? $contactProperties[$p['generation']] : '';
 
-		$element = new Sabre_VObject_Property("N");
+		$element = new Sabre\VObject\Property("N");
 		$element->setValue(implode(';', $contactInfos));
 		// $element->offsetSet("SORT-AS", '"' . $contactProperties[$p['fileas']] . '"');
 		$vCard->add($element);
@@ -136,7 +136,7 @@ class VCardProducer implements IVCardProducer {
 		$orgdata = array();
 		$orgdata[] = (isset($contactProperties[$p['company_name']])) ? $contactProperties[$p['company_name']] : '';
 		$orgdata[] = (isset($contactProperties[$p['department_name']])) ? $contactProperties[$p['department_name']] : '';
-		$element = new Sabre_VObject_Property('ORG');
+		$element = new Sabre\VObject\Property('ORG');
 		$element->setValue(implode(';', $orgdata));
 		$vCard->add($element);
 
@@ -149,7 +149,7 @@ class VCardProducer implements IVCardProducer {
 		if ($this->version >= 4) {
 			if (isset($contactProperties[$p['assistant']])) {
 				if (!empty ($contactProperties[$p['assistant']])) {
-					$element = new Sabre_VObject_Property('RELATED');
+					$element = new Sabre\VObject\Property('RELATED');
 					$element->setValue( $contactProperties[$p['assistant']]);
 					$element->offsetSet('TYPE','assistant');	// Not RFC compliant
 					$vCard->add($element);
@@ -158,7 +158,7 @@ class VCardProducer implements IVCardProducer {
 
 			if (isset($contactProperties[$p['manager_name']])) {
 				if (!empty ($contactProperties[$p['manager_name']])) {
-					$element = new Sabre_VObject_Property('RELATED');
+					$element = new Sabre\VObject\Property('RELATED');
 					$element->setValue( $contactProperties[$p['manager_name']]);
 					$element->offsetSet('TYPE','manager');		// Not RFC compliant
 					$vCard->add($element);
@@ -167,7 +167,7 @@ class VCardProducer implements IVCardProducer {
 
 			if (isset($contactProperties[$p['spouse_name']])) {
 				if (!empty ($contactProperties[$p['spouse_name']])) {
-					$element = new Sabre_VObject_Property('RELATED');
+					$element = new Sabre\VObject\Property('RELATED');
 					$element->setValue( $contactProperties[$p['spouse_name']]);
 					$element->offsetSet('TYPE','spouse');
 					$vCard->add($element);
@@ -241,7 +241,7 @@ class VCardProducer implements IVCardProducer {
 		for ($i = 1; $i <= 3; $i++) {
 			if (isset($contactProperties[$p["email_address_$i"]])) {
 				// Zarafa needs an email display name
-				$emailProperty = new Sabre_VObject_Property('EMAIL', $contactProperties[$p["email_address_$i"]]);
+				$emailProperty = new Sabre\VObject\Property('EMAIL', $contactProperties[$p["email_address_$i"]]);
 				
 				// Get display name
 				$dn = isset($contactProperties[$p["email_address_display_name_$i"]])
@@ -326,7 +326,7 @@ class VCardProducer implements IVCardProducer {
 			$mime = 'JPEG';
 		}
 		$this->logger->trace("Adding contact picture to VCard");
-		$photoProperty = new Sabre_VObject_Property('PHOTO', base64_encode($photo));
+		$photoProperty = new Sabre\VObject\Property('PHOTO', base64_encode($photo));
 		$photoProperty->offsetSet('TYPE', $mime);
 		$photoProperty->offsetSet('ENCODING', 'b');
 		$vCard->add($photoProperty);
@@ -365,7 +365,7 @@ class VCardProducer implements IVCardProducer {
 		
 		if ($address != ';;;;;;') {
 			$this->logger->trace("Not empty address - adding $address");
-			$element = new Sabre_VObject_Property('ADR');
+			$element = new Sabre\VObject\Property('ADR');
 			$element->setValue($address);
 			$element->offsetSet('TYPE', $addressType);
 			$vCard->add($element);

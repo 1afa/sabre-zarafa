@@ -41,9 +41,6 @@
 	require_once("mapi/mapitags.php");
 	require_once("mapi/mapiguid.php");
 	
-	// VObject for vcard
-	include_once "Sabre/VObject/includes.php";
-	
 	// VObject to mapi properties
 	require_once "vcard/IVCardParser.php";		// too many vcard formats :(
 	include_once "vcard/VCardParser2.php";
@@ -354,7 +351,7 @@ class Zarafa_Bridge {
 		$this->logger->trace(__FUNCTION__);
 
 		$this->logger->debug("VCARD:\n" . $vcardData);
-		$vObject = Sabre_VObject_Reader::read($vcardData);
+		$vObject = Sabre\VObject\Reader::read($vcardData);
 
 		// Extract version to call the correct parser
 		$version = $vObject->version->value;
@@ -427,7 +424,7 @@ class Zarafa_Bridge {
 		}
 	
 		$producer = new VCardProducer($this, VCARD_VERSION);
-		$vCard = new Sabre_VObject_Component('VCARD');
+		$vCard = new Sabre\VObject\Component('VCARD');
 
 		// Produce VCard object
 		$this->logger->trace("Producing vcard from contact properties");

@@ -68,9 +68,9 @@ class Zarafa_Folder
 			'description' => (isset($props[PR_COMMENT]) ? $props[PR_COMMENT] : ''),
 			'principaluri' => $principal_uri,
 			'displayname' => $this->get_name(),
-			'{' . Sabre_CardDAV_Plugin::NS_CARDDAV . '}addressbook-description' => (isset($props[PR_COMMENT]) ? $props[PR_COMMENT] : ''),
+			'{' . Sabre\CardDAV\Plugin::NS_CARDDAV . '}addressbook-description' => (isset($props[PR_COMMENT]) ? $props[PR_COMMENT] : ''),
 			'{http://calendarserver.org/ns/}getctag' => $this->get_ctag(),
-			'{' . Sabre_CardDAV_Plugin::NS_CARDDAV . '}supported-address-data' => new Sabre_CardDAV_Property_SupportedAddressData()
+			'{' . Sabre\CardDAV\Plugin::NS_CARDDAV . '}supported-address-data' => new Sabre\CardDAV\Property\SupportedAddressData()
 		);
 	}
 
@@ -151,7 +151,7 @@ class Zarafa_Folder
 	//	$this->logger->debug("Mutations:\n$dump");
 
 		// What we know to change
-		$authorizedMutations = array ('{DAV:}displayname', '{' . Sabre_CardDAV_Plugin::NS_CARDDAV . '}addressbook-description');
+		$authorizedMutations = array ('{DAV:}displayname', '{' . Sabre\CardDAV\Plugin::NS_CARDDAV . '}addressbook-description');
 
 		// Check the mutations
 		foreach ($mutations as $m => $value) {
@@ -173,8 +173,8 @@ class Zarafa_Folder
 			$mapiProperties[PR_DISPLAY_NAME] = $displayName;
 		}
 		// Description
-		if (isset($mutations['{' . Sabre_CardDAV_Plugin::NS_CARDDAV . '}addressbook-description'])) {
-			$description = $mutations['{' . Sabre_CardDAV_Plugin::NS_CARDDAV . '}addressbook-description'];
+		if (isset($mutations['{' . Sabre\CardDAV\Plugin::NS_CARDDAV . '}addressbook-description'])) {
+			$description = $mutations['{' . Sabre\CardDAV\Plugin::NS_CARDDAV . '}addressbook-description'];
 			$mapiProperties[805568542] = $description;
 		}
 		if (count($mapiProperties) == 0) {
