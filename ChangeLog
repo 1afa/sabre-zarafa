@@ -1,0 +1,8 @@
+* Mon Apr 15 2013 Alfred Klomp <alfred@bokxing-it.nl> 0.17
+- Add support for the 'department_name' VCard property;
+- Fix issue 30 from Google Code: birthdays before 1970 were ignored;
+- Fix issue 25 from Google Code: 'continue' only breaks switch, not foreach;
+- Fix issue 24 from Google Code: would not create addresses in new cards;
+- Upgrade included version of SabreDAV to version 1.6.9, the latest 1.6.x
+  release at time of writing;
+- Add ChangeLog file.
