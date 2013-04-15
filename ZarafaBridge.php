@@ -272,7 +272,7 @@ class Zarafa_Bridge {
 
 		// Combine these restrictions into one big compound restriction:
 		if (count($restr_nondeleted) > 0) {
-			mapi_table_restrict($hierarchy_table, Array(RES_AND, Array(Array(RES_AND, Array(Array(RES_AND, $restr_nondeleted), restrict_nonhidden())), $restr_contacts)));
+			mapi_table_restrict($hierarchy_table, restrict_and(restrict_and($restr_nondeleted, restrict_nonhidden()), $restr_contacts));
 		}
 		else {
 			mapi_table_restrict($hierarchy_table, restrict_and(restrict_nonhidden(), $restr_contacts));
