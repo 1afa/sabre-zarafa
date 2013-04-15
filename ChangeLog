@@ -1,3 +1,4 @@
+- Remove included SabreDAV 1.6.x version;
 - Upgrade to SabreDAV 1.8 API.
 
 * Wed Apr 17 2013 Alfred Klomp <alfred@bokxing-it.nl> 0.17.1
