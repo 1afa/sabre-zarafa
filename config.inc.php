@@ -38,7 +38,7 @@
 	define ('SABRE_AUTH_REALM', 'Zarafa SabreDAV CardDav');
 	
 	// Product ID sent in vcards
-	define ('VCARD_PRODUCT_ID', '-//SabreDav/ZarafaBackend/0.15');
+	define ('VCARD_PRODUCT_ID', '-//SabreDav/ZarafaBackend/0.17');
 	
 	// Choose VCard version
 	// Supported values:
