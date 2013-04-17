@@ -33,11 +33,25 @@ This installs as any [SabreDAV](http://code.google.com/p/sabredav) server.
 Unpack the source into a directory. This manual will assume
 `/var/www/htdocs/sabre-zarafa` as the root.
 
-[SabreDAV](http://code.google.com/p/sabredav) is already included in the
-project source so you do not need to get it separately. Currently, Sabre-Zarafa
-is written for the SabreDAV 1.6.x API. You can swap out the included version of
-SabreDAV with a newer one from the 1.6 series by simply copying the relevant
-bits of the SabreDAV package over the included parts in `/lib`.
+As of version 0.18, Sabre-Zarafa is written against the SabreDAV 1.8 API, and
+[SabreDAV](http://code.google.com/p/sabredav) no longer comes included. Since
+the directory layout changed in SabreDAV 1.8, it no longer makes sense to
+bundle parts of it, and bundling the whole package seems excessive.
+
+You have to download a SabreDAV release from the 1.8 series yourself and unzip
+it in the `/lib` directory:
+
+    # cd /var/www/htdocs/sabre-zarafa/lib
+    # unzip /path/to/SabreDAV-1.8.x.zip
+
+Sabre-Zarafa logs using [Apache log4php](http://logging.apache.org/log4php).
+You have to [download](http://logging.apache.org/log4php/download.html) a copy
+and move the files in `/src/main/php/` to the `/lib/log4php` directory:
+
+    # tar xvzf apache-log4php-2.3.0-src.tar.gz
+    # mv apache-log4php-2.3.0/src/main/php/ /var/www/htdocs/sabre-zarafa/lib/log4php
+
+See below on how to configure `log4php.xml`.
 
 The webserver needs to write to the `data` directory, since it is used by
 SabreDAV to store DAV locks. The log file, called `debug.txt`, should also be
@@ -145,6 +159,9 @@ hesitate to read it!
 
 ## PHP 5.1 and 5.2 version
 
+As of version 0.18, Sabre-Zarafa requires SabreDAV 1.8, which in turn requires
+PHP 5.3.
+
 As of 0.15 Sabre-Zarafa uses SabreDAV 1.6.1 which requires PHP 5.3. If you use
 older versions of PHP you will need to revert to official SabreDAV 1.5 (PHP
 5.2). If you use PHP 5.1 you should look for the specific PHP 5.1 branch of
@@ -161,6 +178,10 @@ setup is to log WARN and FATAL messages to `debug.txt` with a maximum size of
 5MB for logfile and 3 backup indexes (`debug.txt.1`).
 
 To disable debugging simply set root appender to `noDebug`.
+
+Make sure the path to `debug.txt` in `log4php.xml` is absolute:
+
+    <param name="file" value="/var/www/htdocs/sabre-zarafa/debug.txt" />
 
 Log4PHP allow you to log selected messages the way you want. For instance one
 could log connection failed messages to syslog or to a database. See [log4php
