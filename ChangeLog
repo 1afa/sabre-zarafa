@@ -1,3 +1,6 @@
+* Wed Apr 17 2013 Alfred Klomp <alfred@bokxing-it.nl> 0.17.1
+- Add SabreDAV license file, to comply with SabreDAV license terms.
+
 * Mon Apr 15 2013 Alfred Klomp <alfred@bokxing-it.nl> 0.17
 - Add support for the 'department_name' VCard property;
 - Fix issue 30 from Google Code: birthdays before 1970 were ignored;
