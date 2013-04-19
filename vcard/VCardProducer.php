@@ -148,33 +148,20 @@ class VCardProducer implements IVCardProducer {
 		$this->setVCard($vCard, 'OFFICE',          $contactProperties, $p['office_location']);
 
 		if ($this->version >= 4) {
-			if (isset($contactProperties[$p['assistant']])) {
-				if (!empty ($contactProperties[$p['assistant']])) {
-					$element = new Sabre\VObject\Property('RELATED');
-					$element->setValue( $contactProperties[$p['assistant']]);
-					$element->offsetSet('TYPE','assistant');	// Not RFC compliant
-					$vCard->add($element);
-				}
+			// Relation types 'assistant' and 'manager' are not RFC6350-compliant.
+			if (isset($contactProperties[$p['assistant']])
+			&& !empty($contactProperties[$p['assistant']])) {
+				$vCard->add(new Sabre\VObject\Property('RELATED', $contactProperties[$p['assistant']], array('VALUE' => 'text', 'TYPE' => 'assistant')));
 			}
-
-			if (isset($contactProperties[$p['manager_name']])) {
-				if (!empty ($contactProperties[$p['manager_name']])) {
-					$element = new Sabre\VObject\Property('RELATED');
-					$element->setValue( $contactProperties[$p['manager_name']]);
-					$element->offsetSet('TYPE','manager');		// Not RFC compliant
-					$vCard->add($element);
-				}
+			if (isset($contactProperties[$p['manager_name']])
+			&& !empty($contactProperties[$p['manager_name']])) {
+				$vCard->add(new Sabre\VObject\Property('RELATED', $contactProperties[$p['manager_name']], array('VALUE' => 'text', 'TYPE' => 'manager')));
 			}
-
-			if (isset($contactProperties[$p['spouse_name']])) {
-				if (!empty ($contactProperties[$p['spouse_name']])) {
-					$element = new Sabre\VObject\Property('RELATED');
-					$element->setValue( $contactProperties[$p['spouse_name']]);
-					$element->offsetSet('TYPE','spouse');
-					$vCard->add($element);
-				}
+			if (isset($contactProperties[$p['spouse_name']])
+			&& !empty($contactProperties[$p['spouse_name']])) {
+				$vCard->add(new Sabre\VObject\Property('RELATED', $contactProperties[$p['spouse_name']], array('VALUE' => 'text', 'TYPE' => 'spouse')));
 			}
-		} 
+		}
 		
 		// older syntax - may be needed by some clients so keep it!
 		$map = array
