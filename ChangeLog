@@ -1,3 +1,4 @@
+- Rewrote email producing code to print pref property;
 - Rewrote telephone number parsing code for clarity/solidity;
 - Calculate CTag from all cards in directory; this fixes synchronization;
 - Add documentation on how to disable ETag support;

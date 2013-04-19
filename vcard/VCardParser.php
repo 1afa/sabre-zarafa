@@ -176,9 +176,9 @@ class VCardParser implements IVCardParser {
 			if (isset($orgInfo[1])) $properties[$p['department_name']] = $orgInfo[1];
 		}
 
-		if (isset($vcard->fn)) {
-			$properties[$p['display_name']] = $vcard->fn->value;
-			$properties[PR_SUBJECT] = $vcard->fn->value;
+		if (isset($vcard->FN)) {
+			$properties[$p['display_name']] = $vcard->FN->value;
+			$properties[PR_SUBJECT] = $vcard->FN->value;
 		}
 
 		if (empty($sortAs) || SAVE_AS_OVERRIDE_SORTAS) {

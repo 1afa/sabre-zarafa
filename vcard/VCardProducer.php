@@ -127,18 +127,19 @@ class VCardProducer implements IVCardProducer {
 		$contactInfos[] = isset($contactProperties[$p['display_name_prefix']]) ? $contactProperties[$p['display_name_prefix']] : '';
 		$contactInfos[] = isset($contactProperties[$p['generation']])          ? $contactProperties[$p['generation']] : '';
 
-		$element = new Sabre\VObject\Property("N");
-		$element->setValue(implode(';', $contactInfos));
-		// $element->offsetSet("SORT-AS", '"' . $contactProperties[$p['fileas']] . '"');
-		$vCard->add($element);
+		$elem = new Sabre\VObject\Property\Compound('N');
+		$elem->setParts($contactInfos);
+	//	if (isset($contactProperties[$p['fileas']])) $elem->offsetSet('SORT-AS', '"'.$contactProperties[$p['fileas']].'"');
+		$vCard->add($elem);
 
 		// Add ORG:<company>;<department>
 		$orgdata = array();
 		$orgdata[] = (isset($contactProperties[$p['company_name']])) ? $contactProperties[$p['company_name']] : '';
 		$orgdata[] = (isset($contactProperties[$p['department_name']])) ? $contactProperties[$p['department_name']] : '';
-		$element = new Sabre\VObject\Property('ORG');
-		$element->setValue(implode(';', $orgdata));
-		$vCard->add($element);
+
+		$elem = new Sabre\VObject\Property\Compound('ORG');
+		$elem->setParts($orgdata);
+		$vCard->add($elem);
 
 		$this->setVCard($vCard, 'SORT-AS',         $contactProperties, $p['fileas']);
 		$this->setVCard($vCard, 'NICKNAME',        $contactProperties, $p['nickname']);
@@ -177,11 +178,12 @@ class VCardProducer implements IVCardProducer {
 		
 		// older syntax - may be needed by some clients so keep it!
 		$map = array
-			( 'X-MS-ASSISTANT' => 'assistant'
-			, 'X-MS-MANAGER'   => 'manager_name'
-			, 'X-MS-SPOUSE'    => 'spouse_name'
+			( 'assistant'    => 'X-MS-ASSISTANT'
+			, 'manager_name' => 'X-MS-MANAGER'
+			, 'spouse_name'  => 'X-MS-SPOUSE'
 			);
-		foreach ($map as $prop_vcard => $prop_mapi) {
+
+		foreach ($map as $prop_mapi => $prop_vcard) {
 			$this->setVCard($vCard, $prop_vcard, $contactProperties, $p[$prop_mapi]);
 		}
 
@@ -245,20 +247,17 @@ class VCardProducer implements IVCardProducer {
 		
 		// emails
 		for ($i = 1; $i <= 3; $i++) {
-			if (isset($contactProperties[$p["email_address_$i"]])) {
-				// Zarafa needs an email display name
-				$emailProperty = new Sabre\VObject\Property('EMAIL', $contactProperties[$p["email_address_$i"]]);
-				
-				// Get display name
-				$dn = isset($contactProperties[$p["email_address_display_name_$i"]])
-				          ? $contactProperties[$p["email_address_display_name_$i"]]
-				          : $contactProperties[$p['display_name']];
-
-				$emailProperty->offsetSet("X-CN", '"' . $dn . '"');
-				$vCard->add($emailProperty);
+			if (!isset($contactProperties[$p["email_address_$i"]])) {
+				continue;
 			}
+			// Get display name:
+			$dn = isset($contactProperties[$p["email_address_display_name_$i"]])
+			          ? $contactProperties[$p["email_address_display_name_$i"]]
+			          : $contactProperties[$p['display_name']];
+
+			$vCard->add(new Sabre\VObject\Property('EMAIL', $contactProperties[$p["email_address_$i"]], array('X-CN' => "\"$dn\"", 'pref' => "$i")));
 		}
-		
+
 		// URL and Instant Messenging (vCard 3.0 extension)
 		$this->setVCard($vCard,'URL',   $contactProperties,$p["webpage"]); 
 		$this->setVCard($vCard,'IMPP',  $contactProperties,$p["im"]); 
