@@ -136,17 +136,18 @@ class VCardParser implements IVCardParser {
 		
 		// Name components
 		$sortAs = '';
-		if (isset($vcard->n)) {
-			$this->logger->trace("N: " . $vcard->n);
-			$nameInfo = VCardParser::splitCompoundProperty($vcard->n->value);
-			$dump = print_r($nameInfo, true);
+		if (isset($vcard->N)) {
+			$this->logger->trace("N: " . $vcard->N);
+			$parts = $vcard->N->getParts();
+
+			$dump = print_r($parts, true);
 			$this->logger->trace("Name info\n$dump");
 			
-			$properties[$p['surname']]             = isset($nameInfo[0]) ? $nameInfo[0] : '';
-			$properties[$p['given_name']]          = isset($nameInfo[1]) ? $nameInfo[1] : '';
-			$properties[$p['middle_name']]         = isset($nameInfo[2]) ? $nameInfo[2] : ''; 
-			$properties[$p['display_name_prefix']] = isset($nameInfo[3]) ? $nameInfo[3] : ''; 
-			$properties[$p['generation']]          = isset($nameInfo[4]) ? $nameInfo[4] : '';
+			$properties[$p['surname']]             = isset($parts[0]) ? $parts[0] : '';
+			$properties[$p['given_name']]          = isset($parts[1]) ? $parts[1] : '';
+			$properties[$p['middle_name']]         = isset($parts[2]) ? $parts[2] : '';
+			$properties[$p['display_name_prefix']] = isset($parts[3]) ? $parts[3] : '';
+			$properties[$p['generation']]          = isset($parts[4]) ? $parts[4] : '';
 			
 			// Issue 3#8
 			if ($vcard->n->offsetExists('SORT-AS')) {
@@ -170,17 +171,16 @@ class VCardParser implements IVCardParser {
 		if (isset($vcard->title))			$properties[$p['title']] = $vcard->title->value;
 		if (isset($vcard->role))			$properties[$p['profession']] = $vcard->role->value;
 		if (isset($vcard->office))			$properties[$p['office_location']] = $vcard->office->value;
-		if (isset($vcard->org)) {
-			$orgInfo = VCardParser::splitCompoundProperty($vcard->org->value);
-			if (isset($orgInfo[0])) $properties[$p['company_name']] = $orgInfo[0];
-			if (isset($orgInfo[1])) $properties[$p['department_name']] = $orgInfo[1];
-		}
 
+		if (isset($vcard->ORG)) {
+			$parts = $vcard->ORG->getParts();
+			if (isset($parts[0])) $properties[$p['company_name']] = $parts[0];
+			if (isset($parts[1])) $properties[$p['department_name']] = $parts[1];
+		}
 		if (isset($vcard->FN)) {
 			$properties[$p['display_name']] = $vcard->FN->value;
 			$properties[PR_SUBJECT] = $vcard->FN->value;
 		}
-
 		if (empty($sortAs) || SAVE_AS_OVERRIDE_SORTAS) {
 			$this->logger->trace("Empty sort-as or SAVE_AS_OVERRIDE_SORTAS set");
 			$sortAs = SAVE_AS_PATTERN;		// $vcard->fn->value;
@@ -255,8 +255,7 @@ class VCardParser implements IVCardParser {
 					// need to break two levels to proceed to the next foreach() iteration:
 					continue 2;
 			}
-			
-			$addressComponents = VCardParser::splitCompoundProperty($address->value);
+			$addressComponents = $address->getParts();
 
 			$dump = print_r($addressComponents, true);
 			$this->logger->trace("Address components:\n$dump");
@@ -412,16 +411,6 @@ class VCardParser implements IVCardParser {
 			'\\\\' => '\\'
 		);
 		return str_replace(array_keys($replaceValues), array_values($replaceValues), $value);
-	}
-
-	/**
-	 * Split a compound property into parts
-	 * @param $propertyValue
-	 * @return array
-	 */
-	public static function splitCompoundProperty($propertyValue) {
-		// Do not split \;
-		return preg_split("/(?!\\\\);/", $propertyValue);
 	}
 
 	private function
