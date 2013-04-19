@@ -482,6 +482,7 @@ class Zarafa_Bridge {
 		$properties["surname"] = PR_SURNAME;
 		$properties["home_telephone_number"] = PR_HOME_TELEPHONE_NUMBER;
 		$properties["cellular_telephone_number"] = PR_CELLULAR_TELEPHONE_NUMBER;
+		$properties["mobile_telephone_number"] = PR_MOBILE_TELEPHONE_NUMBER;
 		$properties["office_telephone_number"] = PR_OFFICE_TELEPHONE_NUMBER;
 		$properties["business_fax_number"] = PR_BUSINESS_FAX_NUMBER;
 		$properties["company_name"] = PR_COMPANY_NAME;

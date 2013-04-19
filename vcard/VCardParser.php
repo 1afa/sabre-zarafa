@@ -98,6 +98,7 @@ class VCardParser implements IVCardParser {
 			$properties[$p['assistant_telephone_number']] = NULL;
 			$properties[$p['assistant']] = NULL;
 			$properties[$p['manager_name']] = NULL;
+			$properties[$p['mobile_telephone_number']] = NULL;
 			$properties[$p['spouse_name']] = NULL;
 			$properties[$p['home_address_street']] = NULL;
 			$properties[$p['home_address_city']] = NULL;
@@ -217,77 +218,9 @@ class VCardParser implements IVCardParser {
 			$properties[$p['wedding_anniversary']] = $time->format('U');
 		}
 		
-		// Telephone numbers... todo as this is a bit complicated :p
-		$typeCount = array(
-			'HOME,VOICE' => 0,
-			'CELL,VOICE' => 0,
-			'CELL'		 => 0,
-			'WORK,VOICE' => 0,
-			'WORK,FAX'   => 0,
-			'FAX'        => 0,
-			'PAGER'		 => 0,
-			'ISDN'		 => 0,
-			'WORK'		 => 0,
-			'CAR'		 => 0,
-			'MAIN'		 => 0,
-			'SECR'		 => 0
-		);
-		$telephoneNumbers = $vcard->select("TEL");
-		foreach ($telephoneNumbers as $tel) {
-			$type = '';
-			$pk = '';
+		// Telephone numbers
+		$this->phoneConvert($vcard, $properties, $p);
 
-			// Get type
-			$typeParam = $tel->offsetGet("TYPE");
-			if ($typeParam != NULL) {
-				$type = '';
-				foreach ($typeParam as $tp) {
-					if (!in_array(strtoupper($tp->value), array('PREF', 'IPHONE'))) {
-						$type .= ($type == '') ? '' : ',';
-						$type .= strtoupper($tp->value);
-					}
-				}
-			}
-			
-			if (($type == 'HOME,VOICE') || ($type == 'HOME')) {
-				$type = 'HOME,VOICE';	// Force count key
-				$pk = 'home_telephone_number';
-				if ($typeCount[$type] == 1) {
-					$pk = 'home2_telephone_number';
-				}
-			}
-			if ($type == 'WORK,VOICE') {
-				$pk = 'office_telephone_number';
-				if ($typeCount[$type] == 1) {
-					$pk = 'business2_telephone_number';
-				}
-			}
-			if ($type == 'CELL,VOICE')		$pk = 'cellular_telephone_number';
-			if ($type == 'CELL')			$pk = 'cellular_telephone_number';
-			if ($type == 'IPHONE')			$pk = 'cellular_telephone_number';
-			if ($type == 'WORK,FAX') 		$pk = 'business_fax_number';
-			if ($type == 'HOME,FAX') 		$pk = 'home_fax_number';
-			if ($type == 'FAX')	 		$pk = 'primary_fax_number';
-			if ($type == 'PAGER')			$pk = 'pager_telephone_number';
-			if ($type == 'ISDN')			$pk = 'isdn_number';
-			if ($type == 'WORK')			$pk = 'company_telephone_number';
-			if ($type == 'CAR')				$pk = 'car_telephone_number';
-			if ($type == 'SECR')			$pk = 'assistant_telephone_number';
-			if ($type == 'MAIN')			$pk = 'primary_telephone_number';
-			if ($type == '')				$pk = DEFAULT_TELEPHONE_NUMBER_PROPERTY;
-			
-			// Counting
-			if ($pk != '') {
-				if (!isset($typeCount[$type])) {
-					$typeCount[$type] = 0;
-				}
-				$properties[$p[$pk]] = $tel->value;
-				$typeCount[$type]++;
-			} else {
-				$this->logger->warn("Unknown telephone type: '$type'");
-			}
-		}
-		
 		// Addresses...
 		$addresses = $vcard->select('ADR');
 		foreach ($addresses as $address) {
@@ -491,4 +424,105 @@ class VCardParser implements IVCardParser {
 		return preg_split("/(?!\\\\);/", $propertyValue);
 	}
 
+	private function
+	phoneConvert (&$vcard, &$mapi, &$propertyKeys)
+	{
+		$n_home_voice = 0;
+		$n_work_voice = 0;
+		if ($vcard->TEL === NULL) {
+			return;
+		}
+		foreach ($vcard->TEL as $tel)
+		{
+			$pk = FALSE;
+			$types = array();
+
+			// Get array of types; $type is a Sabre\VObject\Parameter:
+			if (($objects = $tel->offsetGet('TYPE')) !== NULL)
+			{
+				foreach ($objects as $type) {
+					$types[strtoupper($type->value)] = TRUE;
+				}
+				if (isset($types['HOME'])) {
+					if (isset($types['VOICE'])) {
+						if (($pref = $tel->offsetGet('PREF')) !== NULL) {
+							$pk = ($pref->value == '1')
+							    ? 'home_telephone_number'
+							    : 'home2_telephone_number';
+						}
+						else {
+							$pk = ($n_home_voice == 1)
+							    ? 'home2_telephone_number'
+							    : 'home_telephone_number';
+						}
+						$n_home_voice++;
+					}
+					elseif (isset($types['FAX'])) {
+						$pk = 'home_fax_number';
+					}
+				}
+				elseif (isset($types['WORK'])) {
+					if (isset($types['VOICE'])) {
+						if (($pref = $tel->offsetGet('PREF')) !== NULL) {
+							$pk = ($pref->value == '1')
+							    ? 'office_telephone_number'
+							    : 'business2_telephone_number';
+						}
+						else {
+							$pk = ($n_work_voice == 1)
+							    ? 'business2_telephone_number'
+							    : 'office_telephone_number';
+						}
+						$n_work_voice++;
+					}
+					elseif (isset($types['FAX'])) {
+						$pk = 'business_fax_number';
+					}
+					else $pk = 'company_telephone_number';
+				}
+				elseif (isset($types['OTHER'])) {
+					if (isset($types['FAX'])) {
+						$pk = 'other_fax_number';
+					}
+					else $pk = 'other_telephone_number';
+				}
+				// Note: there is also 'cellular_telephone_number',
+				// but it's an alias for 'mobile_telephone_number'.
+				$map = array
+					( 'CAR'       => 'car_telephone_number'
+					, 'CELL'      => 'mobile_telephone_number'
+					, 'FAX'       => 'primary_fax_number'
+					, 'IPHONE'    => 'mobile_telephone_number'
+					, 'ISDN'      => 'isdn_number'
+					, 'MAIN'      => 'primary_telephone_number'
+					, 'PAGER'     => 'pager_telephone_number'
+					, 'SECR'      => 'assistant_telephone_number'
+					, 'TEXTPHONE' => 'ttytdd_telephone_number'
+					);
+
+				// No match yet? Try to match against map above:
+				if (FALSE($pk)) {
+					foreach ($map as $prop_vcard => $prop_mapi) {
+						if (isset($types[$prop_vcard])) {
+							$pk = $prop_mapi;
+							break;
+						}
+					}
+				}
+			}
+			// Still no match found?
+			if (FALSE($pk)) {
+				// If no type info set (so just 'TEL:'), use default phone property:
+				if (count($types) == 0) {
+					$pk = DEFAULT_TELEPHONE_NUMBER_PROPERTY;
+				}
+				// Otherwise some unknown type was specified:
+				else {
+					$this->logger->warn('Unknown telephone type(s): '.implode(';', $types));
+					continue;
+				}
+			}
+			$mapi[$propertyKeys[$pk]] = $tel->value;
+		}
+	}
 }

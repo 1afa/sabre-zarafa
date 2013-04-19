@@ -201,32 +201,38 @@ class VCardProducer implements IVCardProducer {
 		// Telephone numbers
 		// webaccess can handle 19 telephone numbers...
 		$map = array
-			( 'TEL;TYPE=HOME,VOICE' => 'home_telephone_number'
-			, 'TEL;TYPE=HOME,VOICE' => 'home2_telephone_number'
-			, 'TEL;TYPE=CELL'       => 'cellular_telephone_number'
-			, 'TEL;TYPE=WORK,VOICE' => 'office_telephone_number'
-			, 'TEL;TYPE=WORK,VOICE' => 'business2_telephone_number'
-			, 'TEL;TYPE=WORK,FAX'   => 'business_fax_number'
-			, 'TEL;TYPE=HOME,FAX'   => 'home_fax_number'
-			, 'TEL;TYPE=PAGER'      => 'pager_telephone_number'
-			, 'TEL;TYPE=ISDN'       => 'isdn_number'
-			, 'TEL;TYPE=WORK'       => 'company_telephone_number'
-			, 'TEL;TYPE=CAR'        => 'car_telephone_number'
-			, 'TEL;TYPE=SECR'       => 'assistant_telephone_number'
+			( 'home_telephone_number'      => array('type' => array('HOME','VOICE'), 'pref' => '1')
+			, 'home2_telephone_number'     => array('type' => array('HOME','VOICE'), 'pref' => '2')
+			, 'office_telephone_number'    => array('type' => array('WORK','VOICE'), 'pref' => '1')
+			, 'business2_telephone_number' => array('type' => array('WORK','VOICE'), 'pref' => '2')
+			, 'business_fax_number'        => array('type' => array('WORK','FAX'))
+			, 'home_fax_number'            => array('type' => array('HOME','FAX'))
+			, 'cellular_telephone_number'  => array('type' => 'CELL')
+			, 'mobile_telephone_number'    => array('type' => 'CELL')
+			, 'pager_telephone_number'     => array('type' => 'PAGER')
+			, 'isdn_number'                => array('type' => 'ISDN')
+			, 'company_telephone_number'   => array('type' => 'WORK')
+			, 'car_telephone_number'       => array('type' => 'CAR')
+			, 'assistant_telephone_number' => array('type' => 'SECR')
+			, 'other_telephone_number'     => array('type' => 'OTHER')
+			, 'primary_telephone_number'   => array('type' => 'VOICE', 'pref' => '1')
+			, 'primary_fax_number'         => array('type' => 'FAX', 'pref' => '1')
+			, 'ttytdd_telephone_number'    => array('type' => 'TEXTPHONE')
 			);
-		foreach ($map as $prop_vcard => $prop_mapi) {
-			$this->setVCard($vCard, $prop_vcard, $contactProperties, $p[$prop_mapi]);
-		}
 
+		// OSX Addressbook sends back VCards in this format:
+		// TEL;type=WORK;type=VOICE:00334xxxxx
+		foreach ($map as $prop_mapi => $prop_vcard) {
+			if (!isset($contactProperties[$p[$prop_mapi]]) || $contactProperties[$p[$prop_mapi]] == '') {
+				continue;
+			}
+			$vCard->add('TEL', $contactProperties[$p[$prop_mapi]], $prop_vcard);
+		}
 		// There are unmatched telephone numbers in zarafa, use them!
 		$unmatchedProperties = array
 			( 'callback_telephone_number'
-			, 'other_telephone_number'
-			, 'primary_fax_number'
-			, 'primary_telephone_number'
 			, 'radio_telephone_number'
 			, 'telex_telephone_number'
-			, 'ttytdd_telephone_number'
 			);
 		if (in_array(DEFAULT_TELEPHONE_NUMBER_PROPERTY, $unmatchedProperties)) {
 			// unmatched found a match!

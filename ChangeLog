@@ -1,3 +1,4 @@
+- Rewrote telephone number parsing code for clarity/solidity;
 - Calculate CTag from all cards in directory; this fixes synchronization;
 - Add documentation on how to disable ETag support;
 - Add end-user instructions on how to download and install SabreDAV;
