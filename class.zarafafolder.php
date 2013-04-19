@@ -61,17 +61,20 @@ class Zarafa_Folder
 		if (FALSE($props = $this->get_props())) {
 			return array();
 		}
-		return array(
+		$ret = array(
 			'id' => $this->entryid,
 			'uri' => $this->get_name(),
-			'ctag' => $this->get_ctag(),
 			'description' => (isset($props[PR_COMMENT]) ? $props[PR_COMMENT] : ''),
 			'principaluri' => $principal_uri,
 			'displayname' => $this->get_name(),
 			'{' . Sabre\CardDAV\Plugin::NS_CARDDAV . '}addressbook-description' => (isset($props[PR_COMMENT]) ? $props[PR_COMMENT] : ''),
-			'{http://calendarserver.org/ns/}getctag' => $this->get_ctag(),
 			'{' . Sabre\CardDAV\Plugin::NS_CARDDAV . '}supported-address-data' => new Sabre\CardDAV\Property\SupportedAddressData()
 		);
+		if (!FALSE($ctag = $this->get_ctag())) {
+			$ret['ctag'] = $ctag;
+			$ret['{http://calendarserver.org/ns/}getctag'] = $ctag;
+		}
+		return $ret;
 	}
 
 	private function
@@ -318,19 +321,31 @@ class Zarafa_Folder
 	private function
 	get_ctag ()
 	{
+		// For documentation on what a CTag is, see:
+		//   https://trac.calendarserver.org/browser/CalendarServer/trunk/doc/Extensions/caldav-ctag.txt
+		// In short, it's an unique opaque, per-folder token that changes whenever a child resource
+		// is updated.
+		// It seems logical to use the folder's modification time, but the problem is that that time
+		// doesn't change when a child is edited in-place. So unfortunately, to get clients to update
+		// properly after an edit, we must retrive all cards and check all their modification times:
 		if (FALSE($this->ctag)) {
-			if (!FALSE($props = $this->get_props()) && isset($props[PR_LAST_MODIFICATION_TIME])) {
-				$this->ctag = $props[PR_LAST_MODIFICATION_TIME];
+			if (FALSE($this->contacts) && FALSE($this->get_contacts())) {
+				return FALSE;
 			}
-			else if (!FALSE($this->contacts)) {
-				$this->ctag = 0;
-				foreach ($this->contacts as $contact) {
-					if (!isset($contact[PR_LAST_MODIFICATION_TIME])) {
-						continue;
-					}
-					if ($contact[PR_LAST_MODIFICATION_TIME] > $this->ctag) {
-						$this->ctag = $contact[PR_LAST_MODIFICATION_TIME];
-					}
+			// Find latest modification time of child:
+			$this->ctag = 0;
+			foreach ($this->contacts as $contact) {
+				if (!isset($contact[PR_LAST_MODIFICATION_TIME])) {
+					continue;
+				}
+				if ($contact[PR_LAST_MODIFICATION_TIME] > $this->ctag) {
+					$this->ctag = $contact[PR_LAST_MODIFICATION_TIME];
+				}
+			}
+			// Just to be sure, check against folder modification time too:
+			if (!FALSE($props = $this->get_props()) && isset($props[PR_LAST_MODIFICATION_TIME])) {
+				if ($props[PR_LAST_MODIFICATION_TIME] > $this->ctag) {
+					$this->ctag = $props[PR_LAST_MODIFICATION_TIME];
 				}
 			}
 		}
