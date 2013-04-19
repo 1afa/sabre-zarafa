@@ -352,16 +352,14 @@ class VCardProducer implements IVCardProducer {
 			$address[] = isset($contactProperties[$p[$propertyPrefix . '_address_postal_code']]) ? $contactProperties[$p[$propertyPrefix . '_address_postal_code']] : '';
 			$address[] = isset($contactProperties[$p[$propertyPrefix . '_address_country']])     ? $contactProperties[$p[$propertyPrefix . '_address_country']] : '';
 		}
-		
-		$address = implode(';', $address);
-		
-		if ($address != ';;;;;;') {
-			$this->logger->trace("Not empty address - adding $address");
-			$element = new Sabre\VObject\Property('ADR');
-			$element->setValue($address);
-			$element->offsetSet('TYPE', $addressType);
-			$vCard->add($element);
+		if (strlen(implode('', $address)) === 0) {
+			return;
 		}
+		$this->logger->trace("Nonempty address - adding $propertyPrefix");
+
+		$element = new Sabre\VObject\Property\Compound('ADR', NULL, array('TYPE' => $addressType));
+		$element->setParts($address);
+		$vCard->add($element);
 	}
 
 }
