@@ -1,3 +1,4 @@
+- Add documentation on how to disable ETag support;
 - Add end-user instructions on how to download and install SabreDAV;
 - Remove bundled log4php code due to licensing issues;
 - Remove included SabreDAV 1.6.x version;

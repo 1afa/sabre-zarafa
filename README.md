@@ -105,6 +105,11 @@ configuration in `httpd.conf`:
             RewriteCond %{REQUEST_FILENAME} !-f
             RewriteCond %{REQUEST_FILENAME} !-d
             RewriteRule ^.*$ /server.php
+
+            # If you're getting 412 Precondition Failed errors, try turning off ETag support:
+            # RequestHeader unset If-None-Match
+            # Header unset ETag
+            # FileETag None
         </Directory>
 
         # Files and directories writable by the server should never be public:
@@ -134,6 +139,11 @@ case, use a variant of this configuration:
         RewriteCond %{REQUEST_FILENAME} !-f
         RewriteCond %{REQUEST_FILENAME} !-d
         RewriteRule ^.*$ /sabre-zarafa/server.php
+
+        # If you're getting 412 Precondition Failed errors, try turning off ETag support:
+        # RequestHeader unset If-None-Match
+        # Header unset ETag
+        # FileETag None
     </Directory>
 
     # Files and directories writable by the server should never be public:
