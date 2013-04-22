@@ -5,7 +5,9 @@ The aim of this project is to provide a full CardDav backend for
 [Zarafa](http://www.zarafa.com) groupware.
 
 Tarballs and zipfiles of the source can be downloaded
-[here](https://github.com/bokxing-it/sabre-zarafa/tags). For changes, see the
+[here](https://github.com/bokxing-it/sabre-zarafa/tags). See below for
+installation instructions, you will also need to download and install SabreDAV
+and log4php. For an overview of the changes, see the
 [ChangeLog](https://github.com/bokxing-it/sabre-zarafa/blob/master/ChangeLog).
 
 Sabre-Zarafa is a backend for the SabreDAV server. SabreDAV is a generic DAV
@@ -19,6 +21,15 @@ likes.
 Sabre-Zarafa knows nothing about DAV, but does know how to get data from the
 Zarafa server and convert it to VCard format. Together, the SabreDAV frontend
 and the Sabre-Zarafa backend combine to form a Zarafa-based CardDAV server.
+
+Sabre-Zarafa is pretty useable, but it's not all the way there yet. Patches and
+improvements are welcome.
+
+This particular repository is a continuation of the original Sabre-Zarafa
+project, which is hosted [at Google Code](http://code.google.com/p/sabre-zarafa),
+and which has not been maintained for a while. This repository is not really a
+fork, but is intended to be the new mainline tree. Work on Sabre-Zarafa is
+sponsored by [Bokxing IT](http://www.bokxing-it.nl).
 
 ## License
 

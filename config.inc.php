@@ -1,6 +1,7 @@
 <?php
 /*
  * Copyright 2011 - 2012 Guillaume Lapierre
+ * Copyright 2012 - 2013 Bokxing IT, http://www.bokxing-it.nl
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License, version 3, 
@@ -38,7 +39,7 @@
 	define ('SABRE_AUTH_REALM', 'Zarafa SabreDAV CardDav');
 	
 	// Product ID sent in vcards
-	define ('VCARD_PRODUCT_ID', '-//SabreDav/ZarafaBackend/0.17');
+	define ('VCARD_PRODUCT_ID', '-//SabreDav/ZarafaBackend/0.18');
 	
 	// Choose VCard version
 	// Supported values:

@@ -1,3 +1,5 @@
+* Mon Apr 22 2013 Alfred Klomp <alfred@bokxing-it.nl> 0.18
+- Tag version 0.18
 - Rewrote email producing code to print pref property;
 - Rewrote telephone number parsing code for clarity/solidity;
 - Calculate CTag from all cards in directory; this fixes synchronization;
