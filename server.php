@@ -31,18 +31,17 @@
 	set_include_path(get_include_path() . PATH_SEPARATOR . "/usr/share/php/" . PATH_SEPARATOR . BASE_PATH . "lib/");
 
 	// Logging and error handling
-	include_once ("log4php/Logger.php");
-	Logger::configure("log4php.xml");
-	$log = Logger::getLogger("server");
-	
+	require_once 'ZarafaLogger.php';
+	$logger = new Zarafa_Logger('server');
+
 	error_reporting(E_ALL);
 	ini_set("display_errors", true);
 	ini_set("html_errors", false);
 
 	//Mapping PHP errors to exceptions
-	function exception_error_handler($errno, $errstr, $errfile, $errline ) {
-		global $log;
-		$log->fatal("PHP error $errno in $errfile:$errline : $errstr");
+	function exception_error_handler ($errno, $errstr, $errfile, $errline) {
+		global $logger;
+		$logger->fatal("PHP error $errno in $errfile:$errline : $errstr");
 		throw new ErrorException($errstr, 0, $errno, $errfile, $errline);
 	}
 	set_error_handler("exception_error_handler");
@@ -59,19 +58,19 @@
 	include "ZarafaPrincipalsBackend.php";		// Principals
 
 	function checkMapiError($msg) {
-		global $log;
+		global $logger;
 		if (mapi_last_hresult() != 0) {
-			$log->warn("MAPI error $msg: " . get_mapi_error_name());
+			$logger->warn("MAPI error $msg: " . get_mapi_error_name());
 			exit;
 		}
 	}
 	
 	// Zarafa bridge
-	$log->trace("Init bridge");
+	$logger->trace("Init bridge");
 	$bridge = new Zarafa_Bridge();
 	
 	// Backends
-	$log->trace("Loading backends");
+	$logger->trace("Loading backends");
 	$authBackend      = new Zarafa_Auth_Basic_Backend($bridge);
 	$principalBackend = new Zarafa_Principals_Backend($bridge);
 	$carddavBackend   = new Zarafa_CardDav_Backend($bridge); 
@@ -83,12 +82,12 @@
 	);
 
 	// The object tree needs in turn to be passed to the server class
-	$log->trace("Starting server");
+	$logger->trace("Starting server");
 	$server = new Sabre\DAV\Server($nodes);
 	$server->setBaseUri(CARDDAV_ROOT_URI);
 
 	// Required plugins 
-	$log->trace("Adding plugins");
+	$logger->trace("Adding plugins");
 	$server->addPlugin(new Sabre\DAV\Auth\Plugin($authBackend, SABRE_AUTH_REALM));
 	$server->addPlugin(new Sabre\CardDAV\Plugin());
 	$server->addPlugin(new Sabre\DAVACL\Plugin());
@@ -100,8 +99,8 @@
 	}
 	
 	// Start server
-	$log->trace("Server exec");
-	$log->info("SabreDAV version " . Sabre\DAV\Version::VERSION . '-' . Sabre\DAV\Version::STABILITY);
-	$log->info("Producer: " . VCARD_PRODUCT_ID );
-	$log->info("Revision: " . (SABRE_ZARAFA_REV + 1) . ' - ' . SABRE_ZARAFA_DATE);
+	$logger->trace("Server exec");
+	$logger->info("SabreDAV version " . Sabre\DAV\Version::VERSION . '-' . Sabre\DAV\Version::STABILITY);
+	$logger->info("Producer: " . VCARD_PRODUCT_ID );
+	$logger->info("Revision: " . (SABRE_ZARAFA_REV + 1) . ' - ' . SABRE_ZARAFA_DATE);
 	$server->exec();

@@ -25,11 +25,8 @@
  * 
  */
 
-require_once("common.inc.php");
-
-// Logging
-include_once ("log4php/Logger.php");
-Logger::configure("log4php.xml");
+require_once 'common.inc.php';
+require_once 'ZarafaLogger.php';
 
 class Zarafa_Principals_Backend implements Sabre\DAVACL\PrincipalBackend\BackendInterface
 {
@@ -42,7 +39,7 @@ class Zarafa_Principals_Backend implements Sabre\DAVACL\PrincipalBackend\Backend
 	{
 		// Stores a reference to Zarafa Auth Backend so as to get the session
 		$this->bridge = $zarafaBridge;
-		$this->logger = Logger::getLogger(__CLASS__);		
+		$this->logger = new Zarafa_Logger(__CLASS__);
 	}
 
 	/**

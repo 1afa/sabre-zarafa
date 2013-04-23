@@ -28,9 +28,8 @@
 require_once "vcard/IVCardParser.php";
 require_once "config.inc.php";
 
-// Logging
-include_once ("log4php/Logger.php");
-	
+require_once 'ZarafaLogger.php';
+
 // PHP-MAPI
 require_once("mapi/mapi.util.php");
 require_once("mapi/mapicode.php");
@@ -45,7 +44,7 @@ class VCardParser implements IVCardParser {
 	
 	function __construct($bridge) {
 		$this->bridge = $bridge;
-		$this->logger = Logger::getLogger(__CLASS__);
+		$this->logger = new Zarafa_Logger(__CLASS__);
 		$this->logger->trace(__CLASS__ . " constructor done.");
 	}
 

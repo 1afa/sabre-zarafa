@@ -25,9 +25,7 @@
  *
  */
 
-// Logging
-require_once 'log4php/Logger.php';
-Logger::configure('log4php.xml');
+require_once 'ZarafaLogger.php';
 
 class Zarafa_Folder
 {
@@ -52,7 +50,7 @@ class Zarafa_Folder
 		$this->store = $store;
 		$this->handle = $handle;
 		$this->entryid = $entryid;
-		$this->logger = Logger::getLogger(__CLASS__);
+		$this->logger = new Zarafa_Logger(__CLASS__);
 	}
 
 	public function

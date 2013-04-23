@@ -30,10 +30,6 @@
 	include (BASE_PATH . "version.inc.php");
 	include (BASE_PATH . "common.inc.php");
 
-	// Logging
-	include_once ("log4php/Logger.php");
-	Logger::configure("log4php.xml");
-	
 	// PHP-MAPI
 	require_once("mapi/mapi.util.php");
 	require_once("mapi/mapicode.php");
@@ -49,6 +45,7 @@
 	require_once "vcard/IVCardProducer.php";
 	include_once "vcard/VCardProducer.php";
 
+	require_once 'ZarafaLogger.php';
 	require_once 'function.restrict.php';
 	require_once 'class.zarafastore.php';
 
@@ -75,7 +72,7 @@ class Zarafa_Bridge {
 	 */
 	public function __construct() {
 		// Stores a reference to Zarafa Auth Backend so as to get the session
-		$this->logger = Logger::getLogger(__CLASS__);
+		$this->logger = new Zarafa_Logger(__CLASS__);
 	}
 	
 	/**

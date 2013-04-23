@@ -25,11 +25,8 @@
  * 
  */
 
-require_once("common.inc.php");
-
-// Logging
-include_once ("log4php/Logger.php");
-Logger::configure("log4php.xml");
+require_once 'common.inc.php';
+require_once 'ZarafaLogger.php';
 
 // PHP-MAPI
 require_once("mapi/mapi.util.php");
@@ -38,17 +35,18 @@ require_once("mapi/mapidefs.php");
 require_once("mapi/mapitags.php");
 require_once("mapi/mapiguid.php");
 	
-class Zarafa_CardDav_Backend extends Sabre\CardDAV\Backend\AbstractBackend {
-	
+class Zarafa_CardDav_Backend extends Sabre\CardDAV\Backend\AbstractBackend
+{
 	protected $bridge;
 	private $logger;
 
-    public function __construct($zarafaBridge) {
+	public function __construct ($zarafaBridge)
+	{
 		// Stores a reference to Zarafa Auth Backend so as to get the session
-        $this->bridge = $zarafaBridge;
-		$this->logger = Logger::getLogger(__CLASS__);		
-    }
-	
+		$this->bridge = $zarafaBridge;
+		$this->logger = new Zarafa_Logger(__CLASS__);
+	}
+
     /**
      * Returns the list of addressbooks for a specific user.
      *

@@ -24,28 +24,27 @@
  * 
  */
 
-	include_once ("log4php/Logger.php");
-	Logger::configure("log4php.xml");
- 
-	class Zarafa_Auth_Basic_Backend extends Sabre\DAV\Auth\Backend\AbstractBasic {
+require_once 'ZarafaLogger.php';
+
+class Zarafa_Auth_Basic_Backend extends Sabre\DAV\Auth\Backend\AbstractBasic
+{
+	protected $bridge;
+	private $logger;
 		
-		protected $bridge;
-		private $logger;
-		
-		public function __construct($zarafaBridge) {
-			// Stores a reference to Zarafa Auth Backend so as to get the session
-			$this->bridge = $zarafaBridge;
-			$this->logger = Logger::getLogger(__CLASS__);
-		}
-		
-		// Implements
-		protected function validateUserPass($username, $password) {
-			$this->logger->trace(__FUNCTION__."($username, <password>)");
-			$connect = $this->bridge->connect($username, $password);
-			if (!$connect) {
-				$this->logger->warn("Connection failed for $username");
-			}
-			return $connect;
-		}
-		
+	public function __construct ($zarafaBridge)
+	{
+		// Stores a reference to Zarafa Auth Backend so as to get the session
+		$this->bridge = $zarafaBridge;
+		$this->logger = new Zarafa_Logger(__CLASS__);
 	}
+		
+	// Implements
+	protected function validateUserPass($username, $password) {
+		$this->logger->trace(__FUNCTION__."($username, <password>)");
+		$connect = $this->bridge->connect($username, $password);
+		if (!$connect) {
+			$this->logger->warn("Connection failed for $username");
+		}
+		return $connect;
+	}
+}

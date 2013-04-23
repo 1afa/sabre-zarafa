@@ -25,10 +25,8 @@
  * 
  */
 
-// Logging
-include_once ("log4php/Logger.php");
-Logger::configure("log4php.xml");
- 
+require_once 'ZarafaLogger.php';
+
 require_once "vcard/IVCardProducer.php";
 require_once "config.inc.php";
 	
@@ -50,7 +48,7 @@ class VCardProducer implements IVCardProducer {
 		$this->bridge = $bridge;
 		$this->version = $version;
 		$this->defaultCharset = 'utf-8';
-		$this->logger = Logger::getLogger(__CLASS__);
+		$this->logger = new Zarafa_Logger(__CLASS__);
 	}
 
 	/**
