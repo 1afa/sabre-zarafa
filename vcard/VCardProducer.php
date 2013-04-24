@@ -125,20 +125,22 @@ class VCardProducer implements IVCardProducer {
 		$contactInfos[] = isset($contactProperties[$p['display_name_prefix']]) ? $contactProperties[$p['display_name_prefix']] : '';
 		$contactInfos[] = isset($contactProperties[$p['generation']])          ? $contactProperties[$p['generation']] : '';
 
-		$elem = new Sabre\VObject\Property\Compound('N');
-		$elem->setParts($contactInfos);
-	//	if (isset($contactProperties[$p['fileas']])) $elem->offsetSet('SORT-AS', '"'.$contactProperties[$p['fileas']].'"');
-		$vCard->add($elem);
-
+		if (strlen(implode('', $contactInfos)) > 0) {
+			$elem = new Sabre\VObject\Property\Compound('N');
+			$elem->setParts($contactInfos);
+		//	if (isset($contactProperties[$p['fileas']])) $elem->offsetSet('SORT-AS', '"'.$contactProperties[$p['fileas']].'"');
+			$vCard->add($elem);
+		}
 		// Add ORG:<company>;<department>
 		$orgdata = array();
 		$orgdata[] = (isset($contactProperties[$p['company_name']])) ? $contactProperties[$p['company_name']] : '';
 		$orgdata[] = (isset($contactProperties[$p['department_name']])) ? $contactProperties[$p['department_name']] : '';
 
-		$elem = new Sabre\VObject\Property\Compound('ORG');
-		$elem->setParts($orgdata);
-		$vCard->add($elem);
-
+		if (strlen(implode('', $orgdata)) > 0) {
+			$elem = new Sabre\VObject\Property\Compound('ORG');
+			$elem->setParts($orgdata);
+			$vCard->add($elem);
+		}
 		$this->setVCard($vCard, 'SORT-AS',         $contactProperties, $p['fileas']);
 		$this->setVCard($vCard, 'NICKNAME',        $contactProperties, $p['nickname']);
 		$this->setVCard($vCard, 'TITLE',           $contactProperties, $p['title']);
