@@ -24,6 +24,20 @@
  * 
  */
 
+// Handle uncaught errors by logging them and quitting:
+function uncaught_error_handler ($errno, $errstr, $errfile, $errline)
+{
+	global $logger;
+
+	if (is_object($logger)) {
+		$logger->fatal("PHP error $errno in $errfile:$errline : $errstr");
+	}
+	else {
+		error_log("PHP error $errno in $errfile:$errline : $errstr");
+	}
+	die();
+}
+
  	// Load configuration file
 	define('BASE_PATH', dirname(__FILE__) . "/");
 
@@ -35,20 +49,19 @@
 	$logger = new Zarafa_Logger('server');
 
 	error_reporting(E_ALL);
-	ini_set("display_errors", true);
+	ini_set('display_errors', FALSE);
 	ini_set("html_errors", false);
 
-	//Mapping PHP errors to exceptions
-	function exception_error_handler ($errno, $errstr, $errfile, $errline) {
-		global $logger;
-		$logger->fatal("PHP error $errno in $errfile:$errline : $errstr");
-		throw new ErrorException($errstr, 0, $errno, $errfile, $errline);
-	}
-	set_error_handler("exception_error_handler");
+	// Handle all unhandled PHP errors through this function:
+	set_error_handler('uncaught_error_handler');
 	
 	// Include Zarafa SabreDav Bridge
 	include ("./ZarafaBridge.php");
 	
+	// Disable MAPI exceptions;
+	// we handle errors by checking a function's return status (at least for now):
+	mapi_enable_exceptions(FALSE);
+
 	// SabreDAV
 	include('lib/SabreDAV/vendor/autoload.php');
 
