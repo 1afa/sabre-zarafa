@@ -1,3 +1,4 @@
+- VCardProducer: don't error out when email display name not found;
 - Create separate logging class, which will try to load log4php but silently
   fail if that component is not installed; this loosens the dependency on
   log4php.

@@ -240,9 +240,16 @@ class VCardProducer implements IVCardProducer {
 			// Get display name:
 			$dn = isset($contactProperties[$p["email_address_display_name_$i"]])
 			          ? $contactProperties[$p["email_address_display_name_$i"]]
-			          : $contactProperties[$p['display_name']];
+			          : (isset($contactProperties[$p['display_name']])
+			                 ? $contactProperties[$p['display_name']]
+			                 : FALSE);
 
-			$vCard->add(new Sabre\VObject\Property('EMAIL', $contactProperties[$p["email_address_$i"]], array('X-CN' => "\"$dn\"", 'pref' => "$i")));
+			if (FALSE($dn)) {
+				$vCard->add(new Sabre\VObject\Property('EMAIL', $contactProperties[$p["email_address_$i"]], array('pref' => "$i")));
+			}
+			else {
+				$vCard->add(new Sabre\VObject\Property('EMAIL', $contactProperties[$p["email_address_$i"]], array('pref' => "$i", 'X-CN' => "\"$dn\"")));
+			}
 		}
 
 		// URL and Instant Messenging (vCard 3.0 extension)
