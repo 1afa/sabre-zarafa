@@ -1,3 +1,7 @@
+- VCardParser: rewrite contact photo logic, the old code did not properly
+  recognize differences between uppercase and lowercase encoding strings. Also
+  build in some more checks, notably the check if the GD extension is loaded
+  before trying to use it.
 - VCardProducer: don't error out when email display name not found;
 - Create separate logging class, which will try to load log4php but silently
   fail if that component is not installed; this loosens the dependency on

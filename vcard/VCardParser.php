@@ -330,40 +330,13 @@ class VCardParser implements IVCardParser {
 		
 		// Contact picture
 		if (isset($vcard->photo)) {
-			$type     = strtolower($vcard->photo->offsetGet("TYPE")->value);
-			$encoding = $vcard->photo->offsetGet("ENCODING")->value;
+			$type     = strtolower($vcard->photo->offsetGet('TYPE')->value);
+			$encoding = strtolower($vcard->photo->offsetGet('ENCODING')->value);
 			$content  = $vcard->photo->value;
-			
+
 			$this->logger->debug("Found contact picture type $type encoding $encoding");
-			
-			if (($encoding == 'b') || ($encoding == '')) {
-				$content = base64_decode($content);
-				if (($type != 'jpeg') && ($type != 'image/jpeg') && ($type != 'image/jpg')) {
-					$this->logger->trace("Converting to jpeg using GD");
-					$img = imagecreatefromstring($content);
-					$this->logger->trace("Image loaded by GD");
-					if ($img === FALSE) {
-						$this->logger->warn("Corrupted contact picture or unknown format");
-						$content = NULL;
-					} else {
-						// Capture output
-						ob_start();
-						$r = imagejpeg($img);
-						$content = ob_get_contents();
-						ob_end_clean();
-						// imagedestroy($img);
-						$this->logger->debug("Convert done - result: " . ($r ? "OK" : "KO"));
-					}
-				}
-				if ($content !== NULL) {
-					$this->logger->info("Contact has picture!");
-					$properties['ContactPicture'] = $content;
-					$properties[PR_HASATTACH] = true;
-					$properties[$p['has_picture']] = true;
-				}
-			} else {
-				$this->logger->warn("Encoding not supported: $encoding");
-			}
+
+			$this->photoConvert($content, $type, $encoding, $properties, $p);
 		}
 		
 		// Misc
@@ -512,5 +485,44 @@ class VCardParser implements IVCardParser {
 			}
 			$mapi[$propertyKeys[$pk]] = $tel->value;
 		}
+	}
+
+	private function
+	photoConvert ($content, $type, $encoding, &$mapi, &$propertyKeys)
+	{
+		if ($encoding !== 'b' && $encoding != '') {
+			$this->logger->warn("Encoding not supported: $encoding");
+			return FALSE;
+		}
+		if (FALSE($content = base64_decode($content))) {
+			$this->logger->warn('Error: failed to base64-decode contact photo');
+			return FALSE;
+		}
+		// Convert to JPEG if not already in that format:
+		if ($type != 'jpeg' && $type != 'image/jpeg' && $type != 'image/jpg')
+		{
+			if (FALSE(extension_loaded('gd'))) {
+				$this->logger->warn("Cannot convert image of type \"$type\" to jpeg: GD extension not installed");
+				return FALSE;
+			}
+			$this->logger->trace('Converting to jpeg using GD');
+			if (FALSE($img = imagecreatefromstring($content))) {
+				$this->logger->warn('Corrupted contact picture or unknown format');
+				return FALSE;
+			}
+			$this->logger->trace('Image loaded by GD');
+			// Capture output
+			ob_start();
+			$r = imagejpeg($img);
+			$content = ob_get_contents();
+			ob_end_clean();
+			imagedestroy($r);
+		}
+		$this->logger->info('Contact has picture!');
+		$mapi['ContactPicture'] = $content;
+		$mapi[PR_HASATTACH] = TRUE;
+		$mapi[$propertyKeys['has_picture']] = TRUE;
+
+		return TRUE;
 	}
 }
