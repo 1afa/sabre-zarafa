@@ -1,3 +1,4 @@
+- VCardParser: remove superfluous escaping functions; VObject handles that now;
 - VCardParser: rewrite contact photo logic, the old code did not properly
   recognize differences between uppercase and lowercase encoding strings. Also
   build in some more checks, notably the check if the GD extension is loaded

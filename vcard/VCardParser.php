@@ -344,47 +344,6 @@ class VCardParser implements IVCardParser {
 		if (isset($vcard->note))			$properties[$p['notes']] = $vcard->note->value;
 	}
 
-	/**
-	 * Escape vcard value
-	 * , -> \, (always)
-	 * ; -> \; (when required)
-	 * \ -> \\ (always)
-     * newline -> \n (always)
-	 * @param $value value to be escaped
-	 * @param compound is this part of a compound property? If so ; must be escaped
-	 * @return escaped value
-	 */
-	public static function escapeVCardValue($value, $compound) {
-		
-		$replaceValues = array(
-			'\\' => '\\\\',
-			','	=> '\\,',
-			"\r\n" => '\\n',
-			"\n\r" => '\\n',
-			"\n" => '\\n',
-			"\r" => '\\r'
-		);
-		
-		if ($compound) {
-			$replaceValues[';'] = '\\;';
-		} 
-		
-		return str_replace(array_keys($replaceValues), array_values($replaceValues), $value);
-	}
-	
-	/**
-	 * Unescape a property value
-	 */
-	public static function unescapeVCardValue($value) {
-		$replaceValues = array(
-			'\\,' => ',',
-			'\\;' => ';',			// ; MAY be escaped so we have to unescape it always
-			'\\n' => "\n",
-			'\\\\' => '\\'
-		);
-		return str_replace(array_keys($replaceValues), array_values($replaceValues), $value);
-	}
-
 	private function
 	phoneConvert (&$vcard, &$mapi, &$propertyKeys)
 	{
