@@ -516,7 +516,7 @@ class VCardParser implements IVCardParser {
 			$r = imagejpeg($img);
 			$content = ob_get_contents();
 			ob_end_clean();
-			imagedestroy($r);
+			imagedestroy($img);
 		}
 		$this->logger->info('Contact has picture!');
 		$mapi['ContactPicture'] = $content;
