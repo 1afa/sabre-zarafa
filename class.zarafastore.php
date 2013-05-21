@@ -160,12 +160,13 @@ class Zarafa_Store
 	private function
 	subtree_walk ($subtree_id, $restriction)
 	{
-		$folder = mapi_msgstore_openentry($this->handle, $subtree_id);
-		$hier = mapi_folder_gethierarchytable($folder, CONVENIENT_DEPTH | MAPI_DEFERRED_ERRORS);
-
-		mapi_table_restrict($hier, $restriction);
-
 		$folders = array();
+
+		if (FALSE($folder = mapi_msgstore_openentry($this->handle, $subtree_id))
+		 || FALSE($hier = mapi_folder_gethierarchytable($folder, CONVENIENT_DEPTH | MAPI_DEFERRED_ERRORS))
+		 || FALSE(mapi_table_restrict($hier, $restriction))) {
+			return $folders;
+		}
 		foreach (mapi_table_queryallrows($hier, array(PR_ENTRYID, PR_SUBFOLDERS, PR_DISPLAY_NAME)) as $row) {
 			$folders[$row[PR_ENTRYID]] = $row[PR_DISPLAY_NAME];
 			$folders = array_merge($folders, $this->subtree_walk($row[PR_ENTRYID], $restriction));
