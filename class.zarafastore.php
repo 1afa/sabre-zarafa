@@ -25,6 +25,7 @@
  *
  */
 
+require_once 'ZarafaLogger.php';
 require_once 'class.zarafafolder.php';
 
 class Zarafa_Store
@@ -36,6 +37,7 @@ class Zarafa_Store
 	public $root_props;
 	public $folders = array();
 	public $is_unicode;
+	private $logger;
 
 	public function
 	__construct (&$bridge, $entryid, $handle)
@@ -43,6 +45,8 @@ class Zarafa_Store
 		$this->bridge = $bridge;
 		$this->entryid = $entryid;
 		$this->handle = $handle;
+
+		$this->logger = new Zarafa_Logger(__CLASS__);
 
 		$this->root = mapi_msgstore_openentry($this->handle, NULL);
 		$this->root_props = mapi_getprops($this->root, array(PR_IPM_CONTACT_ENTRYID));
@@ -124,13 +128,10 @@ class Zarafa_Store
 		$description = isset($properties['{' . Sabre\CardDAV\Plugin::NS_CARDDAV . '}addressbook-description']) ? $properties['{' . Sabre\CardDAV\Plugin::NS_CARDDAV . '}addressbook-description'] : '';
 
 		// FIXME: does this even work? According to the docs, mapi_folder_createfolder() returns a boolean...
-		if (FALSE($folder = mapi_folder_createfolder($this->root, $displayname, $description, MAPI_UNICODE | OPEN_IF_EXISTS, FOLDER_GENERIC))) {
-			return FALSE;
-		}
-		if (FALSE(mapi_setprops($folder, array(PR_CONTAINER_CLASS => 'IPF.Contact')))) {
-			return FALSE;
-		}
-		if (FALSE(mapi_savechanges($folder))) {
+		if (FALSE($folder = mapi_folder_createfolder($this->root, $displayname, $description, MAPI_UNICODE | OPEN_IF_EXISTS, FOLDER_GENERIC))
+		 || FALSE(mapi_setprops($folder, array(PR_CONTAINER_CLASS => 'IPF.Contact')))
+		 || FALSE(mapi_savechanges($folder))) {
+			$this->logger->debug(__FUNCTION__.': '.get_mapi_error_name());
 			return FALSE;
 		}
 		// FIXME add folder to internal cache?
@@ -147,10 +148,9 @@ class Zarafa_Store
 			return FALSE;
 		}
 		// Delete folder content
-		if (FALSE(mapi_folder_emptyfolder($folder_handle, DEL_ASSOCIATED))) {
-			return FALSE;
-		}
-		if (FALSE(mapi_folder_deletefolder($parent_handle, $entryid))) {
+		if (FALSE(mapi_folder_emptyfolder($folder_handle, DEL_ASSOCIATED))
+		 || FALSE(mapi_folder_deletefolder($parent_handle, $entryid))) {
+			$this->logger->debug(__FUNCTION__.': '.get_mapi_error_name());
 			return FALSE;
 		}
 		unset($this->folders[$entryid]);
@@ -165,6 +165,7 @@ class Zarafa_Store
 		if (FALSE($folder = mapi_msgstore_openentry($this->handle, $subtree_id))
 		 || FALSE($hier = mapi_folder_gethierarchytable($folder, CONVENIENT_DEPTH | MAPI_DEFERRED_ERRORS))
 		 || FALSE(mapi_table_restrict($hier, $restriction))) {
+			$this->logger->debug(__FUNCTION__.': '.get_mapi_error_name());
 			return $folders;
 		}
 		foreach (mapi_table_queryallrows($hier, array(PR_ENTRYID, PR_SUBFOLDERS, PR_DISPLAY_NAME)) as $row) {

@@ -244,7 +244,7 @@ class Zarafa_Folder
 			return FALSE;
 		}
 		if (FALSE($contact = mapi_msgstore_openentry($this->store->handle, $entryid))) {
-			$this->logger->fatal(__FUNCTION__.': could not open contact object');
+			$this->logger->fatal(__FUNCTION__.': could not open contact object: '.get_mapi_error_name());
 			return FALSE;
 		}
 		$mapiProperties = $this->bridge->vcardToMapiProperties($data);
@@ -272,7 +272,7 @@ class Zarafa_Folder
 		//	$dump = print_r ($nullProperties, true);
 		//	$this->logger->trace("Removing properties\n$dump");
 			if (FALSE(mapi_deleteprops($contact, $nullProperties))) {
-				$this->logger->fatal(__FUNCTION__.': could not remove properties in backend');
+				$this->logger->fatal(__FUNCTION__.': could not remove properties in backend: '.get_mapi_error_name());
 				return FALSE;
 			}
 		}
@@ -296,7 +296,7 @@ class Zarafa_Folder
 			return FALSE;
 		}
 		if (FALSE(mapi_folder_deletemessages($this->handle, array($entryid)))) {
-			$this->logger->fatal(__FUNCTION__.': could not delete contact');
+			$this->logger->fatal(__FUNCTION__.': could not delete contact: '.get_mapi_error_name());
 			return FALSE;
 		}
 		return TRUE;
