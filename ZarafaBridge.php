@@ -657,13 +657,14 @@ class Zarafa_Bridge {
 	 * @param entryId contact entry id
 	 * @param contactPicture must be a valid jpeg file. If contactPicture is NULL will remove contact picture from contact if exists
 	 */
-	public function setContactPicture(&$contact, $contactPicture) {
+	public function setContactPicture(&$contact, $contactPicture)
+	{
 		$this->logger->trace(__FUNCTION__);
-		
-		// Find if contact picture is already set
-		$contactAttachment = -1;
-		$hasattachProp = mapi_getprops($contact, array(PR_HASATTACH));
-		if ($hasattachProp) {
+
+		$contactAttachment = FALSE;
+
+		// Find if contact picture is already set:
+		if (mapi_getprops($contact, array(PR_HASATTACH))) {
 			$attachmentTable = mapi_message_getattachmenttable($contact);
 			$attachments = mapi_table_queryallrows($attachmentTable, array(
 				PR_ATTACH_NUM,
@@ -679,39 +680,45 @@ class Zarafa_Bridge {
 				PR_EC_WA_ATTACHMENT_HIDDEN_OVERRIDE
 			));
 			foreach ($attachments as $attachmentRow) {
-				if (isset($attachmentRow[PR_ATTACHMENT_CONTACTPHOTO]) && $attachmentRow[PR_ATTACHMENT_CONTACTPHOTO]) {
+				if (isset($attachmentRow[PR_ATTACHMENT_CONTACTPHOTO])
+				       && $attachmentRow[PR_ATTACHMENT_CONTACTPHOTO]) {
 					$contactAttachment = $attachmentRow[PR_ATTACH_NUM];
 					break;
 				}
 			}
 		}
-		// Remove existing attachment if necessary
-		if ($contactAttachment != -1) {
-			$this->logger->trace("removing existing contact picture");
-			$attach = mapi_message_deleteattach($contact, $contactAttachment);
+		// Remove existing attachment if necessary:
+		if (!FALSE($contactAttachment)) {
+			$this->logger->trace('removing existing contact picture');
+			if (FALSE(mapi_message_deleteattach($contact, $contactAttachment))) {
+				$this->logger->warn(__FUNCTION__.': could not delete attachment: '.get_mapi_error_name());
+				// TODO: should we return with error?
+			}
 		}
-		
-		if ($contactPicture !== NULL) {
-			$this->logger->debug("Saving contact picture as attachment");
+		if ($contactPicture == NULL) {
+			return TRUE;
+		}
+		$this->logger->debug('Saving contact picture as attachment');
 
-			// Create attachment
-			$attach = mapi_message_createattach($contact);
-			
-			// Update contact attachment properties
-			$properties = array(
-				PR_ATTACH_SIZE => strlen($contactPicture),
-				PR_ATTACH_LONG_FILENAME => 'ContactPicture.jpg',
-				PR_ATTACHMENT_HIDDEN => false,
-				PR_DISPLAY_NAME => 'ContactPicture.jpg',
-				PR_ATTACH_METHOD => ATTACH_BY_VALUE,
-				PR_ATTACH_MIME_TAG => 'image/jpeg',
-				PR_ATTACHMENT_CONTACTPHOTO =>  true,
-				PR_ATTACH_DATA_BIN => $contactPicture,
-				PR_ATTACHMENT_FLAGS => 1,
-				PR_ATTACH_EXTENSION_A => '.jpg',
-				PR_ATTACH_NUM => 1
-			);
-			$this->save_properties($attach, $properties);
+		// Create attachment:
+		if (FALSE($attach = mapi_message_createattach($contact))) {
+			$this->logger->warn(__FUNCTION__.': could not create attachment: '.get_mapi_error_name());
+			return FALSE;
 		}
+		// Update contact attachment properties:
+		$properties = array(
+			PR_ATTACH_SIZE => strlen($contactPicture),
+			PR_ATTACH_LONG_FILENAME => 'ContactPicture.jpg',
+			PR_ATTACHMENT_HIDDEN => false,
+			PR_DISPLAY_NAME => 'ContactPicture.jpg',
+			PR_ATTACH_METHOD => ATTACH_BY_VALUE,
+			PR_ATTACH_MIME_TAG => 'image/jpeg',
+			PR_ATTACHMENT_CONTACTPHOTO =>  true,
+			PR_ATTACH_DATA_BIN => $contactPicture,
+			PR_ATTACHMENT_FLAGS => 1,
+			PR_ATTACH_EXTENSION_A => '.jpg',
+			PR_ATTACH_NUM => 1
+		);
+		return $this->save_properties($attach, $properties);
 	}
 }
