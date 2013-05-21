@@ -129,8 +129,7 @@ class Zarafa_Store
 
 		// FIXME: does this even work? According to the docs, mapi_folder_createfolder() returns a boolean...
 		if (FALSE($folder = mapi_folder_createfolder($this->root, $displayname, $description, MAPI_UNICODE | OPEN_IF_EXISTS, FOLDER_GENERIC))
-		 || FALSE(mapi_setprops($folder, array(PR_CONTAINER_CLASS => 'IPF.Contact')))
-		 || FALSE(mapi_savechanges($folder))) {
+		 || FALSE($this->bridge->save_properties($folder, array(PR_CONTAINER_CLASS => 'IPF.Contact')))) {
 			$this->logger->debug(__FUNCTION__.': '.get_mapi_error_name());
 			return FALSE;
 		}

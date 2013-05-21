@@ -442,24 +442,12 @@ class Zarafa_Bridge {
 		if (SAVE_RAW_VCARD) {
 			$this->logger->trace("Saving vcard to contact properties");
 			// Check if raw vCard is up-to-date
-			mapi_setprops($contact, array(
+			$this->save_properties($contact, array(
 					PR_CARDDAV_RAW_DATA => $vCardData,
 					PR_CARDDAV_RAW_DATA_VERSION => CACHE_VERSION,
 					PR_CARDDAV_RAW_DATA_GENERATION_TIME => time()
 			));
-
-			if (mapi_last_hresult() > 0) {
-				$this->logger->error("Error setting contact properties: " . get_mapi_error_name());
-			}
-			mapi_savechanges($contact);
-			
-			if (mapi_last_hresult() > 0) {
-				$this->logger->error("Error saving vcard to contact: " . get_mapi_error_name());
-			} else {
-				$this->logger->trace("VCard successfully added to contact properties");
-			}
 		}
-		
 		return $vCardData;
 	}
 	
@@ -610,7 +598,21 @@ class Zarafa_Bridge {
 		$dump = print_r ($this->extendedProperties, true);
 		$this->logger->trace("Properties init done:\n$dump");
 	}
-	
+
+	public function
+	save_properties (&$handle, $properties)
+	{
+		if (FALSE(mapi_setprops($handle, $properties))) {
+			$this->logger->fatal(__FUNCTION__.': MAPI error when applying mutations: '.get_mapi_error_name());
+			return FALSE;
+		}
+		if (FALSE(mapi_savechanges($handle))) {
+			$this->logger->fatal(__FUNCTION__.': MAPI error when saving changes to object: '.get_mapi_error_name());
+			return FALSE;
+		}
+		return TRUE;
+	}
+
 	/**
 	 * Generate a GUID using random numbers (version 4)
 	 * GUID are 128 bits long numbers 
@@ -709,16 +711,7 @@ class Zarafa_Bridge {
 				PR_ATTACH_EXTENSION_A => '.jpg',
 				PR_ATTACH_NUM => 1
 			);
-			mapi_setprops($attach, $properties);
-			mapi_savechanges($attach);
-		}	
-			
-		// Test
-		if (mapi_last_hresult() > 0) {
-			$this->logger->error("Error saving contact picture: " . get_mapi_error_name());
-		} else {
-			$this->logger->trace("contact picture done");
+			$this->save_properties($attach, $properties);
 		}
 	}
-	
 }

@@ -182,7 +182,7 @@ class Zarafa_Folder
 			$this->logger->info(__FUNCTION__.': no changes detected for folder');
 			return FALSE;
 		}
-		return $this->save_properties($this->handle, $mapiProperties);
+		return $this->bridge->save_properties($this->handle, $mapiProperties);
 	}
 
 	public function
@@ -233,7 +233,7 @@ class Zarafa_Folder
 		$mapiProperties[PR_LAST_MODIFICATION_TIME] = time();
 		// message flags ?
 
-		return $this->save_properties($contact, $mapiProperties);
+		return $this->bridge->save_properties($contact, $mapiProperties);
 	}
 
 	public function
@@ -279,7 +279,7 @@ class Zarafa_Folder
 		// Set properties
 		$mapiProperties[PR_LAST_MODIFICATION_TIME] = time();
 
-		return $this->save_properties($contact, $mapiProperties);
+		return $this->bridge->save_properties($contact, $mapiProperties);
 	}
 
 	/**
@@ -451,19 +451,5 @@ class Zarafa_Folder
 		return (isset($this->uri_mapping[$uri]))
 			? $this->uri_mapping[$uri]
 			: FALSE;
-	}
-
-	private function
-	save_properties (&$handle, $properties)
-	{
-		if (FALSE(mapi_setprops($handle, $properties))) {
-			$this->logger->fatal(__FUNCTION__.': MAPI error when applying mutations: '.get_mapi_error_name());
-			return FALSE;
-		}
-		if (FALSE(mapi_savechanges($handle))) {
-			$this->logger->fatal(__FUNCTION__.': MAPI error when saving changes to object: '.get_mapi_error_name());
-			return FALSE;
-		}
-		return TRUE;
 	}
 }
