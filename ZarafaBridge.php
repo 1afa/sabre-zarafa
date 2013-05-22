@@ -361,13 +361,7 @@ class Zarafa_Bridge {
 		$properties = array();
 		$parser->vObjectToProperties($vObject, $properties);
 		
-		$dump = '';
-		ob_start();
-		print_r ($properties);
-		$dump = ob_get_contents();
-		ob_end_clean();
-		
-		$this->logger->debug("VCard properties:\n" . $dump);
+		$this->logger->debug("VCard properties:\n" . print_r($properties, TRUE));
 		
 		return $properties;
 	}

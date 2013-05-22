@@ -53,15 +53,11 @@ class VCardParser implements IVCardParser {
      * @param object $vCard 
      * @param object $properties array storing MAPI properties
 	 */
-	public function vObjectToProperties($vcard, &$properties) {
+	public function vObjectToProperties ($vcard, &$properties)
+	{
 		$this->logger->info("vObjectToProperties");
 		
-		ob_start();
-		print_r ($vcard);
-		$dump = ob_get_contents();
-		ob_end_clean();
-
-		$this->logger->trace("VObject :\n$dump");
+		$this->logger->trace("VObject: \n" . print_r($vcard, TRUE));
 		
 		// Common VCard properties parsing
 		$p = $this->bridge->getExtendedProperties();
