@@ -230,7 +230,6 @@ class Zarafa_Folder
 		$p = $this->bridge->getExtendedProperties();
 		$mapiProperties[$p['icon_index']] = "512";
 		$mapiProperties[$p['message_class']] = 'IPM.Contact';
-		$mapiProperties[PR_LAST_MODIFICATION_TIME] = time();
 		// message flags ?
 
 		return $this->bridge->save_properties($contact, $mapiProperties);
@@ -276,9 +275,6 @@ class Zarafa_Folder
 				return FALSE;
 			}
 		}
-		// Set properties
-		$mapiProperties[PR_LAST_MODIFICATION_TIME] = time();
-
 		return $this->bridge->save_properties($contact, $mapiProperties);
 	}
 

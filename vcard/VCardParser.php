@@ -206,17 +206,22 @@ class VCardParser implements IVCardParser {
 		if (isset($vcard->x_ms_manager))	$properties[$p['manager_name']] = $vcard->x_ms_manager->value;
 		if (isset($vcard->x_ms_spouse))		$properties[$p['spouse_name']] = $vcard->x_ms_spouse->value;
 		
-		// Dates
+		// Dates:
 		if (isset($vcard->bday)) {
 			$time = new DateTime($vcard->bday->value);
 			$properties[$p['birthday']] = $time->format('U');
 		}
-			
 		if (isset($vcard->anniversary)) {
 			$time = new DateTime($vcard->anniversary->value);
 			$properties[$p['wedding_anniversary']] = $time->format('U');
 		}
-		
+		if (isset($vcard->rev)) {
+			$time = new DateTime($vcard->rev->value);
+			$properties[$p['last_modification_time']] = $time->format('U');
+		}
+		else {
+			$properties[$p['last_modification_time']] = time();
+		}
 		// Telephone numbers
 		$this->phoneConvert($vcard, $properties, $p);
 
