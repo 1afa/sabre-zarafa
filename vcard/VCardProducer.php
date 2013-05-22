@@ -73,13 +73,22 @@ class VCardProducer implements IVCardProducer {
      * @param array $properties 
 	 * @param object $vCard
 	 */
-	public function propertiesToVObject($contact, &$vCard) {
-
+	public function propertiesToVObject($contact, $contactTableProps, &$vCard)
+	{
 		$this->logger->debug("Generating contact vCard from properties");
-		
+
 		$p = $this->bridge->getExtendedProperties();
 		$contactProperties =  mapi_getprops($contact); // $this->bridge->getProperties($contactId);
-		
+
+		// $contactTableProps contains extra properties from the table,
+		// such as PR_ENTRYID, PR_LAST_MODIFICATION_TIME and PR_CARDDAV_URI.
+		// Mix these in with the contact properties:
+		// (Cannot use array_merge() since it renumbers numeric indices):
+		foreach ($contactTableProps as $key => $val) {
+			if (!isset($contactProperties[$key])) {
+				$contactProperties[$key] = $val;
+			}
+		}
 		$this->logger->trace("Contact properties: \n" . print_r($contactProperties, TRUE));
 		
 		// Version check

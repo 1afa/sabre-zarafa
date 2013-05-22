@@ -33,6 +33,6 @@ interface IVCardProducer {
      * @param ressource $contact 
 	 * @param object $vCard
 	 */
-	public function propertiesToVObject($contact, &$vcard);
+	public function propertiesToVObject($contact, $contactTableProps, &$vcard);
 
 }
