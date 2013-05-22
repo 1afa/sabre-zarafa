@@ -173,8 +173,7 @@ class VCardProducer implements IVCardProducer {
 		foreach ($map as $prop_mapi => $prop_vcard) {
 			$this->setVCard($vCard, $prop_vcard, $contactProperties, $p[$prop_mapi]);
 		}
-
-		// Dates
+		// Dates:
 		if (isset($contactProperties[$p['birthday']])) {
 			$vCard->add('BDAY', date(DATE_PATTERN, $contactProperties[$p['birthday']]));
 		}
@@ -186,7 +185,10 @@ class VCardProducer implements IVCardProducer {
 				$vCard->add('X-ANNIVERSARY', date(DATE_PATTERN, $contactProperties[$p['wedding_anniversary']]));
 			}
 		}
-		
+		if (isset($contactProperties[$p['last_modification_time']])) {
+			// This timestamp is always in ISO8601 form, no DATE_PATTERN here:
+			$vCard->add('REV', date('c', $contactProperties[$p['last_modification_time']]));
+		}
 		// Telephone numbers
 		// webaccess can handle 19 telephone numbers...
 		$map = array
@@ -280,7 +282,6 @@ class VCardProducer implements IVCardProducer {
 		$vCard->add('UID', "urn:uuid:" . substr($contactProperties[PR_CARDDAV_URI], 0, -4)); // $this->entryIdToStr($contactProperties[PR_ENTRYID]));
 		$this->setVCard($vCard, 'NOTE', $contactProperties, $p['notes']);
 		$vCard->add('PRODID', VCARD_PRODUCT_ID);
-		$vCard->add('REV', date('c',$contactProperties[$p['last_modification_time']]));
 	}
 
 	private function
