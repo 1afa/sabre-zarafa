@@ -221,6 +221,9 @@ class VCardParser implements IVCardParser {
 		// Telephone numbers
 		$this->phoneConvert($vcard, $properties, $p);
 
+		// Social media profiles:
+		$this->socialProfileConvert($vcard, $properties, $p);
+
 		// Addresses...
 		$addresses = $vcard->select('ADR');
 		foreach ($addresses as $address) {
@@ -484,5 +487,31 @@ class VCardParser implements IVCardParser {
 		$mapi[$propertyKeys['has_picture']] = TRUE;
 
 		return TRUE;
+	}
+
+	private function
+	socialProfileConvert (&$vcard, &$mapi, &$propertyKeys)
+	{
+		foreach ($vcard->select('X-SOCIALPROFILE') as $prop)
+		{
+			if (($params = $prop->offsetGet('TYPE')) === NULL) {
+				$this->logger->trace(sprintf('Ignoring social profile with value "%s"', $prop->value));
+				continue;
+			}
+			$types = array();
+			foreach ($params as $param) {
+				$types[$param->value] = TRUE;
+			}
+			// Possibly do something with the types and objects here.
+			// Observed strings passed by OSX Contacts:
+			//   X-SOCIALPROFILE;type=twitter:http://twitter.com/name
+			//   X-SOCIALPROFILE;type=facebook:http://facebook.com/name
+			//   X-SOCIALPROFILE;type=flickr:http://www.flickr.com/photos/name
+			//   X-SOCIALPROFILE;type=linkedin:http://www.linkedin.com/in/name
+			//   X-SOCIALPROFILE;type=myspace:http://www.myspace.com/name
+			//   X-SOCIALPROFILE;type=sinaweibo:http://weibo.com/n/name
+
+			$this->logger->trace(sprintf('Ignoring social profile at "%s" with value "%s"', implode('/', array_keys($types)), $prop->value));
+		}
 	}
 }
