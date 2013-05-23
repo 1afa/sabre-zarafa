@@ -353,65 +353,62 @@ class VCardParser implements IVCardParser {
 	{
 		$n_home_voice = 0;
 		$n_work_voice = 0;
-		if ($vcard->TEL === NULL) {
-			return;
-		}
-		foreach ($vcard->TEL as $tel)
+		foreach ($vcard->select('TEL') as $tel)
 		{
 			$pk = FALSE;
 			$types = array();
 
 			// Get array of types; $type is a Sabre\VObject\Parameter:
-			if (($objects = $tel->offsetGet('TYPE')) !== NULL)
+			foreach ($tel->offsetGet('TYPE') as $type) {
+				$types[strtoupper($type->value)] = TRUE;
+			}
+			if (isset($types['HOME'])) {
+				if (isset($types['VOICE'])) {
+					if (($pref = $tel->offsetGet('PREF')) !== NULL) {
+						$pk = ($pref->value == '1')
+						    ? 'home_telephone_number'
+						    : 'home2_telephone_number';
+					}
+					else {
+						$pk = ($n_home_voice == 1)
+						    ? 'home2_telephone_number'
+						    : 'home_telephone_number';
+					}
+					$n_home_voice++;
+				}
+				elseif (isset($types['FAX'])) {
+					$pk = 'home_fax_number';
+				}
+			}
+			elseif (isset($types['WORK'])) {
+				if (isset($types['VOICE'])) {
+					if (($pref = $tel->offsetGet('PREF')) !== NULL) {
+						$pk = ($pref->value == '1')
+						    ? 'office_telephone_number'
+						    : 'business2_telephone_number';
+					}
+					else {
+						$pk = ($n_work_voice == 1)
+						    ? 'business2_telephone_number'
+						    : 'office_telephone_number';
+					}
+					$n_work_voice++;
+				}
+				elseif (isset($types['FAX'])) {
+					$pk = 'business_fax_number';
+				}
+				else $pk = 'company_telephone_number';
+			}
+			elseif (isset($types['OTHER']))
 			{
-				foreach ($objects as $type) {
-					$types[strtoupper($type->value)] = TRUE;
+				// There is unfortunately no 'other_fax_number'.
+				// TODO: Zarafa defines faxes 1..3, maybe use them here:
+				if (!isset($types['FAX'])) {
+					$pk = 'other_telephone_number';
 				}
-				if (isset($types['HOME'])) {
-					if (isset($types['VOICE'])) {
-						if (($pref = $tel->offsetGet('PREF')) !== NULL) {
-							$pk = ($pref->value == '1')
-							    ? 'home_telephone_number'
-							    : 'home2_telephone_number';
-						}
-						else {
-							$pk = ($n_home_voice == 1)
-							    ? 'home2_telephone_number'
-							    : 'home_telephone_number';
-						}
-						$n_home_voice++;
-					}
-					elseif (isset($types['FAX'])) {
-						$pk = 'home_fax_number';
-					}
-				}
-				elseif (isset($types['WORK'])) {
-					if (isset($types['VOICE'])) {
-						if (($pref = $tel->offsetGet('PREF')) !== NULL) {
-							$pk = ($pref->value == '1')
-							    ? 'office_telephone_number'
-							    : 'business2_telephone_number';
-						}
-						else {
-							$pk = ($n_work_voice == 1)
-							    ? 'business2_telephone_number'
-							    : 'office_telephone_number';
-						}
-						$n_work_voice++;
-					}
-					elseif (isset($types['FAX'])) {
-						$pk = 'business_fax_number';
-					}
-					else $pk = 'company_telephone_number';
-				}
-				elseif (isset($types['OTHER']))
-				{
-					// There is unfortunately no 'other_fax_number'.
-					// TODO: Zarafa defines faxes 1..3, maybe use them here:
-					if (!isset($types['FAX'])) {
-						$pk = 'other_telephone_number';
-					}
-				}
+			}
+			if (FALSE($pk)) {
+				// No match yet? Try to match against map:
 				// Note: there is also 'cellular_telephone_number',
 				// but it's an alias for 'mobile_telephone_number'.
 				$map = array
@@ -426,13 +423,10 @@ class VCardParser implements IVCardParser {
 					, 'TEXTPHONE' => 'ttytdd_telephone_number'
 					);
 
-				// No match yet? Try to match against map above:
-				if (FALSE($pk)) {
-					foreach ($map as $prop_vcard => $prop_mapi) {
-						if (isset($types[$prop_vcard])) {
-							$pk = $prop_mapi;
-							break;
-						}
+				foreach ($map as $prop_vcard => $prop_mapi) {
+					if (isset($types[$prop_vcard])) {
+						$pk = $prop_mapi;
+						break;
 					}
 				}
 			}
