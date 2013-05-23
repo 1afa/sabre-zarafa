@@ -86,7 +86,10 @@ class VCardParser implements IVCardParser {
 			$properties[$p['business2_telephone_number']] = NULL;
 			$properties[$p['business_fax_number']] = NULL;
 			$properties[$p['home_fax_number']] = NULL;
+			$properties[$p['primary_fax_number']] = NULL;
+			$properties[$p['primary_telephone_number']] = NULL;
 			$properties[$p['pager_telephone_number']] = NULL;
+			$properties[$p['other_telephone_number']] = NULL;
 			$properties[$p['isdn_number']] = NULL;
 			$properties[$p['company_telephone_number']] = NULL;
 			$properties[$p['car_telephone_number']] = NULL;
@@ -94,6 +97,7 @@ class VCardParser implements IVCardParser {
 			$properties[$p['assistant']] = NULL;
 			$properties[$p['manager_name']] = NULL;
 			$properties[$p['mobile_telephone_number']] = NULL;
+			$properties[$p['ttytdd_telephone_number']] = NULL;
 			$properties[$p['spouse_name']] = NULL;
 			$properties[$p['home_address_street']] = NULL;
 			$properties[$p['home_address_city']] = NULL;
