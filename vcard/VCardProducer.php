@@ -287,7 +287,7 @@ class VCardProducer implements IVCardProducer {
 			// Create an URI from the EntryID:
 			$contactProperties[PR_CARDDAV_URI] = $this->bridge->entryid_to_uri($contactProperties[PR_ENTRYID]);
 		}
-		$vCard->add('UID', "urn:uuid:" . substr($contactProperties[PR_CARDDAV_URI], 0, -4)); // $this->entryIdToStr($contactProperties[PR_ENTRYID]));
+		$vCard->add('UID', substr($contactProperties[PR_CARDDAV_URI], 0, -4));
 		$this->setVCard($vCard, 'NOTE', $contactProperties, $p['notes']);
 		$vCard->add('PRODID', VCARD_PRODUCT_ID);
 	}
