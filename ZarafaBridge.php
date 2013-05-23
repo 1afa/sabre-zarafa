@@ -419,8 +419,10 @@ class Zarafa_Bridge {
 
 		// Produce VCard object
 		$this->logger->trace("Producing vcard from contact properties");
-		$producer->propertiesToVObject($contact, $contactProperties, $vCard);
-		
+
+		if (FALSE($producer->propertiesToVObject($contact, $contactProperties, $vCard))) {
+			return FALSE;
+		}
 		// Serialize
 		$vCardData = $vCard->serialize();
 		$this->logger->debug("Produced VCard\n" . $vCardData);

@@ -70,16 +70,23 @@ class VCardProducer implements IVCardProducer {
 	
 	/**
 	 * Convert vObject to an array of properties
-     * @param array $properties 
+	 * @param array $properties
 	 * @param object $vCard
+	 * @return bool
 	 */
-	public function propertiesToVObject($contact, $contactTableProps, &$vCard)
+	public function
+	propertiesToVObject ($contact, $contactTableProps, &$vCard)
 	{
 		$this->logger->debug("Generating contact vCard from properties");
 
-		$p = $this->bridge->getExtendedProperties();
-		$contactProperties =  mapi_getprops($contact); // $this->bridge->getProperties($contactId);
-
+		if (FALSE($p = $this->bridge->getExtendedProperties())) {
+			$this->logger->fatal('cannot get extended properties');
+			return FALSE;
+		}
+		if (FALSE($contactProperties = mapi_getprops($contact))) {
+			$this->logger->fatal('cannot get properties for contact: '.get_mapi_error_name());
+			return FALSE;
+		}
 		// $contactTableProps contains extra properties from the table,
 		// such as PR_ENTRYID, PR_LAST_MODIFICATION_TIME and PR_CARDDAV_URI.
 		// Mix these in with the contact properties:
@@ -93,19 +100,17 @@ class VCardProducer implements IVCardProducer {
 		
 		// Version check
 		switch ($this->version) {
-			case 2:		$vCard->add('VERSION', '2.1');	break;
-			case 3:		$vCard->add('VERSION', '3.0');	break;
-			case 4:		$vCard->add('VERSION', '4.0');	break;
+			case 2: $vCard->add('VERSION', '2.1'); break;
+			case 3: $vCard->add('VERSION', '3.0'); break;
+			case 4: $vCard->add('VERSION', '4.0'); break;
 			default:
 				$this->logger->fatal("Unrecognised VCard version: " . $this->version);
-				return;
+				return FALSE;
 		}
-		
 		// Private contact ?
 		if (isset($contactProperties[$p['private']]) && $contactProperties[$p['private']]) {
 			$vCard->add('CLASS', 'PRIVATE');		// Not in VCARD 4.0 but keep it for compatibility
 		}
-
 		// Mandatory FN
 		$this->setVCard($vCard, 'FN', $contactProperties, $p['display_name']);
 		
@@ -149,11 +154,26 @@ class VCardProducer implements IVCardProducer {
 			$elem->setParts($orgdata);
 			$vCard->add($elem);
 		}
-		$this->setVCard($vCard, 'SORT-AS',         $contactProperties, $p['fileas']);
-		$this->setVCard($vCard, 'NICKNAME',        $contactProperties, $p['nickname']);
-		$this->setVCard($vCard, 'TITLE',           $contactProperties, $p['title']);
-		$this->setVCard($vCard, 'ROLE',            $contactProperties, $p['profession']);
-		$this->setVCard($vCard, 'OFFICE',          $contactProperties, $p['office_location']);
+		$map = array
+			( 'fileas'          => 'SORT-AS'
+			, 'nickname'        => 'NICKNAME'
+			, 'title'           => 'TITLE'
+			, 'profession'      => 'ROLE'
+			, 'office_location' => 'OFFICE'
+
+			// URL and Instant Messenging (vCard 3.0 extension):
+			, 'webpage'         => 'URL'
+			, 'im'              => 'IMPP'
+
+			// older syntax - may be needed by some clients so keep it!
+			, 'assistant'       => 'X-MS-ASSISTANT'
+			, 'manager_name'    => 'X-MS-MANAGER'
+			, 'spouse_name'     => 'X-MS-SPOUSE'
+			);
+
+		foreach ($map as $prop_mapi => $prop_vcard) {
+			$this->setVCard($vCard, $prop_vcard, $contactProperties, $p[$prop_mapi]);
+		}
 
 		if ($this->version >= 4) {
 			// Relation types 'assistant' and 'manager' are not RFC6350-compliant.
@@ -169,17 +189,6 @@ class VCardProducer implements IVCardProducer {
 			&& !empty($contactProperties[$p['spouse_name']])) {
 				$vCard->add(new Sabre\VObject\Property('RELATED', $contactProperties[$p['spouse_name']], array('VALUE' => 'text', 'TYPE' => 'spouse')));
 			}
-		}
-		
-		// older syntax - may be needed by some clients so keep it!
-		$map = array
-			( 'assistant'    => 'X-MS-ASSISTANT'
-			, 'manager_name' => 'X-MS-MANAGER'
-			, 'spouse_name'  => 'X-MS-SPOUSE'
-			);
-
-		foreach ($map as $prop_mapi => $prop_vcard) {
-			$this->setVCard($vCard, $prop_vcard, $contactProperties, $p[$prop_mapi]);
 		}
 		// Dates:
 		if (isset($contactProperties[$p['birthday']])) {
@@ -237,7 +246,6 @@ class VCardProducer implements IVCardProducer {
 			// unmatched found a match!
 			$this->setVCard($vCard, 'TEL', $contactProperties, $p[DEFAULT_TELEPHONE_NUMBER_PROPERTY]);
 		}
-
 		$this->setVCardAddress($vCard, 'HOME',  $contactProperties, 'home');
 		$this->setVCardAddress($vCard, 'WORK',  $contactProperties, 'business');
 		$this->setVCardAddress($vCard, 'OTHER', $contactProperties, 'other');
@@ -262,10 +270,6 @@ class VCardProducer implements IVCardProducer {
 			}
 		}
 
-		// URL and Instant Messenging (vCard 3.0 extension)
-		$this->setVCard($vCard,'URL',   $contactProperties,$p["webpage"]); 
-		$this->setVCard($vCard,'IMPP',  $contactProperties,$p["im"]); 
-		
 		// Categories
 		$contactCategories = '';
 		if (isset($contactProperties[$p['categories']])) {
@@ -290,6 +294,8 @@ class VCardProducer implements IVCardProducer {
 		$vCard->add('UID', substr($contactProperties[PR_CARDDAV_URI], 0, -4));
 		$this->setVCard($vCard, 'NOTE', $contactProperties, $p['notes']);
 		$vCard->add('PRODID', VCARD_PRODUCT_ID);
+
+		return TRUE;
 	}
 
 	private function
