@@ -404,11 +404,13 @@ class VCardParser implements IVCardParser {
 					}
 					else $pk = 'company_telephone_number';
 				}
-				elseif (isset($types['OTHER'])) {
-					if (isset($types['FAX'])) {
-						$pk = 'other_fax_number';
+				elseif (isset($types['OTHER']))
+				{
+					// There is unfortunately no 'other_fax_number'.
+					// TODO: Zarafa defines faxes 1..3, maybe use them here:
+					if (!isset($types['FAX'])) {
+						$pk = 'other_telephone_number';
 					}
-					else $pk = 'other_telephone_number';
 				}
 				// Note: there is also 'cellular_telephone_number',
 				// but it's an alias for 'mobile_telephone_number'.
