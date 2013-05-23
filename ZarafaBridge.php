@@ -58,7 +58,7 @@ class Zarafa_Bridge {
 	protected $session = FALSE;
 	protected $publicStore;
 	protected $wastebasketId = FALSE;
-	protected $extendedProperties;
+	protected $extendedProperties = FALSE;
 	protected $connectedUser = FALSE;
 	private $folders_private = array();
 	private $folders_public = array();
@@ -103,9 +103,6 @@ class Zarafa_Bridge {
 			$this->logger->warn(__FUNCTION__.': could not get public stores');
 			return FALSE;
 		}
-		// Load properties
-		$this->initProperties();
-
 		// Store username for principals
 		$this->connectedUser = $user;
 
@@ -144,12 +141,18 @@ class Zarafa_Bridge {
 		$this->logger->trace(__FUNCTION__);
 		return $this->connectedUser;
 	}
-	
-	public function getExtendedProperties() {
+
+	public function
+	getExtendedProperties ()
+	{
 		$this->logger->trace(__FUNCTION__);
+
+		if (FALSE($this->extendedProperties)) {
+			$this->initProperties();
+		}
 		return $this->extendedProperties;
 	}
-	
+
 	/**
 	 * Get connected user email address
 	 * @return email address
@@ -378,10 +381,15 @@ class Zarafa_Bridge {
 		$contactId = $contactProperties[PR_ENTRYID];
 
 		$this->logger->trace(__FUNCTION__.'(' . bin2hex($contactId).')');
-	
-		$contact = mapi_msgstore_openentry($store, $contactId);
-		$p = $this->extendedProperties;
 
+		if (FALSE($contact = mapi_msgstore_openentry($store, $contactId))) {
+			$this->logger->fatal(__FUNCTION__.': cannot open contact: '.get_mapi_error_name());
+			return FALSE;
+		}
+		if (FALSE($p = $this->getExtendedProperties())) {
+			$this->logger->fatal('cannot get extended properties');
+			return FALSE;
+		}
 		$this->logger->trace("PR_CARDDAV_RAW_DATA: " . PR_CARDDAV_RAW_DATA);
 		$this->logger->trace("PR_CARDDAV_RAW_DATA_GENERATION_TIME: " . PR_CARDDAV_RAW_DATA_GENERATION_TIME);
 		$this->logger->trace("PR_CARDDAV_RAW_DATA_VERSION: " . PR_CARDDAV_RAW_DATA_VERSION);
