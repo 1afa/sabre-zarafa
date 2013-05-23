@@ -139,3 +139,11 @@
 	if (function_exists("date_default_timezone_set")) {
 		date_default_timezone_set('Europe/Paris');
 	}
+
+	// Return ETags to the client. Normally, with reasonable clients like
+	// OSX Contacts or SoGo Connector, you want this. However, according to
+	// the SabreDAV documentation, there are certain clients (which?) that
+	// become confused when, for a given ETag, we don't return
+	// byte-for-byte the exact body that the client sent. So support for
+	// this feature is kept optional:
+	define('ETAG_ENABLE', TRUE);

@@ -1,3 +1,6 @@
+- Add ETag support, based on the hash of the EntryID and the last-modified
+  timestamp. This should be sufficiently unique. Add a config option to turn
+  this feature off if desired. Creating contacts now works in OSX Contacts.
 - VCardParser: remove superfluous escaping functions; VObject handles that now;
 - VCardParser: rewrite contact photo logic, the old code did not properly
   recognize differences between uppercase and lowercase encoding strings. Also

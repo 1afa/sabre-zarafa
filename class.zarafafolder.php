@@ -51,6 +51,10 @@ class Zarafa_Folder
 		$this->handle = $handle;
 		$this->entryid = $entryid;
 		$this->logger = new Zarafa_Logger(__CLASS__);
+
+		// This config setting was introduced in Sabre-Zarafa 0.19 and defaults to TRUE;
+		// make sure it's defined for people who migrate from an old config:
+		if (!defined('ETAG_ENABLE')) define('ETAG_ENABLE', TRUE);
 	}
 
 	public function
@@ -82,12 +86,16 @@ class Zarafa_Folder
 			? $contact[PR_CARDDAV_URI]
 			: $this->bridge->entryid_to_uri($contact[PR_ENTRYID]);
 
-		return array(
+		$ret = array(
 			'id' => $contact[PR_ENTRYID],
 			'carddata' => $this->bridge->getContactVCard($contact, $this->store->handle),
 			'uri' => $uri,
 			'lastmodified' => $contact[PR_LAST_MODIFICATION_TIME]
 		);
+		if (ETAG_ENABLE) {
+			$ret['etag'] = $this->make_etag($contact[PR_ENTRYID], $contact[PR_LAST_MODIFICATION_TIME]);
+		}
+		return $ret;
 	}
 
 	public function
@@ -232,7 +240,15 @@ class Zarafa_Folder
 		$mapiProperties[$p['message_class']] = 'IPM.Contact';
 		// message flags ?
 
-		return $this->bridge->save_properties($contact, $mapiProperties);
+		if (FALSE($this->bridge->save_properties($contact, $mapiProperties))) {
+			return FALSE;
+		}
+		if (!ETAG_ENABLE || FALSE($p = mapi_getprops($contact)) || !isset($p[PR_ENTRYID]) || !isset($p[PR_LAST_MODIFICATION_TIME])) {
+			return TRUE;
+		}
+		// Don't use the modification time from $mapiProperties, use the
+		// reported value; it may have been changed by the server!
+		return $this->make_etag($p[PR_ENTRYID], $p[PR_LAST_MODIFICATION_TIME]);
 	}
 
 	public function
@@ -275,7 +291,13 @@ class Zarafa_Folder
 				return FALSE;
 			}
 		}
-		return $this->bridge->save_properties($contact, $mapiProperties);
+		if (FALSE($this->bridge->save_properties($contact, $mapiProperties))) {
+			return FALSE;
+		}
+		if (!ETAG_ENABLE || FALSE($p = mapi_getprops($contact)) || !isset($p[PR_ENTRYID]) || !isset($p[PR_LAST_MODIFICATION_TIME])) {
+			return TRUE;
+		}
+		return $this->make_etag($p[PR_ENTRYID], $p[PR_LAST_MODIFICATION_TIME]);
 	}
 
 	/**
@@ -447,5 +469,15 @@ class Zarafa_Folder
 		return (isset($this->uri_mapping[$uri]))
 			? $this->uri_mapping[$uri]
 			: FALSE;
+	}
+
+	private function
+	make_etag ($entryid, $timestamp)
+	{
+		// Return the etag based on the entryid and the timestamp.
+		// This should satisfy the requirements of being unique between
+		// cards and between revisions of the same card. Using these
+		// two properties makes it relatively cheap to construct.
+		return sprintf('"%s"', md5($entryid . $timestamp));
 	}
 }

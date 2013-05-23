@@ -213,11 +213,11 @@ class Zarafa_CardDav_Backend extends Sabre\CardDAV\Backend\AbstractBackend
 		if (FALSE($folder = $this->bridge->get_folder($addressBookId))) {
 			return $this->exc_notfound(__FUNCTION__.': cannot find folder');
 		}
-		if (FALSE($folder->create_contact($uri, $data))) {
+		if (FALSE($etag = $folder->create_contact($uri, $data))) {
 			$this->logger->fatal(__FUNCTION__.': could not create card');
 			return FALSE;
 		}
-		return NULL;
+		return (is_string($etag)) ? $etag : NULL;
 	} 
 
 	/**
@@ -239,11 +239,11 @@ class Zarafa_CardDav_Backend extends Sabre\CardDAV\Backend\AbstractBackend
 		if (FALSE($folder = $this->bridge->get_folder($addressBookId))) {
 			return $this->exc_notfound(__FUNCTION__.': cannot find folder');
 		}
-		if (FALSE($folder->update_contact($uri, $data))) {
+		if (FALSE($etag = $folder->update_contact($uri, $data))) {
 			$this->logger->fatal(__FUNCTION__.': failed to update card');
 			return FALSE;
 		}
-		return NULL;
+		return (is_string($etag)) ? $etag : NULL;
 	}
 
 	/**
