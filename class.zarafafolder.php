@@ -132,8 +132,14 @@ class Zarafa_Folder
 			return $this->cards[$uri];
 		}
 		// Otherwise do the actual lookup:
-		if (FALSE($entryid = $this->uri_to_entryid($uri))) {
-			$this->logger->fatal(__FUNCTION__.': could not find contact');
+		if (FALSE($entryid = $this->uri_to_entryid($uri)))
+		{
+			// Do not log this at FATAL, ERROR or WARN levels even though it's
+			// technically an error. Some clients, notably OSX' Contacts.app, check
+			// whether the URI of a new contact is available by requesting that
+			// card, and *expecting* the lookup to fail. So this "error" occurs
+			// frequently during normal use. Don't needlessly pollute the logs:
+			$this->logger->info(__FUNCTION__.': could not find contact');
 			return FALSE;
 		}
 		if (FALSE($contacts = $this->get_contacts($entryid))) {
