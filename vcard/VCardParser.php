@@ -37,12 +37,14 @@ require_once("mapi/mapidefs.php");
 require_once("mapi/mapitags.php");
 require_once("mapi/mapiguid.php");
 	
-class VCardParser implements IVCardParser {
-
+class VCardParser implements IVCardParser
+{
 	protected $bridge;
 	protected $logger;
-	
-	function __construct($bridge) {
+	protected $vcard = FALSE;
+
+	function __construct ($bridge)
+	{
 		$this->bridge = $bridge;
 		$this->logger = new Zarafa_Logger(__CLASS__);
 		$this->logger->trace(__CLASS__ . " constructor done.");
@@ -50,14 +52,21 @@ class VCardParser implements IVCardParser {
 
 	/**
 	 * Convert vObject to an array of properties
-     * @param object $vCard 
-     * @param object $properties array storing MAPI properties
+	 * @param string $vcardData the vCard in string form
 	 */
-	public function vObjectToProperties ($vcard, &$properties)
+	public function vObjectToProperties ($vcardData)
 	{
-		$this->logger->info("vObjectToProperties");
-		
-		$this->logger->trace("VObject: \n" . print_r($vcard, TRUE));
+		$this->logger->trace(__FUNCTION__);
+
+		$this->vcard = Sabre\VObject\Reader::read($vcardData);
+
+		$properties = array();
+
+		if (FALSE($this->vcard)) {
+			$this->logger->fatal('failed to create vCard object');
+			return FALSE;
+		}
+		$this->logger->trace("VObject: \n" . print_r($this->vcard, TRUE));
 		
 		// Common VCard properties parsing
 		$p = $this->bridge->getExtendedProperties();
@@ -135,9 +144,9 @@ class VCardParser implements IVCardParser {
 		
 		// Name components
 		$sortAs = '';
-		if (isset($vcard->N)) {
-			$this->logger->trace("N: " . $vcard->N);
-			$parts = $vcard->N->getParts();
+		if (isset($this->vcard->N)) {
+			$this->logger->trace("N: " . $this->vcard->N);
+			$parts = $this->vcard->N->getParts();
 
 			$dump = print_r($parts, true);
 			$this->logger->trace("Name info\n$dump");
@@ -149,40 +158,40 @@ class VCardParser implements IVCardParser {
 			$properties[$p['generation']]          = isset($parts[4]) ? $parts[4] : '';
 			
 			// Issue 3#8
-			if ($vcard->n->offsetExists('SORT-AS')) {
-				$sortAs = $vcard->n->offsetGet('SORT-AS')->value;
+			if ($this->vcard->n->offsetExists('SORT-AS')) {
+				$sortAs = $this->vcard->n->offsetGet('SORT-AS')->value;
 			}
 		}
 		
 		// Given sort-as ?
 		/*
-		if (isset($vcard->sort-as)) {
+		if (isset($this->vcard->sort-as)) {
 			$this->logger->debug("Using vcard SORT-AS");
-			$sortAs = $vcard->sort-as->value;
+			$sortAs = $this->vcard->sort-as->value;
 		}
 		*/
-		$sortAsProperty = $vcard->select("SORT-AS");
+		$sortAsProperty = $this->vcard->select('SORT-AS');
 		if (count($sortAsProperty) != 0) {
 			$sortAs = current($sortAsProperty)->value;
 		}
 		
-		if (isset($vcard->nickname))		$properties[$p['nickname']] = $vcard->nickname->value;
-		if (isset($vcard->title))			$properties[$p['title']] = $vcard->title->value;
-		if (isset($vcard->role))			$properties[$p['profession']] = $vcard->role->value;
-		if (isset($vcard->office))			$properties[$p['office_location']] = $vcard->office->value;
+		if (isset($this->vcard->nickname))		$properties[$p['nickname']] = $this->vcard->nickname->value;
+		if (isset($this->vcard->title))			$properties[$p['title']] = $this->vcard->title->value;
+		if (isset($this->vcard->role))			$properties[$p['profession']] = $this->vcard->role->value;
+		if (isset($this->vcard->office))			$properties[$p['office_location']] = $this->vcard->office->value;
 
-		if (isset($vcard->ORG)) {
-			$parts = $vcard->ORG->getParts();
+		if (isset($this->vcard->ORG)) {
+			$parts = $this->vcard->ORG->getParts();
 			if (isset($parts[0])) $properties[$p['company_name']] = $parts[0];
 			if (isset($parts[1])) $properties[$p['department_name']] = $parts[1];
 		}
-		if (isset($vcard->FN)) {
-			$properties[$p['display_name']] = $vcard->FN->value;
-			$properties[PR_SUBJECT] = $vcard->FN->value;
+		if (isset($this->vcard->FN)) {
+			$properties[$p['display_name']] = $this->vcard->FN->value;
+			$properties[PR_SUBJECT] = $this->vcard->FN->value;
 		}
 		if (empty($sortAs) || SAVE_AS_OVERRIDE_SORTAS) {
 			$this->logger->trace("Empty sort-as or SAVE_AS_OVERRIDE_SORTAS set");
-			$sortAs = SAVE_AS_PATTERN;		// $vcard->fn->value;
+			$sortAs = SAVE_AS_PATTERN;		// $this->vcard->fn->value;
 			
 			// Do substitutions
 			$substitutionKeys   = array('%d', '%l', '%f', '%c');
@@ -202,35 +211,34 @@ class VCardParser implements IVCardParser {
 		$properties[PR_SUBJECT] = $sortAs;
 		
 		// Custom... not quite sure X-MS-STUFF renders as x_ms_stuff... will have to check that!
-		if (isset($vcard->x_ms_assistant))	$properties[$p['assistant']] = $vcard->x_ms_assistant->value;
-		if (isset($vcard->x_ms_manager))	$properties[$p['manager_name']] = $vcard->x_ms_manager->value;
-		if (isset($vcard->x_ms_spouse))		$properties[$p['spouse_name']] = $vcard->x_ms_spouse->value;
+		if (isset($this->vcard->x_ms_assistant))	$properties[$p['assistant']] = $this->vcard->x_ms_assistant->value;
+		if (isset($this->vcard->x_ms_manager))	$properties[$p['manager_name']] = $this->vcard->x_ms_manager->value;
+		if (isset($this->vcard->x_ms_spouse))		$properties[$p['spouse_name']] = $this->vcard->x_ms_spouse->value;
 		
 		// Dates:
-		if (isset($vcard->bday)) {
-			$time = new DateTime($vcard->bday->value);
+		if (isset($this->vcard->bday)) {
+			$time = new DateTime($this->vcard->bday->value);
 			$properties[$p['birthday']] = $time->format('U');
 		}
-		if (isset($vcard->anniversary)) {
-			$time = new DateTime($vcard->anniversary->value);
+		if (isset($this->vcard->anniversary)) {
+			$time = new DateTime($this->vcard->anniversary->value);
 			$properties[$p['wedding_anniversary']] = $time->format('U');
 		}
-		if (isset($vcard->rev)) {
-			$time = new DateTime($vcard->rev->value);
+		if (isset($this->vcard->rev)) {
+			$time = new DateTime($this->vcard->rev->value);
 			$properties[$p['last_modification_time']] = $time->format('U');
 		}
 		else {
 			$properties[$p['last_modification_time']] = time();
 		}
 		// Telephone numbers
-		$this->phoneConvert($vcard, $properties, $p);
+		$this->phoneConvert($properties, $p);
 
 		// Social media profiles:
-		$this->socialProfileConvert($vcard, $properties, $p);
+		$this->socialProfileConvert($properties, $p);
 
 		// Addresses...
-		$addresses = $vcard->select('ADR');
-		foreach ($addresses as $address) {
+		foreach ($this->vcard->select('ADR') as $address) {
 			$type = strtoupper($address->offsetGet('TYPE')->value);
 			$this->logger->debug("Found address $type");
 
@@ -278,8 +286,8 @@ class VCardParser implements IVCardParser {
 		// emails need to handle complementary properties plus create one off entries!
 		$nremails = array();
 		$abprovidertype = 0;
-		$emails = $vcard->select("EMAIL");
-		$emailsDisplayName = $vcard->select("X-EMAIL-CN");		// emClient handles those
+		$emails = $this->vcard->select('EMAIL');
+		$emailsDisplayName = $this->vcard->select('X-EMAIL-CN');		// emClient handles those
 		$numMail = 0;
 		
 		if (is_array($emailsDisplayName)) {
@@ -304,7 +312,7 @@ class VCardParser implements IVCardParser {
 				// Display name exists, use it!
 				$displayName = $emailsDisplayName[$numMail - 1]->value;
 			} else {
-				$displayName = $vcard->fn->value;
+				$displayName = $this->vcard->fn->value;
 			}
 			
 			// Override displayName?
@@ -330,17 +338,17 @@ class VCardParser implements IVCardParser {
 		}
 		
 		// URLs and instant messaging. IMPP could be multivalues, will need to check that!
-		if (isset($vcard->url))				$properties[$p['webpage']] = $vcard->url->value;
-		if (isset($vcard->impp))			$properties[$p['im']] = $vcard->impp->value;
+		if (isset($this->vcard->url))				$properties[$p['webpage']] = $this->vcard->url->value;
+		if (isset($this->vcard->impp))			$properties[$p['im']] = $this->vcard->impp->value;
 		
 		// Categories (multi values)
-		if (isset($vcard->categories)) 		$properties[$p['categories']] = explode(',', $vcard->categories->value);
+		if (isset($this->vcard->categories)) 		$properties[$p['categories']] = explode(',', $this->vcard->categories->value);
 		
 		// Contact picture
-		if (isset($vcard->photo)) {
-			$type     = strtolower($vcard->photo->offsetGet('TYPE')->value);
-			$encoding = strtolower($vcard->photo->offsetGet('ENCODING')->value);
-			$content  = $vcard->photo->value;
+		if (isset($this->vcard->photo)) {
+			$type     = strtolower($this->vcard->photo->offsetGet('TYPE')->value);
+			$encoding = strtolower($this->vcard->photo->offsetGet('ENCODING')->value);
+			$content  = $this->vcard->photo->value;
 
 			$this->logger->debug("Found contact picture type $type encoding $encoding");
 
@@ -349,15 +357,17 @@ class VCardParser implements IVCardParser {
 		
 		// Misc
 		$properties[$p["icon_index"]] = "512";		// Zarafa specific?
-		if (isset($vcard->note))			$properties[$p['notes']] = $vcard->note->value;
+		if (isset($this->vcard->note))			$properties[$p['notes']] = $this->vcard->note->value;
+
+		return $properties;
 	}
 
 	private function
-	phoneConvert (&$vcard, &$mapi, &$propertyKeys)
+	phoneConvert (&$mapi, &$propertyKeys)
 	{
 		$n_home_voice = 0;
 		$n_work_voice = 0;
-		foreach ($vcard->select('TEL') as $tel)
+		foreach ($this->vcard->select('TEL') as $tel)
 		{
 			$pk = FALSE;
 			$types = array();
@@ -490,9 +500,9 @@ class VCardParser implements IVCardParser {
 	}
 
 	private function
-	socialProfileConvert (&$vcard, &$mapi, &$propertyKeys)
+	socialProfileConvert (&$mapi, &$propertyKeys)
 	{
-		foreach ($vcard->select('X-SOCIALPROFILE') as $prop)
+		foreach ($this->vcard->select('X-SOCIALPROFILE') as $prop)
 		{
 			if (($params = $prop->offsetGet('TYPE')) === NULL) {
 				$this->logger->trace(sprintf('Ignoring social profile with value "%s"', $prop->value));

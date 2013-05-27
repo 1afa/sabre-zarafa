@@ -38,10 +38,8 @@
 	require_once("mapi/mapiguid.php");
 	
 	// VObject to mapi properties
-	require_once "vcard/IVCardParser.php";		// too many vcard formats :(
-	include_once "vcard/VCardParser2.php";
-	include_once "vcard/VCardParser3.php";
-	include_once "vcard/VCardParser4.php";
+	require_once "vcard/IVCardParser.php";
+	include_once "vcard/VCardParser.php";
 	require_once "vcard/IVCardProducer.php";
 	include_once "vcard/VCardProducer.php";
 
@@ -347,28 +345,20 @@ class Zarafa_Bridge {
 	 * @param $vcardData
 	 * @return array
 	 */
-	public function vcardToMapiProperties($vcardData) {
+	public function vcardToMapiProperties ($vcardData)
+	{
 		$this->logger->trace(__FUNCTION__);
-
 		$this->logger->debug("VCARD:\n" . $vcardData);
-		$vObject = Sabre\VObject\Reader::read($vcardData);
 
-		// Extract version to call the correct parser
-		$version = $vObject->version->value;
-		$majorVersion = substr($version, 0, 1);
-		
-		$objectClass = "VCardParser$majorVersion";
-		$this->logger->trace("Using $objectClass to parse vcard data");
-		$parser = new $objectClass($this);
-		
-		$properties = array();
-		$parser->vObjectToProperties($vObject, $properties);
-		
+		$parser = new VCardParser($this);
+
+		if (FALSE($properties = $parser->vObjectToProperties($vcardData))) {
+			return FALSE;
+		}
 		$this->logger->debug("VCard properties:\n" . print_r($properties, TRUE));
-		
 		return $properties;
 	}
-	
+
 	/**
 	 * Retrieve vCard for a contact. If need be will "build" the vCard data
 	 * @see RFC6350 http://tools.ietf.org/html/rfc6350

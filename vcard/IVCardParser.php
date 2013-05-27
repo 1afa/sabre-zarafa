@@ -24,13 +24,11 @@
  * 
  */
 	
-interface IVCardParser {
-
+interface IVCardParser
+{
 	/**
 	 * Convert vObject to an array of properties
-     * @param object $vCard 
-     * @return array
+	 * @return array
 	 */
-	public function vObjectToProperties($vcard, &$properties);
-
+	public function vObjectToProperties ($vcardData);
 }
