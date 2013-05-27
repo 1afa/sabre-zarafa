@@ -42,6 +42,7 @@ class VCardParser implements IVCardParser
 	protected $bridge;
 	protected $logger;
 	protected $vcard = FALSE;
+	protected $mapi = array();
 
 	function __construct ($bridge)
 	{
@@ -60,8 +61,6 @@ class VCardParser implements IVCardParser
 
 		$this->vcard = Sabre\VObject\Reader::read($vcardData);
 
-		$properties = array();
-
 		if (FALSE($this->vcard)) {
 			$this->logger->fatal('failed to create vCard object');
 			return FALSE;
@@ -74,72 +73,72 @@ class VCardParser implements IVCardParser
 		// Init properties
 		if (CLEAR_MISSING_PROPERTIES) {
 			$this->logger->trace("Clearing missing properties");
-			$properties[$p['surname']] = NULL;
-			$properties[$p['given_name']] = NULL;
-			$properties[$p['middle_name']] = NULL;
-			$properties[$p['display_name_prefix']] = NULL;
-			$properties[$p['generation']] = NULL;
-			$properties[$p['display_name']] = NULL;
-			$properties[$p['nickname']] = NULL;
-			$properties[$p['title']] = NULL;
-			$properties[$p['profession']] = NULL;
-			$properties[$p['office_location']] = NULL;
-			$properties[$p['company_name']] = NULL;
-			$properties[$p['department_name']] = NULL;
-			$properties[$p['birthday']] = NULL;
-			$properties[$p['wedding_anniversary']] = NULL;
-			$properties[$p['home_telephone_number']] = NULL;
-			$properties[$p['home2_telephone_number']] = NULL;
-			$properties[$p['cellular_telephone_number']] = NULL;
-			$properties[$p['office_telephone_number']] = NULL;
-			$properties[$p['business2_telephone_number']] = NULL;
-			$properties[$p['business_fax_number']] = NULL;
-			$properties[$p['home_fax_number']] = NULL;
-			$properties[$p['primary_fax_number']] = NULL;
-			$properties[$p['primary_telephone_number']] = NULL;
-			$properties[$p['pager_telephone_number']] = NULL;
-			$properties[$p['other_telephone_number']] = NULL;
-			$properties[$p['isdn_number']] = NULL;
-			$properties[$p['company_telephone_number']] = NULL;
-			$properties[$p['car_telephone_number']] = NULL;
-			$properties[$p['assistant_telephone_number']] = NULL;
-			$properties[$p['assistant']] = NULL;
-			$properties[$p['manager_name']] = NULL;
-			$properties[$p['mobile_telephone_number']] = NULL;
-			$properties[$p['ttytdd_telephone_number']] = NULL;
-			$properties[$p['spouse_name']] = NULL;
-			$properties[$p['home_address_street']] = NULL;
-			$properties[$p['home_address_city']] = NULL;
-			$properties[$p['home_address_state']] = NULL;
-			$properties[$p['home_address_postal_code']] = NULL;
-			$properties[$p['home_address_country']] = NULL;
-			$properties[$p['business_address_street']] = NULL;
-			$properties[$p['business_address_city']] = NULL;
-			$properties[$p['business_address_state']] = NULL;
-			$properties[$p['business_address_postal_code']] = NULL;
-			$properties[$p['business_address_country']] = NULL;
-			$properties[$p['other_address_street']] = NULL;
-			$properties[$p['other_address_city']] = NULL;
-			$properties[$p['other_address_state']] = NULL;
-			$properties[$p['other_address_postal_code']] = NULL;
-			$properties[$p['other_address_country']] = NULL;
+			$this->mapi[$p['surname']] = NULL;
+			$this->mapi[$p['given_name']] = NULL;
+			$this->mapi[$p['middle_name']] = NULL;
+			$this->mapi[$p['display_name_prefix']] = NULL;
+			$this->mapi[$p['generation']] = NULL;
+			$this->mapi[$p['display_name']] = NULL;
+			$this->mapi[$p['nickname']] = NULL;
+			$this->mapi[$p['title']] = NULL;
+			$this->mapi[$p['profession']] = NULL;
+			$this->mapi[$p['office_location']] = NULL;
+			$this->mapi[$p['company_name']] = NULL;
+			$this->mapi[$p['department_name']] = NULL;
+			$this->mapi[$p['birthday']] = NULL;
+			$this->mapi[$p['wedding_anniversary']] = NULL;
+			$this->mapi[$p['home_telephone_number']] = NULL;
+			$this->mapi[$p['home2_telephone_number']] = NULL;
+			$this->mapi[$p['cellular_telephone_number']] = NULL;
+			$this->mapi[$p['office_telephone_number']] = NULL;
+			$this->mapi[$p['business2_telephone_number']] = NULL;
+			$this->mapi[$p['business_fax_number']] = NULL;
+			$this->mapi[$p['home_fax_number']] = NULL;
+			$this->mapi[$p['primary_fax_number']] = NULL;
+			$this->mapi[$p['primary_telephone_number']] = NULL;
+			$this->mapi[$p['pager_telephone_number']] = NULL;
+			$this->mapi[$p['other_telephone_number']] = NULL;
+			$this->mapi[$p['isdn_number']] = NULL;
+			$this->mapi[$p['company_telephone_number']] = NULL;
+			$this->mapi[$p['car_telephone_number']] = NULL;
+			$this->mapi[$p['assistant_telephone_number']] = NULL;
+			$this->mapi[$p['assistant']] = NULL;
+			$this->mapi[$p['manager_name']] = NULL;
+			$this->mapi[$p['mobile_telephone_number']] = NULL;
+			$this->mapi[$p['ttytdd_telephone_number']] = NULL;
+			$this->mapi[$p['spouse_name']] = NULL;
+			$this->mapi[$p['home_address_street']] = NULL;
+			$this->mapi[$p['home_address_city']] = NULL;
+			$this->mapi[$p['home_address_state']] = NULL;
+			$this->mapi[$p['home_address_postal_code']] = NULL;
+			$this->mapi[$p['home_address_country']] = NULL;
+			$this->mapi[$p['business_address_street']] = NULL;
+			$this->mapi[$p['business_address_city']] = NULL;
+			$this->mapi[$p['business_address_state']] = NULL;
+			$this->mapi[$p['business_address_postal_code']] = NULL;
+			$this->mapi[$p['business_address_country']] = NULL;
+			$this->mapi[$p['other_address_street']] = NULL;
+			$this->mapi[$p['other_address_city']] = NULL;
+			$this->mapi[$p['other_address_state']] = NULL;
+			$this->mapi[$p['other_address_postal_code']] = NULL;
+			$this->mapi[$p['other_address_country']] = NULL;
 			$nremails = array();
 			$abprovidertype = 0;
 			for ($i = 1; $i <= 3; $i++) {
-				$properties[$p["email_address_$i"]] = NULL;
-				$properties[$p["email_address_display_name_email_$i"]] = NULL;
-				$properties[$p["email_address_display_name_$i"]] = NULL;
-				$properties[$p["email_address_type_$i"]] = NULL;
-				$properties[$p["email_address_entryid_$i"]] = NULL;
+				$this->mapi[$p["email_address_$i"]] = NULL;
+				$this->mapi[$p["email_address_display_name_email_$i"]] = NULL;
+				$this->mapi[$p["email_address_display_name_$i"]] = NULL;
+				$this->mapi[$p["email_address_type_$i"]] = NULL;
+				$this->mapi[$p["email_address_entryid_$i"]] = NULL;
 			}
-			$properties[$p["address_book_mv"]] = NULL;
-			$properties[$p["address_book_long"]] = NULL;
-			$properties[$p['webpage']] = NULL;
-			$properties[$p['im']] = NULL;
-			$properties[$p['categories']] = NULL;
-			$properties['ContactPicture'] = NULL;
-			$properties[PR_HASATTACH] = false;
-			$properties[$p['has_picture']] = false;
+			$this->mapi[$p["address_book_mv"]] = NULL;
+			$this->mapi[$p["address_book_long"]] = NULL;
+			$this->mapi[$p['webpage']] = NULL;
+			$this->mapi[$p['im']] = NULL;
+			$this->mapi[$p['categories']] = NULL;
+			$this->mapi['ContactPicture'] = NULL;
+			$this->mapi[PR_HASATTACH] = false;
+			$this->mapi[$p['has_picture']] = false;
 		}
 		
 		// Name components
@@ -151,11 +150,11 @@ class VCardParser implements IVCardParser
 			$dump = print_r($parts, true);
 			$this->logger->trace("Name info\n$dump");
 			
-			$properties[$p['surname']]             = isset($parts[0]) ? $parts[0] : '';
-			$properties[$p['given_name']]          = isset($parts[1]) ? $parts[1] : '';
-			$properties[$p['middle_name']]         = isset($parts[2]) ? $parts[2] : '';
-			$properties[$p['display_name_prefix']] = isset($parts[3]) ? $parts[3] : '';
-			$properties[$p['generation']]          = isset($parts[4]) ? $parts[4] : '';
+			$this->mapi[$p['surname']]             = isset($parts[0]) ? $parts[0] : '';
+			$this->mapi[$p['given_name']]          = isset($parts[1]) ? $parts[1] : '';
+			$this->mapi[$p['middle_name']]         = isset($parts[2]) ? $parts[2] : '';
+			$this->mapi[$p['display_name_prefix']] = isset($parts[3]) ? $parts[3] : '';
+			$this->mapi[$p['generation']]          = isset($parts[4]) ? $parts[4] : '';
 			
 			// Issue 3#8
 			if ($this->vcard->n->offsetExists('SORT-AS')) {
@@ -175,19 +174,19 @@ class VCardParser implements IVCardParser
 			$sortAs = current($sortAsProperty)->value;
 		}
 		
-		if (isset($this->vcard->nickname))		$properties[$p['nickname']] = $this->vcard->nickname->value;
-		if (isset($this->vcard->title))			$properties[$p['title']] = $this->vcard->title->value;
-		if (isset($this->vcard->role))			$properties[$p['profession']] = $this->vcard->role->value;
-		if (isset($this->vcard->office))			$properties[$p['office_location']] = $this->vcard->office->value;
+		if (isset($this->vcard->nickname))		$this->mapi[$p['nickname']] = $this->vcard->nickname->value;
+		if (isset($this->vcard->title))			$this->mapi[$p['title']] = $this->vcard->title->value;
+		if (isset($this->vcard->role))			$this->mapi[$p['profession']] = $this->vcard->role->value;
+		if (isset($this->vcard->office))			$this->mapi[$p['office_location']] = $this->vcard->office->value;
 
 		if (isset($this->vcard->ORG)) {
 			$parts = $this->vcard->ORG->getParts();
-			if (isset($parts[0])) $properties[$p['company_name']] = $parts[0];
-			if (isset($parts[1])) $properties[$p['department_name']] = $parts[1];
+			if (isset($parts[0])) $this->mapi[$p['company_name']] = $parts[0];
+			if (isset($parts[1])) $this->mapi[$p['department_name']] = $parts[1];
 		}
 		if (isset($this->vcard->FN)) {
-			$properties[$p['display_name']] = $this->vcard->FN->value;
-			$properties[PR_SUBJECT] = $this->vcard->FN->value;
+			$this->mapi[$p['display_name']] = $this->vcard->FN->value;
+			$this->mapi[PR_SUBJECT] = $this->vcard->FN->value;
 		}
 		if (empty($sortAs) || SAVE_AS_OVERRIDE_SORTAS) {
 			$this->logger->trace("Empty sort-as or SAVE_AS_OVERRIDE_SORTAS set");
@@ -196,46 +195,46 @@ class VCardParser implements IVCardParser
 			// Do substitutions
 			$substitutionKeys   = array('%d', '%l', '%f', '%c');
 			$substitutionValues = array(
-				$properties[$p['display_name']],
-				$properties[$p['surname']],
-				$properties[$p['given_name']],
-				$properties[$p['company_name']]
+				$this->mapi[$p['display_name']],
+				$this->mapi[$p['surname']],
+				$this->mapi[$p['given_name']],
+				$this->mapi[$p['company_name']]
 			);
 			$sortAs = str_replace($substitutionKeys, $substitutionValues, $sortAs);
 		}
 
 		// Should PR_SUBJET and display_name be equals to fileas? I think so!
 		$this->logger->debug("Contact display name: " . $sortAs);
-		$properties[$p['fileas']] = $sortAs;
-		$properties[$p['display_name']] = $sortAs;
-		$properties[PR_SUBJECT] = $sortAs;
+		$this->mapi[$p['fileas']] = $sortAs;
+		$this->mapi[$p['display_name']] = $sortAs;
+		$this->mapi[PR_SUBJECT] = $sortAs;
 		
 		// Custom... not quite sure X-MS-STUFF renders as x_ms_stuff... will have to check that!
-		if (isset($this->vcard->x_ms_assistant))	$properties[$p['assistant']] = $this->vcard->x_ms_assistant->value;
-		if (isset($this->vcard->x_ms_manager))	$properties[$p['manager_name']] = $this->vcard->x_ms_manager->value;
-		if (isset($this->vcard->x_ms_spouse))		$properties[$p['spouse_name']] = $this->vcard->x_ms_spouse->value;
+		if (isset($this->vcard->x_ms_assistant))	$this->mapi[$p['assistant']] = $this->vcard->x_ms_assistant->value;
+		if (isset($this->vcard->x_ms_manager))	$this->mapi[$p['manager_name']] = $this->vcard->x_ms_manager->value;
+		if (isset($this->vcard->x_ms_spouse))		$this->mapi[$p['spouse_name']] = $this->vcard->x_ms_spouse->value;
 		
 		// Dates:
 		if (isset($this->vcard->bday)) {
 			$time = new DateTime($this->vcard->bday->value);
-			$properties[$p['birthday']] = $time->format('U');
+			$this->mapi[$p['birthday']] = $time->format('U');
 		}
 		if (isset($this->vcard->anniversary)) {
 			$time = new DateTime($this->vcard->anniversary->value);
-			$properties[$p['wedding_anniversary']] = $time->format('U');
+			$this->mapi[$p['wedding_anniversary']] = $time->format('U');
 		}
 		if (isset($this->vcard->rev)) {
 			$time = new DateTime($this->vcard->rev->value);
-			$properties[$p['last_modification_time']] = $time->format('U');
+			$this->mapi[$p['last_modification_time']] = $time->format('U');
 		}
 		else {
-			$properties[$p['last_modification_time']] = time();
+			$this->mapi[$p['last_modification_time']] = time();
 		}
 		// Telephone numbers
-		$this->phoneConvert($properties, $p);
+		$this->phoneConvert($p);
 
 		// Social media profiles:
-		$this->socialProfileConvert($properties, $p);
+		$this->socialProfileConvert($p);
 
 		// Addresses...
 		foreach ($this->vcard->select('ADR') as $address) {
@@ -276,11 +275,11 @@ class VCardParser implements IVCardParser
 			$this->logger->trace("Address components:\n$dump");
 			
 			// Set properties
-			$properties[$p[$pStreet]]  = isset($addressComponents[2]) ? $addressComponents[2] : '';
-			$properties[$p[$pCity]]    = isset($addressComponents[3]) ? $addressComponents[3] : '';
-			$properties[$p[$pState]]   = isset($addressComponents[4]) ? $addressComponents[4] : '';
-			$properties[$p[$pPCode]]   = isset($addressComponents[5]) ? $addressComponents[5] : '';
-			$properties[$p[$pCountry]] = isset($addressComponents[6]) ? $addressComponents[6] : '';
+			$this->mapi[$p[$pStreet]]  = isset($addressComponents[2]) ? $addressComponents[2] : '';
+			$this->mapi[$p[$pCity]]    = isset($addressComponents[3]) ? $addressComponents[3] : '';
+			$this->mapi[$p[$pState]]   = isset($addressComponents[4]) ? $addressComponents[4] : '';
+			$this->mapi[$p[$pPCode]]   = isset($addressComponents[5]) ? $addressComponents[5] : '';
+			$this->mapi[$p[$pCountry]] = isset($addressComponents[6]) ? $addressComponents[6] : '';
 		}
 		
 		// emails need to handle complementary properties plus create one off entries!
@@ -323,26 +322,26 @@ class VCardParser implements IVCardParser
 			
 			$this->logger->debug("Found email $numMail : $displayName <$address>");
 			
-			$properties[$p["email_address_$numMail"]] = $address;
-			$properties[$p["email_address_display_name_email_$numMail"]] = $address;
-			$properties[$p["email_address_display_name_$numMail"]] = $displayName;
-			$properties[$p["email_address_type_$numMail"]] = "SMTP";
-			$properties[$p["email_address_entryid_$numMail"]] = mapi_createoneoff($displayName, "SMTP", $address);
+			$this->mapi[$p["email_address_$numMail"]] = $address;
+			$this->mapi[$p["email_address_display_name_email_$numMail"]] = $address;
+			$this->mapi[$p["email_address_display_name_$numMail"]] = $displayName;
+			$this->mapi[$p["email_address_type_$numMail"]] = "SMTP";
+			$this->mapi[$p["email_address_entryid_$numMail"]] = mapi_createoneoff($displayName, "SMTP", $address);
 			$nremails[] = $numMail - 1;
 			$abprovidertype |= 2 ^ ($numMail - 1);
 		}
 		
 		if ($numMail > 0) {
-			if (!empty($nremails)) $properties[$p["address_book_mv"]] = $nremails;
-			$properties[$p["address_book_long"]] = $abprovidertype;
+			if (!empty($nremails)) $this->mapi[$p["address_book_mv"]] = $nremails;
+			$this->mapi[$p["address_book_long"]] = $abprovidertype;
 		}
 		
 		// URLs and instant messaging. IMPP could be multivalues, will need to check that!
-		if (isset($this->vcard->url))				$properties[$p['webpage']] = $this->vcard->url->value;
-		if (isset($this->vcard->impp))			$properties[$p['im']] = $this->vcard->impp->value;
+		if (isset($this->vcard->url))				$this->mapi[$p['webpage']] = $this->vcard->url->value;
+		if (isset($this->vcard->impp))			$this->mapi[$p['im']] = $this->vcard->impp->value;
 		
 		// Categories (multi values)
-		if (isset($this->vcard->categories)) 		$properties[$p['categories']] = explode(',', $this->vcard->categories->value);
+		if (isset($this->vcard->categories)) 		$this->mapi[$p['categories']] = explode(',', $this->vcard->categories->value);
 		
 		// Contact picture
 		if (isset($this->vcard->photo)) {
@@ -352,18 +351,18 @@ class VCardParser implements IVCardParser
 
 			$this->logger->debug("Found contact picture type $type encoding $encoding");
 
-			$this->photoConvert($content, $type, $encoding, $properties, $p);
+			$this->photoConvert($content, $type, $encoding, $p);
 		}
 		
 		// Misc
-		$properties[$p["icon_index"]] = "512";		// Zarafa specific?
-		if (isset($this->vcard->note))			$properties[$p['notes']] = $this->vcard->note->value;
+		$this->mapi[$p["icon_index"]] = "512";		// Zarafa specific?
+		if (isset($this->vcard->note))			$this->mapi[$p['notes']] = $this->vcard->note->value;
 
-		return $properties;
+		return $this->mapi;
 	}
 
 	private function
-	phoneConvert (&$mapi, &$propertyKeys)
+	phoneConvert (&$propertyKeys)
 	{
 		$n_home_voice = 0;
 		$n_work_voice = 0;
@@ -456,12 +455,12 @@ class VCardParser implements IVCardParser
 					continue;
 				}
 			}
-			$mapi[$propertyKeys[$pk]] = $tel->value;
+			$this->mapi[$propertyKeys[$pk]] = $tel->value;
 		}
 	}
 
 	private function
-	photoConvert ($content, $type, $encoding, &$mapi, &$propertyKeys)
+	photoConvert ($content, $type, $encoding, &$propertyKeys)
 	{
 		if ($encoding !== 'b' && $encoding != '') {
 			$this->logger->warn("Encoding not supported: $encoding");
@@ -492,15 +491,15 @@ class VCardParser implements IVCardParser
 			imagedestroy($img);
 		}
 		$this->logger->info('Contact has picture!');
-		$mapi['ContactPicture'] = $content;
-		$mapi[PR_HASATTACH] = TRUE;
-		$mapi[$propertyKeys['has_picture']] = TRUE;
+		$this->mapi['ContactPicture'] = $content;
+		$this->mapi[PR_HASATTACH] = TRUE;
+		$this->mapi[$propertyKeys['has_picture']] = TRUE;
 
 		return TRUE;
 	}
 
 	private function
-	socialProfileConvert (&$mapi, &$propertyKeys)
+	socialProfileConvert (&$propertyKeys)
 	{
 		foreach ($this->vcard->select('X-SOCIALPROFILE') as $prop)
 		{
