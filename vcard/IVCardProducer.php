@@ -1,6 +1,7 @@
 <?php
 /*
  * Copyright 2011 - 2012 Guillaume Lapierre
+ * Copyright 2012 - 2013 Bokxing IT, http://www.bokxing-it.nl
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License, version 3, 
@@ -24,15 +25,15 @@
  * 
  */
 	
-interface IVCardProducer {
-
+interface IVCardProducer
+{
 	public function getDefaultCharset();
 
 	/**
 	 * Convert vObject to an array of properties
-     * @param ressource $contact 
-	 * @param object $vCard
+	 * @param ressource $contact
 	 */
-	public function propertiesToVObject($contact, $contactTableProps, &$vcard);
+	public function propertiesToVObject($contact, $contactTableProps);
 
+	public function serialize ();
 }

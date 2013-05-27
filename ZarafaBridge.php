@@ -403,11 +403,11 @@ class Zarafa_Bridge {
 			// Check if raw vCard is up-to-date
 			$vcardGenerationTime = $contactProperties[PR_CARDDAV_RAW_DATA_GENERATION_TIME];
 			$lastModifiedDate    = $contactProperties[$p['last_modification_time']];
-			
+
 			// Get cache version
 			$vcardCacheVersion = isset($contactProperties[PR_CARDDAV_RAW_DATA_VERSION]) ? $contactProperties[PR_CARDDAV_RAW_DATA_VERSION] : 'NONE';
 			$this->logger->trace("Saved vcard cache version: " . $vcardCacheVersion);
-			
+
 			if (($vcardGenerationTime >= $lastModifiedDate) && ($vcardCacheVersion == CACHE_VERSION)) {
 				$this->logger->debug("Using saved vcard");
 				return $contactProperties[PR_CARDDAV_RAW_DATA];
@@ -421,18 +421,19 @@ class Zarafa_Bridge {
 				$this->logger->trace("Generation of vcards forced by config");
 			}
 		}
-	
 		$producer = new VCardProducer($this, VCARD_VERSION);
-		$vCard = new Sabre\VObject\Component('VCARD');
 
 		// Produce VCard object
 		$this->logger->trace("Producing vcard from contact properties");
 
-		if (FALSE($producer->propertiesToVObject($contact, $contactProperties, $vCard))) {
+		if (FALSE($producer->propertiesToVObject($contact, $contactProperties))) {
+			$this->logger->fatal('failed to convert MAPI contact to vCard object');
 			return FALSE;
 		}
-		// Serialize
-		$vCardData = $vCard->serialize();
+		if (FALSE($vCardData = $producer->serialize())) {
+			$this->logger->fatal('failed to serialize vCard');
+			return FALSE;
+		}
 		$this->logger->debug("Produced VCard\n" . $vCardData);
 		
 		// Charset conversion?
