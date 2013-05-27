@@ -173,12 +173,40 @@ class VCardParser implements IVCardParser
 		if (count($sortAsProperty) != 0) {
 			$sortAs = current($sortAsProperty)->value;
 		}
-		
-		if (isset($this->vcard->nickname))		$this->mapi[$p['nickname']] = $this->vcard->nickname->value;
-		if (isset($this->vcard->title))			$this->mapi[$p['title']] = $this->vcard->title->value;
-		if (isset($this->vcard->role))			$this->mapi[$p['profession']] = $this->vcard->role->value;
-		if (isset($this->vcard->office))			$this->mapi[$p['office_location']] = $this->vcard->office->value;
 
+		// Some VCard properties can be mapped 1:1 to MAPI properties:
+		$map = array
+			( 'NICKNAME'       => 'nickname'
+			, 'TITLE'          => 'title'
+			, 'ROLE'           => 'profession'
+			, 'OFFICE'         => 'office_location'
+			, 'NOTE'           => 'notes'
+			, 'X-MS-ASSISTANT' => 'assistant'
+			, 'X-MS-MANAGER'   => 'manager_name'
+			, 'X-MS-SPOUSE'    => 'spouse_name'
+
+			// TODO: treat these as multivalues?
+			// MAPI has no support for more than one website or IM account...
+			, 'URL'            => 'webpage'
+			, 'IMPP'           => 'im'
+			);
+
+		// Use a 'foreach' because each property can exist zero, one or more times,
+		// and because $this->vcard->select() returns an array:
+		foreach ($map as $prop_vcard => $prop_mapi)
+		{
+			// If a property occurs more than once, we take the *first*
+			// mention to be the most important:
+			$already_set = FALSE;
+			foreach ($this->vcard->select($prop_vcard) as $prop) {
+				if ($already_set) {
+					$this->logger->info("Discarding $prop_vcard with value '{$prop->value}'; MAPI can store just one field.");
+					continue;
+				}
+				$this->mapi[$p[$prop_mapi]] = $prop->value;
+				$already_set = TRUE;
+			}
+		}
 		if (isset($this->vcard->ORG)) {
 			$parts = $this->vcard->ORG->getParts();
 			if (isset($parts[0])) $this->mapi[$p['company_name']] = $parts[0];
@@ -208,11 +236,6 @@ class VCardParser implements IVCardParser
 		$this->mapi[$p['fileas']] = $sortAs;
 		$this->mapi[$p['display_name']] = $sortAs;
 		$this->mapi[PR_SUBJECT] = $sortAs;
-		
-		// Custom... not quite sure X-MS-STUFF renders as x_ms_stuff... will have to check that!
-		if (isset($this->vcard->x_ms_assistant))	$this->mapi[$p['assistant']] = $this->vcard->x_ms_assistant->value;
-		if (isset($this->vcard->x_ms_manager))	$this->mapi[$p['manager_name']] = $this->vcard->x_ms_manager->value;
-		if (isset($this->vcard->x_ms_spouse))		$this->mapi[$p['spouse_name']] = $this->vcard->x_ms_spouse->value;
 		
 		// Dates:
 		if (isset($this->vcard->bday)) {
@@ -336,10 +359,6 @@ class VCardParser implements IVCardParser
 			$this->mapi[$p["address_book_long"]] = $abprovidertype;
 		}
 		
-		// URLs and instant messaging. IMPP could be multivalues, will need to check that!
-		if (isset($this->vcard->url))				$this->mapi[$p['webpage']] = $this->vcard->url->value;
-		if (isset($this->vcard->impp))			$this->mapi[$p['im']] = $this->vcard->impp->value;
-		
 		// Categories (multi values)
 		if (isset($this->vcard->categories)) 		$this->mapi[$p['categories']] = explode(',', $this->vcard->categories->value);
 		
@@ -356,7 +375,6 @@ class VCardParser implements IVCardParser
 		
 		// Misc
 		$this->mapi[$p["icon_index"]] = "512";		// Zarafa specific?
-		if (isset($this->vcard->note))			$this->mapi[$p['notes']] = $this->vcard->note->value;
 
 		return $this->mapi;
 	}
