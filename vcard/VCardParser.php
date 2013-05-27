@@ -363,7 +363,10 @@ class VCardParser implements IVCardParser {
 				$types[strtoupper($type->value)] = TRUE;
 			}
 			if (isset($types['HOME'])) {
-				if (isset($types['VOICE'])) {
+				if (isset($types['FAX'])) {
+					$pk = 'home_fax_number';
+				}
+				else {
 					if (($pref = $tel->offsetGet('PREF')) !== NULL) {
 						$pk = ($pref->value == '1')
 						    ? 'home_telephone_number'
@@ -375,9 +378,6 @@ class VCardParser implements IVCardParser {
 						    : 'home_telephone_number';
 					}
 					$n_home_voice++;
-				}
-				elseif (isset($types['FAX'])) {
-					$pk = 'home_fax_number';
 				}
 			}
 			elseif (isset($types['WORK'])) {
@@ -438,7 +438,7 @@ class VCardParser implements IVCardParser {
 				}
 				// Otherwise some unknown type was specified:
 				else {
-					$this->logger->warn('Unknown telephone type(s): '.implode(';', $types));
+					$this->logger->warn('Unknown telephone type(s): '.implode(';', array_keys($types)));
 					continue;
 				}
 			}
