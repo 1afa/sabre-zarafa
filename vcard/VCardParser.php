@@ -262,6 +262,9 @@ class VCardParser implements IVCardParser
 		// Telephone numbers
 		$this->phoneConvert();
 
+		// RELATED fields:
+		$this->relatedConvert();
+
 		// Social media profiles:
 		$this->socialProfileConvert();
 
@@ -527,6 +530,29 @@ class VCardParser implements IVCardParser
 		$this->mapi[$this->extendedProperties['has_picture']] = TRUE;
 
 		return TRUE;
+	}
+
+	private function
+	relatedConvert ()
+	{
+		foreach ($this->vcard->select('RELATED') as $prop)
+		{
+			if (($type = $prop->offsetGet('TYPE')) === NULL) {
+				$this->logger->info("Ignoring RELATED property without TYPE parameter '$prop->value'");
+				continue;
+			}
+			switch (strtoupper($type->value)) {
+				case 'ASSISTANT': $pk = 'assistant'; break;
+				case 'MANAGER': $pk = 'manager_name'; break;
+				case 'SPOUSE': $pk = 'spouse_name'; break;
+				default: $pk = FALSE;
+			}
+			if (FALSE($pk)) {
+				$this->logger->info("Ignoring RELATED property with unknown TYPE '{$type->value}'");
+				continue;
+			}
+			$this->mapi[$this->extendedProperties[$pk]] = $prop->value;
+                }
 	}
 
 	private function
