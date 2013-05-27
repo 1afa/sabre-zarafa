@@ -1,3 +1,5 @@
+- VCardParser and VCardProducer: clean up function interfaces, improve
+  encapsulation, split large methods into smaller ones.
 - Add ETag support, based on the hash of the EntryID and the last-modified
   timestamp. This should be sufficiently unique. Add a config option to turn
   this feature off if desired. Creating contacts now works in OSX Contacts.

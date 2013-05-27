@@ -266,50 +266,7 @@ class VCardParser implements IVCardParser
 		$this->socialProfileConvert();
 
 		// Addresses...
-		foreach ($this->vcard->select('ADR') as $address) {
-			$type = strtoupper($address->offsetGet('TYPE')->value);
-			$this->logger->debug("Found address $type");
-
-			switch ($type) {
-				case 'HOME':
-					$pStreet  = 'home_address_street';
-					$pCity    = 'home_address_city';
-					$pState   = 'home_address_state';
-					$pPCode   = 'home_address_postal_code';
-					$pCountry = 'home_address_country';
-					break;
-				case 'WORK':
-					$pStreet  = 'business_address_street';
-					$pCity    = 'business_address_city';
-					$pState   = 'business_address_state';
-					$pPCode   = 'business_address_postal_code';
-					$pCountry = 'business_address_country';
-					break;
-				case 'OTHER':
-					$pStreet  = 'other_address_street';
-					$pCity    = 'other_address_city';
-					$pState   = 'other_address_state';
-					$pPCode   = 'other_address_postal_code';
-					$pCountry = 'other_address_country';
-					break;
-				default:
-					$this->logger->debug("Unknown address type '$type' - skipping");
-					// 'continue' in PHP would break from the switch, not the for-loop;
-					// need to break two levels to proceed to the next foreach() iteration:
-					continue 2;
-			}
-			$addressComponents = $address->getParts();
-
-			$dump = print_r($addressComponents, true);
-			$this->logger->trace("Address components:\n$dump");
-			
-			// Set properties
-			$this->mapi[$p[$pStreet]]  = isset($addressComponents[2]) ? $addressComponents[2] : '';
-			$this->mapi[$p[$pCity]]    = isset($addressComponents[3]) ? $addressComponents[3] : '';
-			$this->mapi[$p[$pState]]   = isset($addressComponents[4]) ? $addressComponents[4] : '';
-			$this->mapi[$p[$pPCode]]   = isset($addressComponents[5]) ? $addressComponents[5] : '';
-			$this->mapi[$p[$pCountry]] = isset($addressComponents[6]) ? $addressComponents[6] : '';
-		}
+		$this->addressConvert();
 		
 		// emails need to handle complementary properties plus create one off entries!
 		$nremails = array();
@@ -383,6 +340,56 @@ class VCardParser implements IVCardParser
 		$this->mapi[$p["icon_index"]] = "512";		// Zarafa specific?
 
 		return $this->mapi;
+	}
+
+	private function
+	addressConvert ()
+	{
+		$p = $this->extendedProperties;
+
+		$map = array
+			( 'HOME'  => 'home'
+			, 'WORK'  => 'business'
+			, 'OTHER' => 'other'
+			);
+
+		foreach ($this->vcard->select('ADR') as $addr) {
+			if (($type = $addr->offsetGet('TYPE')) === NULL) {
+			// TODO: These properties are the so-called mailing address. This address
+			// appears, in Zarafa, to always be linked to one of the home/business/other
+			// types (it's a checkbox you can set on any one of them). Until we do
+			// further research, don't write any unique values to these fields:
+			//	$pStreet  = 'street';
+			//	$pCity    = 'city';
+			//	$pState   = 'state';
+			//	$pPCode   = 'postal_code';
+			//	$pCountry = 'country';
+				$this->logger->info('Ignoring address without type parameter');
+				continue;
+			}
+			else {
+				$type = strtoupper($type->value);
+				if (!isset($map[$type])) {
+					$this->logger->info("Ignoring address with unknown type '$type'");
+					continue;
+				}
+				$this->logger->debug("Found address '$type', mapping to '{$map[$type]}'");
+
+				$pStreet  = "{$map[$type]}_address_street";
+				$pCity    = "{$map[$type]}_address_city";
+				$pState   = "{$map[$type]}_address_state";
+				$pPCode   = "{$map[$type]}_address_postal_code";
+				$pCountry = "{$map[$type]}_address_country";
+			}
+			$parts = $addr->getParts();
+			$this->logger->trace("Address components:\n".print_r($parts, TRUE));
+
+			$this->mapi[$p[$pStreet]]  = isset($parts[2]) ? $parts[2] : '';
+			$this->mapi[$p[$pCity]]    = isset($parts[3]) ? $parts[3] : '';
+			$this->mapi[$p[$pState]]   = isset($parts[4]) ? $parts[4] : '';
+			$this->mapi[$p[$pPCode]]   = isset($parts[5]) ? $parts[5] : '';
+			$this->mapi[$p[$pCountry]] = isset($parts[6]) ? $parts[6] : '';
+		}
 	}
 
 	private function
