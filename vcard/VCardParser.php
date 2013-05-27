@@ -43,6 +43,7 @@ class VCardParser implements IVCardParser
 	protected $logger;
 	protected $vcard = FALSE;
 	protected $mapi = array();
+	protected $extendedProperties = FALSE;
 
 	function __construct ($bridge)
 	{
@@ -68,8 +69,13 @@ class VCardParser implements IVCardParser
 		$this->logger->trace("VObject: \n" . print_r($this->vcard, TRUE));
 		
 		// Common VCard properties parsing
-		$p = $this->bridge->getExtendedProperties();
-		
+		if (FALSE($this->extendedProperties = $this->bridge->getExtendedProperties())) {
+			$this->logger->fatal('failed to load extended properties');
+			return FALSE;
+		}
+		// Use shorthand notation for brevity's sake:
+		$p = $this->extendedProperties;
+
 		// Init properties
 		if (CLEAR_MISSING_PROPERTIES) {
 			$this->logger->trace("Clearing missing properties");
@@ -254,10 +260,10 @@ class VCardParser implements IVCardParser
 			$this->mapi[$p['last_modification_time']] = time();
 		}
 		// Telephone numbers
-		$this->phoneConvert($p);
+		$this->phoneConvert();
 
 		// Social media profiles:
-		$this->socialProfileConvert($p);
+		$this->socialProfileConvert();
 
 		// Addresses...
 		foreach ($this->vcard->select('ADR') as $address) {
@@ -370,7 +376,7 @@ class VCardParser implements IVCardParser
 
 			$this->logger->debug("Found contact picture type $type encoding $encoding");
 
-			$this->photoConvert($content, $type, $encoding, $p);
+			$this->photoConvert($content, $type, $encoding);
 		}
 		
 		// Misc
@@ -380,7 +386,7 @@ class VCardParser implements IVCardParser
 	}
 
 	private function
-	phoneConvert (&$propertyKeys)
+	phoneConvert ()
 	{
 		$n_home_voice = 0;
 		$n_work_voice = 0;
@@ -473,12 +479,12 @@ class VCardParser implements IVCardParser
 					continue;
 				}
 			}
-			$this->mapi[$propertyKeys[$pk]] = $tel->value;
+			$this->mapi[$this->extendedProperties[$pk]] = $tel->value;
 		}
 	}
 
 	private function
-	photoConvert ($content, $type, $encoding, &$propertyKeys)
+	photoConvert ($content, $type, $encoding)
 	{
 		if ($encoding !== 'b' && $encoding != '') {
 			$this->logger->warn("Encoding not supported: $encoding");
@@ -511,13 +517,13 @@ class VCardParser implements IVCardParser
 		$this->logger->info('Contact has picture!');
 		$this->mapi['ContactPicture'] = $content;
 		$this->mapi[PR_HASATTACH] = TRUE;
-		$this->mapi[$propertyKeys['has_picture']] = TRUE;
+		$this->mapi[$this->extendedProperties['has_picture']] = TRUE;
 
 		return TRUE;
 	}
 
 	private function
-	socialProfileConvert (&$propertyKeys)
+	socialProfileConvert ()
 	{
 		foreach ($this->vcard->select('X-SOCIALPROFILE') as $prop)
 		{
