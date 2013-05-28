@@ -1,3 +1,4 @@
+* Tue May 28 2013 Alfred Klomp <alfred@bokxing-it.nl> 0.19
 - VCardParser and VCardProducer: clean up function interfaces, improve
   encapsulation, split large methods into smaller ones.
 - Add ETag support, based on the hash of the EntryID and the last-modified
