@@ -86,9 +86,12 @@ class Zarafa_Folder
 			? $contact[PR_CARDDAV_URI]
 			: $this->bridge->entryid_to_uri($contact[PR_ENTRYID]);
 
+		if (FALSE($carddata = $this->bridge->getContactVCard($contact, $this->store->handle))) {
+			return FALSE;
+		}
 		$ret = array(
 			'id' => $contact[PR_ENTRYID],
-			'carddata' => $this->bridge->getContactVCard($contact, $this->store->handle),
+			'carddata' => $carddata,
 			'uri' => $uri,
 			'lastmodified' => $contact[PR_LAST_MODIFICATION_TIME]
 		);
