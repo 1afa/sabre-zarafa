@@ -217,7 +217,10 @@ class Zarafa_Folder
 			return FALSE;
 		}
 		$this->logger->trace(__FUNCTION__.': getting properties from vcard');
-		$mapiProperties = $this->bridge->vcardToMapiProperties($data);
+		if (FALSE($mapiProperties = $this->bridge->vcardToMapiProperties($data))) {
+			$this->logger->fatal(__FUNCTION__.': could not convert VCard properties to MAPI properties');
+			return FALSE;
+		}
 		$mapiProperties[PR_CARDDAV_URI] = $uri;
 
 		if (SAVE_RAW_VCARD) {
@@ -268,8 +271,10 @@ class Zarafa_Folder
 			$this->logger->fatal(__FUNCTION__.': could not open contact object: '.get_mapi_error_name());
 			return FALSE;
 		}
-		$mapiProperties = $this->bridge->vcardToMapiProperties($data);
-
+		if (FALSE($mapiProperties = $this->bridge->vcardToMapiProperties($data))) {
+			$this->logger->fatal(__FUNCTION__.': could not convert VCard properties to MAPI properties');
+			return FALSE;
+		}
 		if (SAVE_RAW_VCARD) {
 			$mapiProperties[PR_CARDDAV_RAW_DATA] = $data;
 			$mapiProperties[PR_CARDDAV_RAW_DATA_GENERATION_TIME] = time();
