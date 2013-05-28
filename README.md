@@ -94,17 +94,21 @@ database, set `READ_ONLY` to `true`.
 ### Running from the root of the webserver
 
 According to the SabreDAV documentation, you get the least issues if you run
-the service straight from the root of the webserver. You can run it on port 80,
-but for CardDAV, it makes some sense to use port 8008, since that's what OSX
-Addressbook uses by default. To configure Apache to listen to port 8008 and use
-a virtual host to serve Sabre-Zarafa, put something like the following
-configuration in `httpd.conf`:
+the service straight from the root of the webserver. You can run it on a
+standard port like 80 or 443, but for CardDAV, it makes some sense to use port
+8843, since that's [what OSX Addressbook uses by
+default](http://support.apple.com/kb/ts1629). Always enable SSL in production
+environments, since Sabre-Zarafa uses Basic authentication, and that's only
+secure when used over an encrypted connection.
 
-    Listen 8008
+To configure Apache to listen to port 8843 and use a virtual host to serve
+Sabre-Zarafa, put something like the following configuration in `httpd.conf`:
 
-    <VirtualHost *:8008>
+    Listen 8843
 
-        # ...general server options, enable PHP parsing, etc...
+    <VirtualHost *:8843>
+
+        # ...general server options, enable PHP parsing, SSL setup, etc...
 
         DocumentRoot /var/www/htdocs/sabre-zarafa
         <Directory /var/www/htdocs/sabre-zarafa>
