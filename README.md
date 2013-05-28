@@ -167,6 +167,49 @@ case, use a variant of this configuration:
 
 Edit `config.inc.php` and change `CARDDAV_ROOT_URI` to `/sabre-zarafa`.
 
+## Testing and troubleshooting
+
+Before testing with a CardDAV client, surf to the Sabre-Zarafa URL with a
+browser and check that you can log in and get a listing of your contacts.
+Pointing a web browser at Sabre-Zarafa is the easiest way to check that the
+install works; only then should you try real CardDAV clients. If things don't
+work in the browser, start there first.
+
+If you're not seeing any output on the screen, check your PHP error logs. Maybe
+your PHP does not have all the required extensions enabled. SabreDAV uses quite
+a few extensions, such as `ctype` and `dom`. Googling any error messages should
+shed light on the problem.
+
+If you're still fairly certain that things should be working but they don't,
+try changing the error output statements in `server.php` to:
+
+    ini_set('display_errors', TRUE);
+    ini_set('html_errors', TRUE);
+
+PHP should now complain loudly when something goes wrong. Also, make sure
+`log4php` is installed and enable very verbose logging by setting the log level
+to `INFO`, `DEBUG` or even `TRACE` in `log4php.xml`. You will get very chatty
+logs that should point out any problems.
+
+### Filing bugs, getting support
+
+Bugs and issues can be filed at GitHub on the Sabre-Zarafa project page. You'll
+need a GitHub account. Alternatively, you can post to the Sabre-Zarafa thread
+at the [Zarafa forums](http://forums.zarafa.com); the author checks it regularly.
+
+If you want to request support for certain VCard properties, be sure to include
+a traffic dump that shows the exact format of the field.
+
+If your client is having trouble talking to Sabre-Zarafa, please include a
+traffic dump that shows the network conversation, if at all possible. Seeing
+what goes wrong "on the wire" is indispensable for debugging.
+
+In general, if you get any errors, be as specific as possible about what is
+going wrong and how to reproduce the problem. Include as much relevant logs as
+possible (both from PHP and Sabre-Zarafa). Bug reports such as "I tried it on a
+Mac and it doesn't work" are good to know (the author can perhaps try to
+reproduce the problem), but are not directly actionable.
+
 ### Authentication
 
 Please note that the authentification backend uses Basic auth. Some clients
