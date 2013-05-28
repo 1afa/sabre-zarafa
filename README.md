@@ -55,14 +55,16 @@ it in the `/lib` directory:
     # cd /var/www/htdocs/sabre-zarafa/lib
     # unzip /path/to/SabreDAV-1.8.x.zip
 
-Sabre-Zarafa logs using [Apache log4php](http://logging.apache.org/log4php).
-You have to [download](http://logging.apache.org/log4php/download.html) a copy
-and move the files in `/src/main/php/` to the `/lib/log4php` directory:
+Sabre-Zarafa logs using [Apache log4php](http://logging.apache.org/log4php). As
+of version 0.19, installing this package is optional. If you don't install it,
+log messages will be discarded. Logging is recommended however. You can
+[download](http://logging.apache.org/log4php/download.html) the source and move
+the files in `/src/main/php/` to the `/lib/log4php` directory:
 
     # tar xvzf apache-log4php-2.3.0-src.tar.gz
     # mv apache-log4php-2.3.0/src/main/php/ /var/www/htdocs/sabre-zarafa/lib/log4php
 
-See below on how to configure `log4php.xml`.
+See below on how to configure `log4php.xml`, the logger's config file.
 
 The webserver needs to write to the `data` directory, since it is used by
 SabreDAV to store DAV locks. The log file, called `debug.txt`, should also be
@@ -117,7 +119,7 @@ configuration in `httpd.conf`:
             RewriteCond %{REQUEST_FILENAME} !-d
             RewriteRule ^.*$ /server.php
 
-            # If you're getting 412 Precondition Failed errors, try turning off ETag support:
+            # If you're getting 412 Precondition Failed errors, try stripping the ETag headers:
             # RequestHeader unset If-None-Match
             # Header unset ETag
             # FileETag None
@@ -151,7 +153,7 @@ case, use a variant of this configuration:
         RewriteCond %{REQUEST_FILENAME} !-d
         RewriteRule ^.*$ /sabre-zarafa/server.php
 
-        # If you're getting 412 Precondition Failed errors, try turning off ETag support:
+        # If you're getting 412 Precondition Failed errors, try stripping the ETag headers:
         # RequestHeader unset If-None-Match
         # Header unset ETag
         # FileETag None
@@ -212,14 +214,34 @@ reproduce the problem), but are not directly actionable.
 
 ### Authentication
 
-Please note that the authentification backend uses Basic auth. Some clients
-will only work with Basic auth if the host uses SSL. It is not possible to use
-Digest authentication, because Sabre-Zarafa needs the plaintext password to log
-in to the Zarafa server.
+Please note that the authentication backend uses Basic authentication
+exclusively. It is not possible to use Digest authentication, because
+Sabre-Zarafa needs the user's plaintext password to log in to the Zarafa
+server. Some clients will only work with Basic auth if the host uses SSL. You
+should *always* enable SSL on the server, since sending plaintext passwords
+over an unencrypted connection is a security risk.
 
 Some detailed information about SabreDAV setup are available in [SabreDAV
 documentation](http://code.google.com/p/sabredav/wiki/Introduction). Do not
 hesitate to read it!
+
+## Upgrading
+
+### 0.18 to 0.19
+
+Sabre-Zarafa 0.19 adds the `ETAG_ENABLE` config variable to `config.inc.php`.
+This variable controls the optional generation of ETags. If Sabre-Zarafa
+notices that the variable is not set, it will default to TRUE. So users with an
+existing config file don't absolutely need to update their config, though it is
+advised.
+
+Sabre-Zarafa 0.19 no longer requires `log4php`; it will run without logging if
+`log4php` is not installed. This makes it a little bit easier for new users to
+get Sabre-Zarafa up and running (less moving parts).
+
+Other improvements in version 0.19 are all "under the hood" and should require
+no special action on the administrator's part.
+
 
 ## PHP 5.1 and 5.2 version
 
@@ -236,12 +258,16 @@ has not been fully tested.
 
 ### Log4Php
 
-Starting with release 0.10 [log4php](http://logging.apache.org/log4php/) is used
-for debugging. To configure logging you need to edit `log4php.xml`. Default
+Starting with release 0.10 [log4php](http://logging.apache.org/log4php/) is
+used for debugging. Release 0.19 made the installation of log4php optional:
+logging is done by the Zarafa_Logger class, and if it can't find log4php, it
+will silently discard all log messages.
+
+To configure logging you need to edit `log4php.xml`. Default
 setup is to log WARN and FATAL messages to `debug.txt` with a maximum size of
 5MB for logfile and 3 backup indexes (`debug.txt.1`).
 
-To disable debugging simply set root appender to `noDebug`.
+To disable debugging simply set the root appender to `noDebug`.
 
 Make sure the path to `debug.txt` in `log4php.xml` is absolute:
 
