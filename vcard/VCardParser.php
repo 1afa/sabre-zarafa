@@ -353,8 +353,9 @@ class VCardParser implements IVCardParser
 			, 'OTHER' => 'other'
 			);
 
-		foreach ($this->vcard->select('ADR') as $addr) {
-			if (($type = $addr->offsetGet('TYPE')) === NULL) {
+		foreach ($this->vcard->select('ADR') as $addr)
+		{
+			if (count($types = $this->getTypes($addr)) === 0) {
 			// TODO: These properties are the so-called mailing address. This address
 			// appears, in Zarafa, to always be linked to one of the home/business/other
 			// types (it's a checkbox you can set on any one of them). Until we do
@@ -368,9 +369,18 @@ class VCardParser implements IVCardParser
 				continue;
 			}
 			else {
-				$type = strtoupper($type->getValue());
-				if (!isset($map[$type])) {
-					$this->logger->info("Ignoring address with unknown type '$type'");
+				// OS X Contacts.app sends contacts back in the following form:
+				//   ADR;type=HOME;type=pref:;;Main Street;Littleville;Arizona;AAA999;Denmark
+				// Nice, multiple 'type' tags. Get them all:
+				$type = FALSE;
+				foreach ($types as $type => $dummy) {
+					if (isset($map[$type])) {
+						break;
+					}
+					$type = FALSE;
+				}
+				if (FALSE($type)) {
+					$this->logger->info(sprintf('Ignoring address with unknown type(s) "%s"', $types->getValue()));
 					continue;
 				}
 				$this->logger->debug("Found address '$type', mapping to '{$map[$type]}'");
@@ -400,18 +410,14 @@ class VCardParser implements IVCardParser
 		foreach ($this->vcard->select('TEL') as $tel)
 		{
 			$pk = FALSE;
-			$types = array();
+			$types = $this->getTypes($tel);
 
-			// Get array of types; $type is a Sabre\VObject\Parameter:
-			foreach ($tel->offsetGet('TYPE') as $type) {
-				$types[strtoupper($type->getValue())] = TRUE;
-			}
 			if (isset($types['HOME'])) {
 				if (isset($types['FAX'])) {
 					$pk = 'home_fax_number';
 				}
 				else {
-					if (($pref = $tel->offsetGet('PREF')) !== NULL) {
+					if (is_object($pref = $tel->offsetGet('PREF'))) {
 						$pk = ($pref->getValue() == '1')
 						    ? 'home_telephone_number'
 						    : 'home2_telephone_number';
@@ -426,7 +432,7 @@ class VCardParser implements IVCardParser
 			}
 			elseif (isset($types['WORK'])) {
 				if (isset($types['VOICE'])) {
-					if (($pref = $tel->offsetGet('PREF')) !== NULL) {
+					if (is_object($pref = $tel->offsetGet('PREF'))) {
 						$pk = ($pref->getValue() == '1')
 						    ? 'office_telephone_number'
 						    : 'business2_telephone_number';
@@ -526,18 +532,17 @@ class VCardParser implements IVCardParser
 	{
 		foreach ($this->vcard->select('RELATED') as $prop)
 		{
-			if (($type = $prop->offsetGet('TYPE')) === NULL) {
+			if (count($types = $this->getTypes($prop)) === 0) {
 				$this->logger->info(sprintf('Ignoring RELATED property without TYPE parameter "%s"', $prop->getValue()));
 				continue;
 			}
-			switch (strtoupper($type->getValue())) {
-				case 'ASSISTANT': $pk = 'assistant'; break;
-				case 'MANAGER': $pk = 'manager_name'; break;
-				case 'SPOUSE': $pk = 'spouse_name'; break;
-				default: $pk = FALSE;
-			}
+			$pk = (isset($types['ASSISTANT'])) ? 'assistant'
+			   : ((isset($types['MANAGER'])) ? 'manager_name'
+			   : ((isset($types['SPOUSE'])) ? 'spouse_name'
+			   : FALSE));
+
 			if (FALSE($pk)) {
-				$this->logger->info(sprintf('Ignoring RELATED property with unknown TYPE "%s"', $type->getValue()));
+				$this->logger->info(sprintf('Ignoring RELATED property with unknown TYPE "%s"', implode('/', array_keys($types))));
 				continue;
 			}
 			$this->mapi[$this->extendedProperties[$pk]] = $prop->getValue();
@@ -549,13 +554,9 @@ class VCardParser implements IVCardParser
 	{
 		foreach ($this->vcard->select('X-SOCIALPROFILE') as $prop)
 		{
-			if (($params = $prop->offsetGet('TYPE')) === NULL) {
+			if (count($types = $this->getTypes($prop)) === 0) {
 				$this->logger->trace(sprintf('Ignoring social profile with value "%s"', $prop->getValue()));
 				continue;
-			}
-			$types = array();
-			foreach ($params as $param) {
-				$types[$param->getValue()] = TRUE;
 			}
 			// Possibly do something with the types and objects here.
 			// Observed strings passed by OSX Contacts:
@@ -568,5 +569,14 @@ class VCardParser implements IVCardParser
 
 			$this->logger->trace(sprintf('Ignoring social profile at "%s" with value "%s"', implode('/', array_keys($types)), $prop->getValue()));
 		}
+	}
+
+	private function
+	getTypes ($prop)
+	{
+		if (!is_object($offset = $prop->offsetGet('TYPE'))) {
+			return array();
+		}
+		return array_flip(array_map('strtoupper', $offset->getParts()));
 	}
 }
