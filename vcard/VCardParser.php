@@ -322,9 +322,8 @@ class VCardParser implements IVCardParser
 			if (!empty($nremails)) $this->mapi[$p["address_book_mv"]] = $nremails;
 			$this->mapi[$p["address_book_long"]] = $abprovidertype;
 		}
-		
-		// Categories (multi values)
-		if (isset($this->vcard->categories)) 		$this->mapi[$p['categories']] = explode(',', $this->vcard->categories->getValue());
+		// Categories (multivalue):
+		if (isset($this->vcard->categories)) $this->mapi[$p['categories']] = $this->vcard->categories->getParts();
 		
 		// Contact picture
 		if (isset($this->vcard->photo)) {

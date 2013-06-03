@@ -277,19 +277,8 @@ class VCardProducer implements IVCardProducer
 				$this->vcard->add('EMAIL', $contactProperties[$p["email_address_$i"]], array('pref' => "$i", 'X-CN' => "\"$dn\""));
 			}
 		}
-
-		// Categories
-		$contactCategories = '';
-		if (isset($contactProperties[$p['categories']])) {
-			if (is_array($contactProperties[$p['categories']])) {
-				$contactCategories = implode(',', $contactProperties[$p['categories']]);
-			} else {
-				$contactCategories = $contactProperties[$p['categories']];
-			}
-		}
-		if ($contactCategories != '') {
-			$this->vcard->add('CATEGORIES',  $contactCategories);
-		}
+		// Categories: $contactProperties[$p['categories']] can be array or string:
+		$this->setVCard('CATEGORIES', $contactProperties, $p['categories']);
 
 		// Contact picture?
 		$this->get_contact_picture($contact, $contactProperties);
