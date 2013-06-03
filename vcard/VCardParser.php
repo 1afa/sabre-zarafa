@@ -252,13 +252,11 @@ class VCardParser implements IVCardParser
 			$time = new DateTime($this->vcard->anniversary->value);
 			$this->mapi[$p['wedding_anniversary']] = $time->format('U');
 		}
-		if (isset($this->vcard->rev)) {
-			$time = new DateTime($this->vcard->rev->value);
-			$this->mapi[$p['last_modification_time']] = $time->format('U');
-		}
-		else {
-			$this->mapi[$p['last_modification_time']] = time();
-		}
+		// It's tempting to interpret REV: as a Unix timestamp, but don't; Evolution
+		// is known to send MD5 hashes. Besides, it seems this value is overwritten by
+		// the Zarafa backend when it writes the properties to the database.
+		$this->mapi[$p['last_modification_time']] = time();
+
 		// Telephone numbers
 		$this->phoneConvert();
 
