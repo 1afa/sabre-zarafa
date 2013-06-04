@@ -192,9 +192,8 @@ class VCardParser implements IVCardParser
 			, 'X-MS-SPOUSE'    => 'spouse_name'
 
 			// TODO: treat these as multivalues?
-			// MAPI has no support for more than one website or IM account...
+			// MAPI has no support for more than one website...
 			, 'URL'            => 'webpage'
-			, 'IMPP'           => 'im'
 			);
 
 		// Use a 'foreach' because each property can exist zero, one or more times,
@@ -263,14 +262,17 @@ class VCardParser implements IVCardParser
 		// RELATED fields:
 		$this->relatedConvert();
 
-		// Social media profiles:
-		$this->socialProfileConvert();
-
 		// Postal addresses:
 		$this->addressConvert();
 
 		// E-mail addresses:
 		$this->emailConvert();
+
+		// Instant messaging profiles:
+		$this->instantMessagingConvert();
+
+		// Social media profiles:
+		$this->socialProfileConvert();
 
 		// Categories (multivalue):
 		if (isset($this->vcard->categories)) $this->mapi[$p['categories']] = $this->vcard->categories->getParts();
@@ -563,6 +565,40 @@ class VCardParser implements IVCardParser
 			}
 			$this->mapi[$this->extendedProperties[$pk]] = $prop->getValue();
                 }
+	}
+
+	private function
+	instantMessagingConvert ()
+	{
+		// See also RFC 4770, http://tools.ietf.org/html/rfc4770
+		// Observed from OSX Contacts.app:
+		//   X-AIM;type=HOME;type=pref:aimname
+		//   IMPP;X-SERVICE-TYPE=AIM;type=HOME;type=pref:aim:aimname
+		//   IMPP;X-SERVICE-TYPE=Facebook;type=WORK:xmpp:facebookname
+		// Zarafa sadly only has a single 'im' property.
+
+		// Look at these properties in order; first one set wins:
+		// Taken from http://en.wikipedia.org/wiki/VCard
+		$map = array
+			( 'IMPP'
+			, 'X-AIM'
+			, 'X-ICQ'
+			, 'X-GOOGLE-TALK'
+			, 'X-JABBER'
+			, 'X-MSN'
+			, 'X-YAHOO'
+			, 'X-TWITTER'
+			, 'X-SKYPE'
+			, 'X-SKYPE-USERNAME'
+			, 'X-GADUGADU'
+			);
+
+		foreach ($map as $propname) {
+			foreach ($this->vcard->select($propname) as $prop) {
+				$this->mapi[$this->extendedProperties['im']] = $prop->getValue();
+				return;
+			}
+		}
 	}
 
 	private function

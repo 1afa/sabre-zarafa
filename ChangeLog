@@ -1,3 +1,5 @@
+- VCardParser: add a slew of proprietary instant messaging properties to the IM
+  property matcher.
 - Migrate the code to Sabre-VObject 3.0.0 format; make backwards-incompatible
   changes that break Sabre-VObject 2.x. The breakage is necessary because
   Sabre-VObject 3.0 breaks compatibility. We need to migrate to Sabre-VObject
