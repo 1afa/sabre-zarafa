@@ -164,7 +164,7 @@ class VCardParser implements IVCardParser
 			
 			// Issue 3#8
 			if ($this->vcard->n->offsetExists('SORT-AS')) {
-				$sortAs = $this->vcard->n->offsetGet('SORT-AS')->value;
+				$sortAs = $this->vcard->n->offsetGet('SORT-AS')->getValue();
 			}
 		}
 		
@@ -172,12 +172,12 @@ class VCardParser implements IVCardParser
 		/*
 		if (isset($this->vcard->sort-as)) {
 			$this->logger->debug("Using vcard SORT-AS");
-			$sortAs = $this->vcard->sort-as->value;
+			$sortAs = $this->vcard->sort-as->getValue();
 		}
 		*/
 		$sortAsProperty = $this->vcard->select('SORT-AS');
 		if (count($sortAsProperty) != 0) {
-			$sortAs = current($sortAsProperty)->value;
+			$sortAs = current($sortAsProperty)->getValue();
 		}
 
 		// Some VCard properties can be mapped 1:1 to MAPI properties:
@@ -206,10 +206,10 @@ class VCardParser implements IVCardParser
 			$already_set = FALSE;
 			foreach ($this->vcard->select($prop_vcard) as $prop) {
 				if ($already_set) {
-					$this->logger->info("Discarding $prop_vcard with value '{$prop->value}'; MAPI can store just one field.");
+					$this->logger->info(sprintf('Discarding %s with value "%s"; MAPI can store just one field.', $prop_vcard, $prop->getValue()));
 					continue;
 				}
-				$this->mapi[$p[$prop_mapi]] = $prop->value;
+				$this->mapi[$p[$prop_mapi]] = $prop->getValue();
 				$already_set = TRUE;
 			}
 		}
@@ -219,12 +219,12 @@ class VCardParser implements IVCardParser
 			if (isset($parts[1])) $this->mapi[$p['department_name']] = $parts[1];
 		}
 		if (isset($this->vcard->FN)) {
-			$this->mapi[$p['display_name']] = $this->vcard->FN->value;
-			$this->mapi[PR_SUBJECT] = $this->vcard->FN->value;
+			$this->mapi[$p['display_name']] = $this->vcard->FN->getValue();
+			$this->mapi[PR_SUBJECT] = $this->vcard->FN->getValue();
 		}
 		if (empty($sortAs) || SAVE_AS_OVERRIDE_SORTAS) {
 			$this->logger->trace("Empty sort-as or SAVE_AS_OVERRIDE_SORTAS set");
-			$sortAs = SAVE_AS_PATTERN;		// $this->vcard->fn->value;
+			$sortAs = SAVE_AS_PATTERN;		// $this->vcard->fn->getValue();
 			
 			// Do substitutions
 			$substitutionKeys   = array('%d', '%l', '%f', '%c');
@@ -245,11 +245,11 @@ class VCardParser implements IVCardParser
 		
 		// Dates:
 		if (isset($this->vcard->bday)) {
-			$time = new DateTime($this->vcard->bday->value);
+			$time = new DateTime($this->vcard->bday->getValue());
 			$this->mapi[$p['birthday']] = $time->format('U');
 		}
 		if (isset($this->vcard->anniversary)) {
-			$time = new DateTime($this->vcard->anniversary->value);
+			$time = new DateTime($this->vcard->anniversary->getValue());
 			$this->mapi[$p['wedding_anniversary']] = $time->format('U');
 		}
 		// It's tempting to interpret REV: as a Unix timestamp, but don't; Evolution
@@ -292,19 +292,19 @@ class VCardParser implements IVCardParser
 				break;
 			}
 			
-			$address = $email->value;
+			$address = $email->getValue();
 			
 			if (count($emailsDisplayName) >= $numMail) {
 				// Display name exists, use it!
-				$displayName = $emailsDisplayName[$numMail - 1]->value;
+				$displayName = $emailsDisplayName[$numMail - 1]->getValue();
 			} else {
-				$displayName = $this->vcard->fn->value;
+				$displayName = $this->vcard->fn->getValue();
 			}
 			
 			// Override displayName?
 			if ($email->offsetExists("X-CN")) {
 				$xCn = $email->offsetGet("X-CN");
-				$displayName = $xCn->value;
+				$displayName = $xCn->getValue();
 			}
 			
 			$this->logger->debug("Found email $numMail : $displayName <$address>");
@@ -324,16 +324,15 @@ class VCardParser implements IVCardParser
 		}
 		
 		// Categories (multi values)
-		if (isset($this->vcard->categories)) 		$this->mapi[$p['categories']] = explode(',', $this->vcard->categories->value);
+		if (isset($this->vcard->categories)) 		$this->mapi[$p['categories']] = explode(',', $this->vcard->categories->getValue());
 		
 		// Contact picture
 		if (isset($this->vcard->photo)) {
-			$type     = strtolower($this->vcard->photo->offsetGet('TYPE')->value);
-			$encoding = strtolower($this->vcard->photo->offsetGet('ENCODING')->value);
-			$content  = $this->vcard->photo->value;
+			$type     = strtolower($this->vcard->photo->offsetGet('TYPE')->getValue());
+			$encoding = strtolower($this->vcard->photo->offsetGet('ENCODING')->getValue());
+			$content  = $this->vcard->photo->getValue();
 
 			$this->logger->debug("Found contact picture type $type encoding $encoding");
-
 			$this->photoConvert($content, $type, $encoding);
 		}
 		
@@ -369,7 +368,7 @@ class VCardParser implements IVCardParser
 				continue;
 			}
 			else {
-				$type = strtoupper($type->value);
+				$type = strtoupper($type->getValue());
 				if (!isset($map[$type])) {
 					$this->logger->info("Ignoring address with unknown type '$type'");
 					continue;
@@ -405,7 +404,7 @@ class VCardParser implements IVCardParser
 
 			// Get array of types; $type is a Sabre\VObject\Parameter:
 			foreach ($tel->offsetGet('TYPE') as $type) {
-				$types[strtoupper($type->value)] = TRUE;
+				$types[strtoupper($type->getValue())] = TRUE;
 			}
 			if (isset($types['HOME'])) {
 				if (isset($types['FAX'])) {
@@ -413,7 +412,7 @@ class VCardParser implements IVCardParser
 				}
 				else {
 					if (($pref = $tel->offsetGet('PREF')) !== NULL) {
-						$pk = ($pref->value == '1')
+						$pk = ($pref->getValue() == '1')
 						    ? 'home_telephone_number'
 						    : 'home2_telephone_number';
 					}
@@ -428,7 +427,7 @@ class VCardParser implements IVCardParser
 			elseif (isset($types['WORK'])) {
 				if (isset($types['VOICE'])) {
 					if (($pref = $tel->offsetGet('PREF')) !== NULL) {
-						$pk = ($pref->value == '1')
+						$pk = ($pref->getValue() == '1')
 						    ? 'office_telephone_number'
 						    : 'business2_telephone_number';
 					}
@@ -487,21 +486,13 @@ class VCardParser implements IVCardParser
 					continue;
 				}
 			}
-			$this->mapi[$this->extendedProperties[$pk]] = $tel->value;
+			$this->mapi[$this->extendedProperties[$pk]] = $tel->getValue();
 		}
 	}
 
 	private function
 	photoConvert ($content, $type, $encoding)
 	{
-		if ($encoding !== 'b' && $encoding != '') {
-			$this->logger->warn("Encoding not supported: $encoding");
-			return FALSE;
-		}
-		if (FALSE($content = base64_decode($content))) {
-			$this->logger->warn('Error: failed to base64-decode contact photo');
-			return FALSE;
-		}
 		// Convert to JPEG if not already in that format:
 		if ($type != 'jpeg' && $type != 'image/jpeg' && $type != 'image/jpg')
 		{
@@ -536,20 +527,20 @@ class VCardParser implements IVCardParser
 		foreach ($this->vcard->select('RELATED') as $prop)
 		{
 			if (($type = $prop->offsetGet('TYPE')) === NULL) {
-				$this->logger->info("Ignoring RELATED property without TYPE parameter '$prop->value'");
+				$this->logger->info(sprintf('Ignoring RELATED property without TYPE parameter "%s"', $prop->getValue()));
 				continue;
 			}
-			switch (strtoupper($type->value)) {
+			switch (strtoupper($type->getValue())) {
 				case 'ASSISTANT': $pk = 'assistant'; break;
 				case 'MANAGER': $pk = 'manager_name'; break;
 				case 'SPOUSE': $pk = 'spouse_name'; break;
 				default: $pk = FALSE;
 			}
 			if (FALSE($pk)) {
-				$this->logger->info("Ignoring RELATED property with unknown TYPE '{$type->value}'");
+				$this->logger->info(sprintf('Ignoring RELATED property with unknown TYPE "%s"', $type->getValue()));
 				continue;
 			}
-			$this->mapi[$this->extendedProperties[$pk]] = $prop->value;
+			$this->mapi[$this->extendedProperties[$pk]] = $prop->getValue();
                 }
 	}
 
@@ -559,12 +550,12 @@ class VCardParser implements IVCardParser
 		foreach ($this->vcard->select('X-SOCIALPROFILE') as $prop)
 		{
 			if (($params = $prop->offsetGet('TYPE')) === NULL) {
-				$this->logger->trace(sprintf('Ignoring social profile with value "%s"', $prop->value));
+				$this->logger->trace(sprintf('Ignoring social profile with value "%s"', $prop->getValue()));
 				continue;
 			}
 			$types = array();
 			foreach ($params as $param) {
-				$types[$param->value] = TRUE;
+				$types[$param->getValue()] = TRUE;
 			}
 			// Possibly do something with the types and objects here.
 			// Observed strings passed by OSX Contacts:
@@ -575,7 +566,7 @@ class VCardParser implements IVCardParser
 			//   X-SOCIALPROFILE;type=myspace:http://www.myspace.com/name
 			//   X-SOCIALPROFILE;type=sinaweibo:http://weibo.com/n/name
 
-			$this->logger->trace(sprintf('Ignoring social profile at "%s" with value "%s"', implode('/', array_keys($types)), $prop->value));
+			$this->logger->trace(sprintf('Ignoring social profile at "%s" with value "%s"', implode('/', array_keys($types)), $prop->getValue()));
 		}
 	}
 }

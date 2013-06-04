@@ -1,3 +1,8 @@
+- Migrate the code to Sabre-VObject 3.0.0 format; make backwards-incompatible
+  changes that break Sabre-VObject 2.x. The breakage is necessary because
+  Sabre-VObject 3.0 breaks compatibility. We need to migrate to Sabre-VObject
+  3.0 because it has proper support for escaping multiline fields, such as the
+  NOTE: property. These fields break in 2.x.
 - Don't parse the REV: tag as a Unix timestamp, and don't fill it with the
   lastmodified timestamp when creating a VCard. Turns out Evolution sets this
   property to a MD5 hash.

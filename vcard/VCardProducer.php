@@ -52,7 +52,7 @@ class VCardProducer implements IVCardProducer
 		$this->defaultCharset = 'utf-8';
 		$this->logger = new Zarafa_Logger(__CLASS__);
 
-		$this->vcard = new Sabre\VObject\Component('VCARD');
+		$this->vcard = new Sabre\VObject\Component\VCard();
 	}
 
 	/**
@@ -112,9 +112,9 @@ class VCardProducer implements IVCardProducer
 		
 		// Version check
 		switch ($this->version) {
-			case 2: $this->vcard->add('VERSION', '2.1'); break;
-			case 3: $this->vcard->add('VERSION', '3.0'); break;
-			case 4: $this->vcard->add('VERSION', '4.0'); break;
+			case 2: $this->vcard->VERSION = '2.1'; break;
+			case 3: $this->vcard->VERSION = '3.0'; break;
+			case 4: $this->vcard->VERSION = '4.0'; break;
 			default:
 				$this->logger->fatal("Unrecognised VCard version: " . $this->version);
 				return FALSE;
@@ -151,10 +151,8 @@ class VCardProducer implements IVCardProducer
 		$contactInfos[] = isset($contactProperties[$p['generation']])          ? $contactProperties[$p['generation']] : '';
 
 		if (strlen(implode('', $contactInfos)) > 0) {
-			$elem = new Sabre\VObject\Property\Compound('N');
-			$elem->setParts($contactInfos);
+			$elem = $this->vcard->add('N', $contactInfos);
 		//	if (isset($contactProperties[$p['fileas']])) $elem->offsetSet('SORT-AS', '"'.$contactProperties[$p['fileas']].'"');
-			$this->vcard->add($elem);
 		}
 		// Add ORG:<company>;<department>
 		$orgdata = array();
@@ -162,9 +160,7 @@ class VCardProducer implements IVCardProducer
 		$orgdata[] = (isset($contactProperties[$p['department_name']])) ? $contactProperties[$p['department_name']] : '';
 
 		if (strlen(implode('', $orgdata)) > 0) {
-			$elem = new Sabre\VObject\Property\Compound('ORG');
-			$elem->setParts($orgdata);
-			$this->vcard->add($elem);
+			$this->vcard->add('ORG', $orgdata);
 		}
 		$map = array
 			( 'fileas'          => 'SORT-AS'
@@ -191,15 +187,15 @@ class VCardProducer implements IVCardProducer
 			// Relation types 'assistant' and 'manager' are not RFC6350-compliant.
 			if (isset($contactProperties[$p['assistant']])
 			&& !empty($contactProperties[$p['assistant']])) {
-				$this->vcard->add(new Sabre\VObject\Property('RELATED', $contactProperties[$p['assistant']], array('VALUE' => 'text', 'TYPE' => 'assistant')));
+				$this->vcard->add('RELATED', $contactProperties[$p['assistant']], array('VALUE' => 'text', 'TYPE' => 'assistant'));
 			}
 			if (isset($contactProperties[$p['manager_name']])
 			&& !empty($contactProperties[$p['manager_name']])) {
-				$this->vcard->add(new Sabre\VObject\Property('RELATED', $contactProperties[$p['manager_name']], array('VALUE' => 'text', 'TYPE' => 'manager')));
+				$this->vcard->add('RELATED', $contactProperties[$p['manager_name']], array('VALUE' => 'text', 'TYPE' => 'manager'));
 			}
 			if (isset($contactProperties[$p['spouse_name']])
 			&& !empty($contactProperties[$p['spouse_name']])) {
-				$this->vcard->add(new Sabre\VObject\Property('RELATED', $contactProperties[$p['spouse_name']], array('VALUE' => 'text', 'TYPE' => 'spouse')));
+				$this->vcard->add('RELATED', $contactProperties[$p['spouse_name']], array('VALUE' => 'text', 'TYPE' => 'spouse'));
 			}
 		}
 		// Dates:
@@ -275,10 +271,10 @@ class VCardProducer implements IVCardProducer
 			                 : FALSE);
 
 			if (FALSE($dn)) {
-				$this->vcard->add(new Sabre\VObject\Property('EMAIL', $contactProperties[$p["email_address_$i"]], array('pref' => "$i")));
+				$this->vcard->add('EMAIL', $contactProperties[$p["email_address_$i"]], array('pref' => "$i"));
 			}
 			else {
-				$this->vcard->add(new Sabre\VObject\Property('EMAIL', $contactProperties[$p["email_address_$i"]], array('pref' => "$i", 'X-CN' => "\"$dn\"")));
+				$this->vcard->add('EMAIL', $contactProperties[$p["email_address_$i"]], array('pref' => "$i", 'X-CN' => "\"$dn\""));
 			}
 		}
 
@@ -305,8 +301,8 @@ class VCardProducer implements IVCardProducer
 		}
 		$this->vcard->add('UID', substr($contactProperties[PR_CARDDAV_URI], 0, -4));
 		$this->setVCard('NOTE', $contactProperties, $p['notes']);
-		$this->vcard->add('PRODID', VCARD_PRODUCT_ID);
 
+		$this->vcard->PRODID = VCARD_PRODUCT_ID;
 		return TRUE;
 	}
 
@@ -352,10 +348,7 @@ class VCardProducer implements IVCardProducer
 			$mime = 'JPEG';
 		}
 		$this->logger->trace("Adding contact picture to VCard");
-		$photoProperty = new Sabre\VObject\Property('PHOTO', base64_encode($photo));
-		$photoProperty->offsetSet('TYPE', $mime);
-		$photoProperty->offsetSet('ENCODING', 'b');
-		$this->vcard->add($photoProperty);
+		$this->vcard->add('PHOTO', $photo, array('TYPE' => $mime, 'ENCODING' => 'b'));
 	}
 
 	/**
@@ -397,10 +390,6 @@ class VCardProducer implements IVCardProducer
 			return;
 		}
 		$this->logger->trace("Nonempty address - adding $propertyPrefix");
-
-		$element = new Sabre\VObject\Property\Compound('ADR', NULL, array('TYPE' => $addressType));
-		$element->setParts($address);
-		$this->vcard->add($element);
+		$this->vcard->add('ADR', $address, array('TYPE' => $addressType));
 	}
-
 }
