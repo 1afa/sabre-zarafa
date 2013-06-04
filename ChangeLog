@@ -1,3 +1,4 @@
+- Update README.md, add documentation.
 - Bugfix: don't display mobile phone number twice.
 - VCardParser: add a slew of proprietary instant messaging properties to the IM
   property matcher.

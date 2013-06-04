@@ -41,8 +41,10 @@ License, version 3](http://www.gnu.org/licenses/agpl-3.0.html).
 ### Introduction
 
 This installs as any [SabreDAV](http://code.google.com/p/sabredav) server.
-Unpack the source into a directory. This manual will assume
-`/var/www/htdocs/sabre-zarafa` as the root.
+Unpack the source into a directory. This readme will assume that
+`/var/www/htdocs/sabre-zarafa` is the root directory of the install.
+
+### Download and install SabreDAV
 
 As of version 0.18, Sabre-Zarafa is written against the SabreDAV 1.8 API, and
 [SabreDAV](http://code.google.com/p/sabredav) no longer comes included. Since
@@ -53,13 +55,41 @@ You have to download a SabreDAV release from the 1.8 series yourself and unzip
 it in the `/lib` directory:
 
     # cd /var/www/htdocs/sabre-zarafa/lib
-    # unzip /path/to/SabreDAV-1.8.x.zip
+    # unzip /path/to/SabreDAV-1.8.5.zip
+
+### Download and install Sabre-VObject 3.x
+
+Starting with version 0.20, Sabre-Zarafa uses the Sabre-VObject 3.x library for
+parsing and creating vCards. Updating to this brand new version is necessary
+because the Sabre-VObject 2.x library shipped with SabreDAV 1.8 does not
+properly escape multiline property values. This caused multiline notes to come
+out wrong, and the sync to fail with such clients as OS X Contacts.app.
+
+Version 3.x of Sabre-VObject is not shipped in the SabreDAV package at the time
+of writing, because it's still under development. You must
+[download](https://github.com/fruux/sabre-vobject/tags) a development tarball
+and install it yourself. Sabre-Zarafa 0.20 was written and tested against
+Sabre-VObject 3.0.0-alpha4, which despite the scary name appears to work fine;
+the output is more correct than that of version 2.x.
+
+Download the latest Sabre-VObject 3.x tarball, delete the existing 2.x library
+hidden deep within SabreDAV, and untar the new source in its place:
+
+    # cd /var/www/htdocs/sabre-zarafa/lib/SabreDAV/vendor/sabre/
+    # rm -r vobject
+    # tar xvzf /path/to/3.0.0-alpha4.tar.gz
+    # mv sabre-vobject-3.0.0-alpha4 vobject
+
+### Download and install Log4php
 
 Sabre-Zarafa logs using [Apache log4php](http://logging.apache.org/log4php). As
-of version 0.19, installing this package is optional. If you don't install it,
-log messages will be discarded. Logging is recommended however. You can
-[download](http://logging.apache.org/log4php/download.html) the source and move
-the files in `/src/main/php/` to the `/lib/log4php` directory:
+of version 0.19, installing this package has become optional, to make it easier
+to get started with Sabre-Zarafa. If you don't install Log4php, log messages
+will be discarded. It is recommended to install the package and turn on at
+least some logging until you are sure that everything is working properly.
+[Download](http://logging.apache.org/log4php/download.html) the Log4php source
+and move the files in Log4php's `/src/main/php/` directory to Sabre-Zarafa's
+`/lib/log4php` directory:
 
     # tar xvzf apache-log4php-2.3.0-src.tar.gz
     # mv apache-log4php-2.3.0/src/main/php/ /var/www/htdocs/sabre-zarafa/lib/log4php
@@ -67,7 +97,8 @@ the files in `/src/main/php/` to the `/lib/log4php` directory:
 See below on how to configure `log4php.xml`, the logger's config file.
 
 The webserver needs to write to the `data` directory, since it is used by
-SabreDAV to store DAV locks. The log file, called `debug.txt`, should also be
+SabreDAV to store DAV locks. (NB, the author is not convinced that CardDAV
+actually uses locking.) The log file, called `debug.txt`, should also be
 writable. If your server runs as the user `apache`:
 
     # chown apache:apache /var/www/htdocs/sabre-zarafa/data
@@ -197,6 +228,13 @@ PHP should now complain loudly when something goes wrong. Also, make sure
 to `INFO`, `DEBUG` or even `TRACE` in `log4php.xml`. You will get very chatty
 logs that should point out any problems.
 
+Problems with OS X Contacts.app can often be diagnosed by running the program
+from a terminal; it prints quite a lot of helpful output when things aren't
+working. Type this command in a terminal to launch Contacts.app:
+
+    /Applications/Contacts.app/Contents/MacOS/Contacts
+
+
 ### Filing bugs, getting support
 
 Bugs and issues can be filed at GitHub on the Sabre-Zarafa project page. You'll
@@ -230,6 +268,14 @@ documentation](http://code.google.com/p/sabredav/wiki/Introduction). Do not
 hesitate to read it!
 
 ## Upgrading
+
+### 0.19 to 0.20
+
+Sabre-Zarafa 0.20 is written against the Sabre-VObject 3.x branch, which isn't
+yet included in SabreDAV and must be installed manually. Please refer to the
+installation instructions above. Because Sabre-VObject 3.x is in its early
+days, it's possible that some things don't quite work. Please report any bugs
+and issues you find.
 
 ### 0.18 to 0.19
 
