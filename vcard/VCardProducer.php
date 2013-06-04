@@ -223,7 +223,6 @@ class VCardProducer implements IVCardProducer
 			, 'business2_telephone_number' => array('type' => 'WORK,VOICE', 'pref' => '2')
 			, 'business_fax_number'        => array('type' => 'WORK,FAX')
 			, 'home_fax_number'            => array('type' => 'HOME,FAX')
-			, 'cellular_telephone_number'  => array('type' => 'CELL')
 			, 'mobile_telephone_number'    => array('type' => 'CELL')
 			, 'pager_telephone_number'     => array('type' => 'PAGER')
 			, 'isdn_number'                => array('type' => 'ISDN')
