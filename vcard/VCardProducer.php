@@ -217,12 +217,12 @@ class VCardProducer implements IVCardProducer
 		// Telephone numbers
 		// webaccess can handle 19 telephone numbers...
 		$map = array
-			( 'home_telephone_number'      => array('type' => array('HOME','VOICE'), 'pref' => '1')
-			, 'home2_telephone_number'     => array('type' => array('HOME','VOICE'), 'pref' => '2')
-			, 'office_telephone_number'    => array('type' => array('WORK','VOICE'), 'pref' => '1')
-			, 'business2_telephone_number' => array('type' => array('WORK','VOICE'), 'pref' => '2')
-			, 'business_fax_number'        => array('type' => array('WORK','FAX'))
-			, 'home_fax_number'            => array('type' => array('HOME','FAX'))
+			( 'home_telephone_number'      => array('type' => 'HOME,VOICE', 'pref' => '1')
+			, 'home2_telephone_number'     => array('type' => 'HOME,VOICE', 'pref' => '2')
+			, 'office_telephone_number'    => array('type' => 'WORK,VOICE', 'pref' => '1')
+			, 'business2_telephone_number' => array('type' => 'WORK,VOICE', 'pref' => '2')
+			, 'business_fax_number'        => array('type' => 'WORK,FAX')
+			, 'home_fax_number'            => array('type' => 'HOME,FAX')
 			, 'cellular_telephone_number'  => array('type' => 'CELL')
 			, 'mobile_telephone_number'    => array('type' => 'CELL')
 			, 'pager_telephone_number'     => array('type' => 'PAGER')
