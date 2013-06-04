@@ -266,62 +266,12 @@ class VCardParser implements IVCardParser
 		// Social media profiles:
 		$this->socialProfileConvert();
 
-		// Addresses...
+		// Postal addresses:
 		$this->addressConvert();
-		
-		// emails need to handle complementary properties plus create one off entries!
-		$nremails = array();
-		$abprovidertype = 0;
-		$emails = $this->vcard->select('EMAIL');
-		$emailsDisplayName = $this->vcard->select('X-EMAIL-CN');		// emClient handles those
-		$numMail = 0;
-		
-		if (is_array($emailsDisplayName)) {
-			$emailsDisplayName = array_values($emailsDisplayName);
-		}
-		
-		$dump = print_r($emailsDisplayName, true);
-		$this->logger->trace("Display Names\n$dump");
-		
-		foreach ($emails as $email) {
-			$numMail++;
-			$displayName = '';
-			
-			if ($numMail > 3) {
-				// Zarafa only handles 3 mails
-				break;
-			}
-			
-			$address = $email->getValue();
-			
-			if (count($emailsDisplayName) >= $numMail) {
-				// Display name exists, use it!
-				$displayName = $emailsDisplayName[$numMail - 1]->getValue();
-			} else {
-				$displayName = $this->vcard->fn->getValue();
-			}
-			
-			// Override displayName?
-			if ($email->offsetExists("X-CN")) {
-				$xCn = $email->offsetGet("X-CN");
-				$displayName = $xCn->getValue();
-			}
-			
-			$this->logger->debug("Found email $numMail : $displayName <$address>");
-			
-			$this->mapi[$p["email_address_$numMail"]] = $address;
-			$this->mapi[$p["email_address_display_name_email_$numMail"]] = $address;
-			$this->mapi[$p["email_address_display_name_$numMail"]] = $displayName;
-			$this->mapi[$p["email_address_type_$numMail"]] = "SMTP";
-			$this->mapi[$p["email_address_entryid_$numMail"]] = mapi_createoneoff($displayName, "SMTP", $address);
-			$nremails[] = $numMail - 1;
-			$abprovidertype |= 2 ^ ($numMail - 1);
-		}
-		
-		if ($numMail > 0) {
-			if (!empty($nremails)) $this->mapi[$p["address_book_mv"]] = $nremails;
-			$this->mapi[$p["address_book_long"]] = $abprovidertype;
-		}
+
+		// E-mail addresses:
+		$this->emailConvert();
+
 		// Categories (multivalue):
 		if (isset($this->vcard->categories)) $this->mapi[$p['categories']] = $this->vcard->categories->getParts();
 		
@@ -399,6 +349,73 @@ class VCardParser implements IVCardParser
 			$this->mapi[$p[$pPCode]]   = isset($parts[5]) ? $parts[5] : '';
 			$this->mapi[$p[$pCountry]] = isset($parts[6]) ? $parts[6] : '';
 		}
+	}
+
+	private function
+	emailConvert ()
+	{
+		$p = $this->extendedProperties;
+
+		// emails need to handle complementary properties plus create one off entries!
+		$nremails = array();
+		$abprovidertype = 0;
+		$emailsDisplayName = $this->vcard->select('X-EMAIL-CN');		// emClient handles those
+		$numMail = 0;
+
+		if (is_array($emailsDisplayName)) {
+			$emailsDisplayName = array_values($emailsDisplayName);
+		}
+		$dump = print_r($emailsDisplayName, true);
+		$this->logger->trace("Display Names\n$dump");
+
+		foreach ($this->vcard->select('EMAIL') as $email)
+		{
+			$numMail++;
+			$displayName = '';
+			$address = $email->getValue();
+
+			// Zarafa only handles 3 mails:
+			if ($numMail > 3) {
+				$this->logger->debug(sprintf('Discarding e-mail address "%s"; Zarafa has only three e-mail slots and this is number %d', $address, $numMail));
+				continue;
+			}
+			// Find display name:
+			if ($email->offsetExists('X-CN')) {
+				$xCn = $email->offsetGet('X-CN');
+				$displayName = $xCn->getValue();
+			}
+			else if (count($emailsDisplayName) >= $numMail) {
+				$displayName = $emailsDisplayName[$numMail - 1]->getValue();
+			}
+			else {
+				$displayName = $this->vcard->fn->getValue();
+			}
+			$this->logger->debug("Found email $numMail : $displayName <$address>");
+
+			// Create one-off entry:
+			if (FALSE($oneoff = mapi_createoneoff($displayName, 'SMTP', $address))) {
+				$this->logger->warn(sprintf('Failed to create one-off for "%s", reason: %s', $address, get_mapi_error_name()));
+				continue;
+			}
+			$this->mapi[$p["email_address_$numMail"]] = $address;
+			$this->mapi[$p["email_address_display_name_email_$numMail"]] = $address;
+			$this->mapi[$p["email_address_display_name_$numMail"]] = $displayName;
+			$this->mapi[$p["email_address_type_$numMail"]] = 'SMTP';
+			$this->mapi[$p["email_address_entryid_$numMail"]] = $oneoff;
+
+			// FIXME: doc: why populate an array(0 => 0, 1 => 1, 2 => 2) and so on?
+			$nremails[] = $numMail - 1;
+
+			// FIXME: doc: some kind of bitmask, what's the significance?
+			$abprovidertype |= 2 ^ ($numMail - 1);
+		}
+		if ($numMail == 0) {
+			return;
+		}
+		if (!empty($nremails)) {
+			$this->mapi[$p['address_book_mv']] = $nremails;
+		}
+		$this->mapi[$p['address_book_long']] = $abprovidertype;
 	}
 
 	private function
