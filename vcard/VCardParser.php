@@ -151,7 +151,6 @@ class VCardParser implements IVCardParser
 		}
 		
 		// Name components
-		$sortAs = '';
 		if (isset($this->vcard->N)) {
 			$this->logger->trace("N: " . $this->vcard->N);
 			$parts = $this->vcard->N->getParts();
@@ -164,25 +163,7 @@ class VCardParser implements IVCardParser
 			$this->mapi[$p['middle_name']]         = isset($parts[2]) ? $parts[2] : '';
 			$this->mapi[$p['display_name_prefix']] = isset($parts[3]) ? $parts[3] : '';
 			$this->mapi[$p['generation']]          = isset($parts[4]) ? $parts[4] : '';
-			
-			// Issue 3#8
-			if ($this->vcard->n->offsetExists('SORT-AS')) {
-				$sortAs = $this->vcard->n->offsetGet('SORT-AS')->getValue();
-			}
 		}
-		
-		// Given sort-as ?
-		/*
-		if (isset($this->vcard->sort-as)) {
-			$this->logger->debug("Using vcard SORT-AS");
-			$sortAs = $this->vcard->sort-as->getValue();
-		}
-		*/
-		$sortAsProperty = $this->vcard->select('SORT-AS');
-		if (count($sortAsProperty) != 0) {
-			$sortAs = current($sortAsProperty)->getValue();
-		}
-
 		// Some VCard properties can be mapped 1:1 to MAPI properties:
 		// Properties taken from http://en.wikipedia.org/wiki/Vcard
 		$map = array
@@ -232,31 +213,18 @@ class VCardParser implements IVCardParser
 			if (isset($parts[0])) $this->mapi[$p['company_name']] = $parts[0];
 			if (isset($parts[1])) $this->mapi[$p['department_name']] = $parts[1];
 		}
+		// SORT-AS:
+		// Do this here because we may need the value of $this->mapi[$p['fileas']] below:
+		$this->sortAsConvert();
+
 		if (isset($this->vcard->FN)) {
 			$this->mapi[$p['display_name']] = $this->vcard->FN->getValue();
 			$this->mapi[PR_SUBJECT] = $this->vcard->FN->getValue();
 		}
-		if (empty($sortAs) || SAVE_AS_OVERRIDE_SORTAS) {
-			$this->logger->trace("Empty sort-as or SAVE_AS_OVERRIDE_SORTAS set");
-			$sortAs = SAVE_AS_PATTERN;		// $this->vcard->fn->getValue();
-			
-			// Do substitutions
-			$substitutionKeys   = array('%d', '%l', '%f', '%c');
-			$substitutionValues = array(
-				$this->mapi[$p['display_name']],
-				$this->mapi[$p['surname']],
-				$this->mapi[$p['given_name']],
-				$this->mapi[$p['company_name']]
-			);
-			$sortAs = str_replace($substitutionKeys, $substitutionValues, $sortAs);
+		else {
+			$this->mapi[$p['display_name']] = $this->mapi[$p['fileas']];
+			$this->mapi[PR_SUBJECT] = $this->mapi[$p['fileas']];
 		}
-
-		// Should PR_SUBJET and display_name be equals to fileas? I think so!
-		$this->logger->debug("Contact display name: " . $sortAs);
-		$this->mapi[$p['fileas']] = $sortAs;
-		$this->mapi[$p['display_name']] = $sortAs;
-		$this->mapi[PR_SUBJECT] = $sortAs;
-		
 		// Dates:
 		if (isset($this->vcard->bday)) {
 			$time = new DateTime($this->vcard->bday->getValue());
@@ -271,7 +239,7 @@ class VCardParser implements IVCardParser
 		// the Zarafa backend when it writes the properties to the database.
 		$this->mapi[$p['last_modification_time']] = time();
 
-		// Telephone numbers
+		// Telephone numbers:
 		$this->phoneConvert();
 
 		// RELATED fields:
@@ -306,6 +274,52 @@ class VCardParser implements IVCardParser
 		$this->mapi[$p["icon_index"]] = "512";		// Zarafa specific?
 
 		return $this->mapi;
+	}
+
+	private function
+	sortAsConvert ()
+	{
+		$fileas = FALSE;
+		$p = $this->extendedProperties;
+
+		$map = array
+			( 'SORT-AS'
+			, 'SORT-STRING'
+			, 'X-EVOLUTION-FILE-AS'
+			);
+
+		// Check properties in map; first one wins:
+		foreach ($map as $propname) {
+			foreach ($this->vcard->select($propname) as $prop) {
+				$fileas = $prop->getValue();
+				break 2;
+			}
+		}
+		// SORT-AS can also be given as a parameter to N:
+		if (FALSE($fileas) && isset($this->vcard->N) && $this->vcard->N->offsetExists('SORT-AS')) {
+			$fileas = $this->vcard->N->offsetGet('SORT-AS')->getValue();
+		}
+		// If not yet found, or override specified, derive:
+		if (FALSE($fileas) || SAVE_AS_OVERRIDE_SORTAS) {
+			$this->logger->trace('Empty sort-as or SAVE_AS_OVERRIDE_SORTAS set');
+
+			$fileas = SAVE_AS_PATTERN;
+
+			// Don't use $this->mapi[$p['display_name']]; hasn't been set yet, and can
+			// be set by this very function in what would be a circular definition:
+			$displayname = (isset($this->vcard->FN)) ? $this->vcard->FN->getValue() : '';
+
+			// Do substitutions
+			$substitutionKeys   = array('%d', '%l', '%f', '%c');
+			$substitutionValues = array(
+				$displayname,
+				$this->mapi[$p['surname']],
+				$this->mapi[$p['given_name']],
+				$this->mapi[$p['company_name']]
+			);
+			$fileas = str_replace($substitutionKeys, $substitutionValues, $fileas);
+		}
+		$this->mapi[$p['fileas']] = $fileas;
 	}
 
 	private function
