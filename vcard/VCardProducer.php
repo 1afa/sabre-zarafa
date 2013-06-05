@@ -151,8 +151,22 @@ class VCardProducer implements IVCardProducer
 		$contactInfos[] = isset($contactProperties[$p['generation']])          ? $contactProperties[$p['generation']] : '';
 
 		if (strlen(implode('', $contactInfos)) > 0) {
-			$elem = $this->vcard->add('N', $contactInfos);
-		//	if (isset($contactProperties[$p['fileas']])) $elem->offsetSet('SORT-AS', '"'.$contactProperties[$p['fileas']].'"');
+			if ($this->version >= 4 && isset($contactProperties[$p['fileas']]) && !empty($contactProperties[$p['fileas']]))
+			{
+				// FIXME: this syntax does not yet work correctly in Sabre-VObject
+				// 3.0.0-alpha4: it does not delimit the value of SORT-AS with
+				// double quotes. If we include the double quotes in the value
+				// itself, the quotes become part of the sort string. If we do as
+				// below (raw value, no double quotes), we are going against RFC
+				// 6350. Since the default vCard version is 3.0, the average user
+				// should not run into this - hopefully not until the library
+				// catches up.
+				// Issue filed at https://github.com/fruux/sabre-vobject/issues/40
+				$this->vcard->add('N', $contactInfos, array('SORT-AS' => $contactProperties[$p['fileas']]));
+			}
+			else {
+				$this->vcard->add('N', $contactInfos);
+			}
 		}
 		// Add ORG:<company>;<department>
 		$orgdata = array();
@@ -163,7 +177,7 @@ class VCardProducer implements IVCardProducer
 			$this->vcard->add('ORG', $orgdata);
 		}
 		$map = array
-			( 'fileas'          => 'SORT-AS'
+			( 'fileas'          => 'SORT-STRING'	// FIXME: not available in vCard 4, should ignore
 			, 'nickname'        => 'NICKNAME'
 			, 'title'           => 'TITLE'
 			, 'profession'      => 'ROLE'

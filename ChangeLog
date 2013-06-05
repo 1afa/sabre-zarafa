@@ -1,3 +1,5 @@
+- VCardProducer: change SORT-AS tag to SORT-STRING; SORT-AS comes into play in
+  vCard 4.0 as a parameter to the N property; generate it as such.
 - VCardParser: add support for many proprietary phone/relation properties.
 - Update README.md, add documentation.
 - Bugfix: don't display mobile phone number twice.
