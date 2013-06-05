@@ -233,6 +233,11 @@ class VCardProducer implements IVCardProducer
 			, 'primary_telephone_number'   => array('type' => 'VOICE', 'pref' => '1')
 			, 'primary_fax_number'         => array('type' => 'FAX', 'pref' => '1')
 			, 'ttytdd_telephone_number'    => array('type' => 'TEXTPHONE')
+
+			// Only Evolution has any support for the following:
+			, 'radio_telephone_number'     => array('type' => 'X-EVOLUTION-RADIO')
+			, 'telex_telephone_number'     => array('type' => 'X-EVOLUTION-TELEX')
+			, 'callback_telephone_number'  => array('type' => 'X-EVOLUTION-CALLBACK')
 			);
 
 		// OSX Addressbook sends back VCards in this format:

@@ -111,6 +111,9 @@ class VCardParser implements IVCardParser
 			$this->mapi[$p['assistant']] = NULL;
 			$this->mapi[$p['manager_name']] = NULL;
 			$this->mapi[$p['mobile_telephone_number']] = NULL;
+			$this->mapi[$p['callback_telephone_number']] = NULL;
+			$this->mapi[$p['radio_telephone_number']] = NULL;
+			$this->mapi[$p['telex_telephone_number']] = NULL;
 			$this->mapi[$p['ttytdd_telephone_number']] = NULL;
 			$this->mapi[$p['spouse_name']] = NULL;
 			$this->mapi[$p['home_address_street']] = NULL;
@@ -181,19 +184,31 @@ class VCardParser implements IVCardParser
 		}
 
 		// Some VCard properties can be mapped 1:1 to MAPI properties:
+		// Properties taken from http://en.wikipedia.org/wiki/Vcard
 		$map = array
 			( 'NICKNAME'       => 'nickname'
 			, 'TITLE'          => 'title'
 			, 'ROLE'           => 'profession'
 			, 'OFFICE'         => 'office_location'
 			, 'NOTE'           => 'notes'
-			, 'X-MS-ASSISTANT' => 'assistant'
-			, 'X-MS-MANAGER'   => 'manager_name'
-			, 'X-MS-SPOUSE'    => 'spouse_name'
 
 			// TODO: treat these as multivalues?
 			// MAPI has no support for more than one website...
 			, 'URL'            => 'webpage'
+
+			, 'X-MS-ASSISTANT' => 'assistant'
+			, 'X-MS-MANAGER'   => 'manager_name'
+			, 'X-MS-SPOUSE'    => 'spouse_name'
+
+			, 'X-EVOLUTION-ASSISTANT' => 'assistant'
+			, 'X-EVOLUTION-MANAGER'   => 'manager_name'
+			, 'X-EVOLUTION-SPOUSE'    => 'spouse_name'
+			, 'X-EVOLUTION-BLOG-URL'  => 'webpage'
+
+			, 'X-KADDRESSBOOK-X-AssistantsName' => 'assistant'
+			, 'X-KADDRESSBOOK-X-ManagersName'   => 'manager_name'
+			, 'X-KADDRESSBOOK-X-SpouseName'     => 'spouse_name'
+			, 'X-KADDRESSBOOK-BlogFeed'         => 'webpage'
 			);
 
 		// Use a 'foreach' because each property can exist zero, one or more times,
@@ -489,6 +504,13 @@ class VCardParser implements IVCardParser
 					, 'PAGER'     => 'pager_telephone_number'
 					, 'SECR'      => 'assistant_telephone_number'
 					, 'TEXTPHONE' => 'ttytdd_telephone_number'
+
+					// http://en.wikipedia.org/wiki/Vcard claims these
+					// properties are sent by Evolution as TEL TYPE parameters:
+					, 'X-EVOLUTION-RADIO'    => 'radio_telephone_number'
+					, 'X-EVOLUTION-TELEX'    => 'telex_telephone_number'
+					, 'X-EVOLUTION-TTYTDD'   => 'ttytdd_telephone_number'
+					, 'X-EVOLUTION-CALLBACK' => 'callback_telephone_number'
 					);
 
 				foreach ($map as $prop_vcard => $prop_mapi) {
@@ -591,6 +613,8 @@ class VCardParser implements IVCardParser
 			, 'X-SKYPE'
 			, 'X-SKYPE-USERNAME'
 			, 'X-GADUGADU'
+			, 'X-MS-IMADDRESS'
+			, 'X-KADDRESSBOOK-X-IMAddress'
 			);
 
 		foreach ($map as $propname) {
