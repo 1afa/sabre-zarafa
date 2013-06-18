@@ -259,8 +259,8 @@ class VCardParser implements IVCardParser
 		
 		// Contact picture
 		if (isset($this->vcard->photo)) {
-			$type     = strtolower($this->vcard->photo->offsetGet('TYPE')->getValue());
-			$encoding = strtolower($this->vcard->photo->offsetGet('ENCODING')->getValue());
+			$type     = strtolower($this->vcard->photo['TYPE']->getValue());
+			$encoding = strtolower($this->vcard->photo['ENCODING']->getValue());
 			$content  = $this->vcard->photo->getValue();
 
 			$this->logger->debug("Found contact picture type $type encoding $encoding");
@@ -408,8 +408,7 @@ class VCardParser implements IVCardParser
 				continue;
 			}
 			// Find display name:
-			if ($email->offsetExists('X-CN')) {
-				$xCn = $email->offsetGet('X-CN');
+			if ($xCn = $email['X-CN']) {
 				$displayName = $xCn->getValue();
 			}
 			else if (count($emailsDisplayName) >= $numMail) {
@@ -461,7 +460,7 @@ class VCardParser implements IVCardParser
 					$pk = 'home_fax_number';
 				}
 				else {
-					if (is_object($pref = $tel->offsetGet('PREF'))) {
+					if ($pref = $tel['PREF']) {
 						$pk = ($pref->getValue() == '1')
 						    ? 'home_telephone_number'
 						    : 'home2_telephone_number';
@@ -476,7 +475,7 @@ class VCardParser implements IVCardParser
 			}
 			elseif (isset($types['WORK'])) {
 				if (isset($types['VOICE'])) {
-					if (is_object($pref = $tel->offsetGet('PREF'))) {
+					if ($pref = $tel['PREF']) {
 						$pk = ($pref->getValue() == '1')
 						    ? 'office_telephone_number'
 						    : 'business2_telephone_number';
@@ -686,9 +685,9 @@ class VCardParser implements IVCardParser
 	private function
 	getTypes ($prop)
 	{
-		if (!is_object($offset = $prop->offsetGet('TYPE'))) {
-			return array();
+		if ($offset = $prop['TYPE']) {
+			return array_flip(array_map('strtoupper', $offset->getParts()));
 		}
-		return array_flip(array_map('strtoupper', $offset->getParts()));
+		return array();
 	}
 }

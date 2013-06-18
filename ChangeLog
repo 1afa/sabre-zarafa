@@ -1,3 +1,5 @@
+- Use shorthand notation to get property parameters; just as good as the long
+  version, but way more readable.
 - Don't discard values for website and IM when we don't have any MAPI slots
   left; compress their values into a single MAPI slot by making a
   comma-separated list.
