@@ -173,10 +173,6 @@ class VCardParser implements IVCardParser
 			, 'OFFICE'         => 'office_location'
 			, 'NOTE'           => 'notes'
 
-			// TODO: treat these as multivalues?
-			// MAPI has no support for more than one website...
-			, 'URL'            => 'webpage'
-
 			, 'X-MS-ASSISTANT' => 'assistant'
 			, 'X-MS-MANAGER'   => 'manager_name'
 			, 'X-MS-SPOUSE'    => 'spouse_name'
@@ -184,12 +180,10 @@ class VCardParser implements IVCardParser
 			, 'X-EVOLUTION-ASSISTANT' => 'assistant'
 			, 'X-EVOLUTION-MANAGER'   => 'manager_name'
 			, 'X-EVOLUTION-SPOUSE'    => 'spouse_name'
-			, 'X-EVOLUTION-BLOG-URL'  => 'webpage'
 
 			, 'X-KADDRESSBOOK-X-AssistantsName' => 'assistant'
 			, 'X-KADDRESSBOOK-X-ManagersName'   => 'manager_name'
 			, 'X-KADDRESSBOOK-X-SpouseName'     => 'spouse_name'
-			, 'X-KADDRESSBOOK-BlogFeed'         => 'webpage'
 			);
 
 		// Use a 'foreach' because each property can exist zero, one or more times,
@@ -253,6 +247,9 @@ class VCardParser implements IVCardParser
 
 		// Instant messaging profiles:
 		$this->instantMessagingConvert();
+
+		// Websites:
+		$this->websiteConvert();
 
 		// Social media profiles:
 		$this->socialProfileConvert();
@@ -612,8 +609,10 @@ class VCardParser implements IVCardParser
 		//   IMPP;X-SERVICE-TYPE=AIM;type=HOME;type=pref:aim:aimname
 		//   IMPP;X-SERVICE-TYPE=Facebook;type=WORK:xmpp:facebookname
 		// Zarafa sadly only has a single 'im' property.
+		$val = array();
 
-		// Look at these properties in order; first one set wins:
+		// Look at these properties in order; collect them all into an array
+		// and implode them to a string when we're done.
 		// Taken from http://en.wikipedia.org/wiki/VCard
 		$map = array
 			( 'IMPP'
@@ -629,13 +628,36 @@ class VCardParser implements IVCardParser
 			, 'X-GADUGADU'
 			, 'X-MS-IMADDRESS'
 			, 'X-KADDRESSBOOK-X-IMAddress'
-			);
+			) ;
 
 		foreach ($map as $propname) {
 			foreach ($this->vcard->select($propname) as $prop) {
-				$this->mapi[$this->extendedProperties['im']] = $prop->getValue();
-				return;
+				$val[] = $prop->getValue();
 			}
+		}
+		if (count($val) > 0) {
+			$this->mapi[$this->extendedProperties['im']] = implode(';', $val);
+		}
+	}
+
+	private function
+	websiteConvert ()
+	{
+		$val = array();
+
+		$map = array
+			( 'URL'
+			, 'X-EVOLUTION-BLOG-URL'
+			, 'X-KADDRESSBOOK-BlogFeed'
+			) ;
+
+		foreach ($map as $propname) {
+			foreach ($this->vcard->select($propname) as $prop) {
+				$val[] = $prop->getValue();
+			}
+		}
+		if (count($val) > 0) {
+			$this->mapi[$this->extendedProperties['webpage']] = implode(';', $val);
 		}
 	}
 

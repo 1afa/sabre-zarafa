@@ -1,3 +1,6 @@
+- Don't discard values for website and IM when we don't have any MAPI slots
+  left; compress their values into a single MAPI slot by making a
+  comma-separated list.
 - Zarafa_Folder: add support for renaming folders according to a user-defined
   template; this helps in the situation where a public and a private folder
   have the same name.
