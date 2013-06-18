@@ -38,13 +38,15 @@ class Zarafa_Store
 	public $folders = array();
 	public $is_unicode;
 	private $logger;
+	public $storetype = 'unknown';
 
 	public function
-	__construct (&$bridge, $entryid, $handle)
+	__construct (&$bridge, $entryid, $handle, $storetype)
 	{
 		$this->bridge = $bridge;
 		$this->entryid = $entryid;
 		$this->handle = $handle;
+		$this->storetype = $storetype;
 
 		$this->logger = new Zarafa_Logger(__CLASS__);
 
@@ -79,12 +81,12 @@ class Zarafa_Store
 		$deleted = array_merge($deleted, $hidden);
 
 		// Remove deleted folders from list:
-		foreach ($deleted as $entryid => $name) {
+		foreach ($deleted as $entryid => $dummy) {
 			if (isset($folders[$entryid])) {
 				unset($folders[$entryid]);
 			}
 		}
-		foreach ($folders as $entryid => $name) {
+		foreach ($folders as $entryid => $dummy) {
 			if (FALSE($folder = mapi_msgstore_openentry($this->handle, $entryid))) {
 				continue;
 			}
@@ -167,8 +169,8 @@ class Zarafa_Store
 			$this->logger->debug(__FUNCTION__.': '.get_mapi_error_name());
 			return $folders;
 		}
-		foreach (mapi_table_queryallrows($hier, array(PR_ENTRYID, PR_SUBFOLDERS, PR_DISPLAY_NAME)) as $row) {
-			$folders[$row[PR_ENTRYID]] = $row[PR_DISPLAY_NAME];
+		foreach (mapi_table_queryallrows($hier, array(PR_ENTRYID, PR_SUBFOLDERS)) as $row) {
+			$folders[$row[PR_ENTRYID]] = TRUE;
 			$folders = array_merge($folders, $this->subtree_walk($row[PR_ENTRYID], $restriction));
 		}
 		return $folders;

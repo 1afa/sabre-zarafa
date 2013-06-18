@@ -147,3 +147,9 @@
 	// byte-for-byte the exact body that the client sent. So support for
 	// this feature is kept optional:
 	define('ETAG_ENABLE', TRUE);
+
+	// Change the name of the folder as returned by Sabre-Zarafa.
+	// Format options available:
+	//  %d - display name (default up to 0.20)
+	//  %p - provenance, either 'public' or 'private'
+	define('FOLDER_RENAME_PATTERN', '%d');

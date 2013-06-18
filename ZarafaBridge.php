@@ -185,7 +185,7 @@ class Zarafa_Bridge {
 				$this->logger->warn(__FUNCTION__.': failed to open private store');
 				continue;
 			}
-			$this->stores_private[] = new Zarafa_Store($this, $store[PR_ENTRYID], $handle);
+			$this->stores_private[] = new Zarafa_Store($this, $store[PR_ENTRYID], $handle, 'private');
 		}
 		return TRUE;
 	}
@@ -206,7 +206,7 @@ class Zarafa_Bridge {
 				$this->logger->warn(__FUNCTION__.': failed to open public store');
 				continue;
 			}
-			$this->stores_public[] = new Zarafa_Store($this, $store[PR_ENTRYID], $handle);
+			$this->stores_public[] = new Zarafa_Store($this, $store[PR_ENTRYID], $handle, 'public');
 		}
 		return TRUE;
 	}

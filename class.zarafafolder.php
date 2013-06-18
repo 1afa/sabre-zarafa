@@ -390,7 +390,16 @@ class Zarafa_Folder
 				$this->name = $props[PR_DISPLAY_NAME];
 			}
 		}
-		return $this->name;
+		// Do name substitution if pattern defined:
+		if (!defined('FOLDER_RENAME_PATTERN')) {
+			return $this->name;
+		}
+		$subst = array
+			( '%d' => $this->name			// Display name
+			, '%p' => $this->store->storetype	// Provenance ('private' or 'public')
+			) ;
+
+		return str_replace(array_keys($subst), array_values($subst), FOLDER_RENAME_PATTERN);
 	}
 
 	private function
