@@ -1,6 +1,7 @@
 <?php
 /*
  * Copyright 2011 - 2012 Guillaume Lapierre
+ * Copyright 2012 - 2013 Bokxing IT, http://www.bokxing-it.nl
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License, version 3, 
@@ -24,27 +25,19 @@
  * 
  */
 
-require_once 'ZarafaLogger.php';
-
 class Zarafa_Auth_Basic_Backend extends Sabre\DAV\Auth\Backend\AbstractBasic
 {
 	protected $bridge;
-	private $logger;
-		
-	public function __construct ($zarafaBridge)
+
+	public function
+	__construct (Zarafa_Bridge $bridge)
 	{
-		// Stores a reference to Zarafa Auth Backend so as to get the session
-		$this->bridge = $zarafaBridge;
-		$this->logger = new Zarafa_Logger(__CLASS__);
+		$this->bridge = $bridge;
 	}
-		
-	// Implements
-	protected function validateUserPass($username, $password) {
-		$this->logger->trace(__FUNCTION__."($username, <password>)");
-		$connect = $this->bridge->connect($username, $password);
-		if (!$connect) {
-			$this->logger->warn("Connection failed for $username");
-		}
-		return $connect;
+
+	protected function
+	validateUserPass ($username, $password)
+	{
+		return $this->bridge->connect($username, $password);
 	}
 }
