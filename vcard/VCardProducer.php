@@ -175,7 +175,6 @@ class VCardProducer implements IVCardProducer
 
 			// URL and Instant Messenging (vCard 3.0 extension):
 			, 'webpage'         => 'URL'
-			, 'im'              => 'IMPP'
 
 			// older syntax - may be needed by some clients so keep it!
 			, 'assistant'       => 'X-MS-ASSISTANT'
@@ -186,6 +185,9 @@ class VCardProducer implements IVCardProducer
 		foreach ($map as $prop_mapi => $prop_vcard) {
 			$this->setVCard($prop_vcard, $contactProperties, $p[$prop_mapi]);
 		}
+
+		// Convert 'im' to IMPP tags:
+		$this->instantMessagingConvert($contactProperties, $p);
 
 		if ($this->version >= 4) {
 			// Relation types 'assistant' and 'manager' are not RFC6350-compliant.
@@ -388,5 +390,62 @@ class VCardProducer implements IVCardProducer
 		}
 		$this->logger->trace("Nonempty address - adding $propertyPrefix");
 		$this->vcard->add('ADR', $address, array('TYPE' => $addressType));
+	}
+
+	private function
+	instantMessagingConvert ($contactProperties, $extendedProperties)
+	{
+		// Shorthand notation:
+		$p = $extendedProperties['im'];
+
+		if (!isset($contactProperties[$p]) || $contactProperties[$p] === '') {
+			return;
+		}
+		$elems = array();
+		foreach (explode(';', $contactProperties[$p]) as $elem)
+		{
+			$type = FALSE;
+			$name = FALSE;
+
+			if (FALSE($pos = strpos($elem, ':'))) {
+				$name = $elem;
+			}
+			else if ($pos === 0 && strlen($elem) > 1) {
+				$name = strpos($elem, 1);
+			}
+			else if ($pos < strlen($elem) - 1) {
+				$type = substr($elem, 0, $pos);
+				$name = substr($elem, $pos + 1);
+			}
+			// Check for exact duplicates:
+			foreach ($elems as $e) {
+				if ($e[0] === $type && $e[1] === $name) {
+					continue 2;
+				}
+			}
+			// If no type tag, only add if same name with type tag
+			// not added (theirs is more specific):
+			if (FALSE($type)) {
+				foreach ($elems as $e) {
+					if (!FALSE($e[0]) && $e[1] === $name) {
+						continue 2;
+					}
+				}
+			}
+			// If type tag, delete any existing element with same
+			// name but no type (ours is more specific):
+			else {
+				for ($i = count($elems) - 1; $i >= 0; $i--) {
+					if (FALSE($elems[$i][0]) && $elems[$i][1] === $name) {
+						unset($elems[$i]);
+					}
+				}
+			}
+			$elems[] = array($type, $name, $elem);
+		}
+		// Add each element:
+		foreach ($elems as $elem) {
+			$this->vcard->add('IMPP', $elem[2]);
+		}
 	}
 }

@@ -608,7 +608,7 @@ class VCardParser implements IVCardParser
 		//   IMPP;X-SERVICE-TYPE=AIM;type=HOME;type=pref:aim:aimname
 		//   IMPP;X-SERVICE-TYPE=Facebook;type=WORK:xmpp:facebookname
 		// Zarafa sadly only has a single 'im' property.
-		$val = array();
+		$elems = array();
 
 		// Look at these properties in order; collect them all into an array
 		// and implode them to a string when we're done.
@@ -630,13 +630,57 @@ class VCardParser implements IVCardParser
 			) ;
 
 		foreach ($map as $propname) {
-			foreach ($this->vcard->select($propname) as $prop) {
-				$val[] = $prop->getValue();
+			foreach ($this->vcard->select($propname) as $prop)
+			{
+				$elem = $prop->getValue();
+				$type = FALSE;
+				$name = FALSE;
+
+				if (FALSE($pos = strpos($elem, ':'))) {
+					$name = $elem;
+				}
+				else if ($pos === 0 && strlen($elem) > 1) {
+					$name = strpos($elem, 1);
+				}
+				else if ($pos < strlen($elem) - 1) {
+					$type = substr($elem, 0, $pos);
+					$name = substr($elem, $pos + 1);
+				}
+				// Check for exact duplicates:
+				foreach ($elems as $e) {
+					if ($e[0] === $type && $e[1] === $name) {
+						continue 2;
+					}
+				}
+				// If no type tag, only add if same name with type tag
+				// not added (theirs is more specific):
+				if (FALSE($type)) {
+					foreach ($elems as $e) {
+						if (!FALSE($e[0]) && $e[1] === $name) {
+							continue 2;
+						}
+					}
+				}
+				// If type tag, delete any existing element with same
+				// name but no type (ours is more specific):
+				else {
+					for ($i = count($elems) - 1; $i >= 0; $i--) {
+						if (FALSE($elems[$i][0]) && $elems[$i][1] === $name) {
+							unset($elems[$i]);
+						}
+					}
+				}
+				$elems[] = array($type, $name, $elem);
 			}
 		}
-		if (count($val) > 0) {
-			$this->mapi[$this->extendedProperties['im']] = implode(';', $val);
+		if (count($elems) === 0) {
+			return;
 		}
+		$val = array();
+		foreach ($elems as $e) {
+			$val[] = $e[2];
+		}
+		$this->mapi[$this->extendedProperties['im']] = implode(';', $val);
 	}
 
 	private function
