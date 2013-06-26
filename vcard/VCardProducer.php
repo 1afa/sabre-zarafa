@@ -151,17 +151,7 @@ class VCardProducer implements IVCardProducer
 		$contactInfos[] = isset($contactProperties[$p['generation']])          ? $contactProperties[$p['generation']] : '';
 
 		if (strlen(implode('', $contactInfos)) > 0) {
-			if ($this->version >= 4 && isset($contactProperties[$p['fileas']]) && !empty($contactProperties[$p['fileas']]))
-			{
-				// FIXME: this syntax does not yet work correctly in Sabre-VObject
-				// 3.0.0-alpha4: it does not delimit the value of SORT-AS with
-				// double quotes. If we include the double quotes in the value
-				// itself, the quotes become part of the sort string. If we do as
-				// below (raw value, no double quotes), we are going against RFC
-				// 6350. Since the default vCard version is 3.0, the average user
-				// should not run into this - hopefully not until the library
-				// catches up.
-				// Issue filed at https://github.com/fruux/sabre-vobject/issues/40
+			if ($this->version >= 4 && isset($contactProperties[$p['fileas']]) && !empty($contactProperties[$p['fileas']])) {
 				$this->vcard->add('N', $contactInfos, array('SORT-AS' => $contactProperties[$p['fileas']]));
 			}
 			else {
@@ -231,12 +221,12 @@ class VCardProducer implements IVCardProducer
 		// Telephone numbers
 		// webaccess can handle 19 telephone numbers...
 		$map = array
-			( 'home_telephone_number'      => array('type' => 'HOME,VOICE', 'pref' => '1')
-			, 'home2_telephone_number'     => array('type' => 'HOME,VOICE', 'pref' => '2')
-			, 'office_telephone_number'    => array('type' => 'WORK,VOICE', 'pref' => '1')
-			, 'business2_telephone_number' => array('type' => 'WORK,VOICE', 'pref' => '2')
-			, 'business_fax_number'        => array('type' => 'WORK,FAX')
-			, 'home_fax_number'            => array('type' => 'HOME,FAX')
+			( 'home_telephone_number'      => array('type' => array('HOME','VOICE'), 'pref' => '1')
+			, 'home2_telephone_number'     => array('type' => array('HOME','VOICE'), 'pref' => '2')
+			, 'office_telephone_number'    => array('type' => array('WORK','VOICE'), 'pref' => '1')
+			, 'business2_telephone_number' => array('type' => array('WORK','VOICE'), 'pref' => '2')
+			, 'business_fax_number'        => array('type' => array('WORK','FAX'))
+			, 'home_fax_number'            => array('type' => array('HOME','FAX'))
 			, 'mobile_telephone_number'    => array('type' => 'CELL')
 			, 'pager_telephone_number'     => array('type' => 'PAGER')
 			, 'isdn_number'                => array('type' => 'ISDN')
