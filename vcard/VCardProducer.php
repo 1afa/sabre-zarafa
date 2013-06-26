@@ -44,6 +44,7 @@ class VCardProducer implements IVCardProducer
 	protected $version;
 	protected $logger;
 	protected $vcard = FALSE;
+	protected $extendedProperties = FALSE;
 	
 	function __construct ($bridge, $version)
 	{
@@ -91,7 +92,7 @@ class VCardProducer implements IVCardProducer
 			$this->logger->fatal('failed to create vCard object');
 			return FALSE;
 		}
-		if (FALSE($p = $this->bridge->getExtendedProperties())) {
+		if (FALSE($p = $this->extendedProperties = $this->bridge->getExtendedProperties())) {
 			$this->logger->fatal('cannot get extended properties');
 			return FALSE;
 		}
@@ -184,10 +185,10 @@ class VCardProducer implements IVCardProducer
 		}
 
 		// Convert 'im' to IMPP tags:
-		$this->instantMessagingConvert($contactProperties, $p);
+		$this->instantMessagingConvert($contactProperties);
 
 		// Convert 'webpage' to URL tags:
-		$this->websiteConvert($contactProperties, $p);
+		$this->websiteConvert($contactProperties);
 
 		if ($this->version >= 4) {
 			// Relation types 'assistant' and 'manager' are not RFC6350-compliant.
@@ -371,10 +372,9 @@ class VCardProducer implements IVCardProducer
 			$this->logger->fatal('failed to create vCard object');
 			return FALSE;
 		}
-		if (FALSE($p = $this->bridge->getExtendedProperties())) {
-			$this->logger->fatal('cannot get extended properties');
-			return FALSE;
-		}
+		// Shorthand:
+		$p = $this->extendedProperties;
+
 		$address = array();
 		if (isset($p["{$propertyPrefix}_address"])) {
 			$address[] = '';	// post office box
@@ -393,10 +393,10 @@ class VCardProducer implements IVCardProducer
 	}
 
 	private function
-	instantMessagingConvert ($contactProperties, $extendedProperties)
+	instantMessagingConvert ($contactProperties)
 	{
 		// Shorthand notation:
-		$p = $extendedProperties['im'];
+		$p = $this->extendedProperties['im'];
 
 		if (!isset($contactProperties[$p]) || $contactProperties[$p] === '') {
 			return;
@@ -450,10 +450,10 @@ class VCardProducer implements IVCardProducer
 	}
 
 	private function
-	websiteConvert ($contactProperties, $extendedProperties)
+	websiteConvert ($contactProperties)
 	{
 		// Shorthand notation:
-		$p = $extendedProperties['webpage'];
+		$p = $this->extendedProperties['webpage'];
 
 		if (!isset($contactProperties[$p]) || $contactProperties[$p] === '') {
 			return;
