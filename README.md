@@ -52,10 +52,12 @@ the directory layout changed in SabreDAV 1.8, it no longer makes sense to
 bundle parts of it, and bundling the whole package seems excessive.
 
 You have to download a SabreDAV release from the 1.8 series yourself and unzip
-it in the `/lib` directory:
+it in the `/lib` directory. As of Sabre-Zarafa 0.21, this must be at least
+SabreDAV 1.8.6 or higher, because lower versions in the 1.8 branch don't work
+correctly with the Sabre-VObject 3.x library.
 
     # cd /var/www/htdocs/sabre-zarafa/lib
-    # unzip /path/to/SabreDAV-1.8.5.zip
+    # unzip /path/to/SabreDAV-1.8.6.zip
 
 ### Download and install Sabre-VObject 3.x
 
@@ -67,18 +69,17 @@ out wrong, and the sync to fail with such clients as OS X Contacts.app.
 
 Version 3.x of Sabre-VObject is not shipped in the SabreDAV package at the time
 of writing, because it's still under development. You must
-[download](https://github.com/fruux/sabre-vobject/tags) a development tarball
-and install it yourself. Sabre-Zarafa 0.20 was written and tested against
-Sabre-VObject 3.0.0-alpha4, which despite the scary name appears to work fine;
-the output is more correct than that of version 2.x.
+[download](https://github.com/fruux/sabre-vobject/tags) a release tarball
+and install it yourself. Sabre-Zarafa 0.21 is written and tested against
+Sabre-VObject 3.0.0 (the production release, not the alpha or beta versions!).
 
 Download the latest Sabre-VObject 3.x tarball, delete the existing 2.x library
 hidden deep within SabreDAV, and untar the new source in its place:
 
     # cd /var/www/htdocs/sabre-zarafa/lib/SabreDAV/vendor/sabre/
     # rm -r vobject
-    # tar xvzf /path/to/3.0.0-alpha4.tar.gz
-    # mv sabre-vobject-3.0.0-alpha4 vobject
+    # tar xvzf /path/to/3.0.0.tar.gz
+    # mv sabre-vobject-3.0.0 vobject
 
 ### Download and install Log4php
 
@@ -268,6 +269,23 @@ documentation](http://code.google.com/p/sabredav/wiki/Introduction). Do not
 hesitate to read it!
 
 ## Upgrading
+
+### 0.20 to 0.21
+
+Sabre-Zarafa 0.21 is written for SabreDAV 1.8.6 and Sabre-VObject 3.0.0 (the
+production release, not the alpha or beta versions). You must install at least
+those versions of both packages, or newer. Some small API changes have been
+introduced between Sabre-VObject 3.0.0-alpha4 and the 3.0.0 release (as well as
+many internal fixes), so you must upgrade. The old SabreDAV 1.8.5 can
+apparently not handle the Sabre-VObject 3.x branch and must also be updated to
+version 1.8.6, which has support for both 2.x and 3.x branches.
+
+This version introduces a new config option, called `FOLDER_RENAME_PATTERN`.
+This variable allows you to define a rename pattern for folders. You can define
+certain formatting variables; refer to the comments in the config file for
+particulars. Updating the config file to set this variable is not required; if
+the option is not specified, the previous behaviour is used (folder names are
+not rewritten).
 
 ### 0.19 to 0.20
 
