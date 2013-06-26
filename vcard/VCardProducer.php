@@ -173,9 +173,6 @@ class VCardProducer implements IVCardProducer
 			, 'profession'      => 'ROLE'
 			, 'office_location' => 'OFFICE'
 
-			// URL and Instant Messenging (vCard 3.0 extension):
-			, 'webpage'         => 'URL'
-
 			// older syntax - may be needed by some clients so keep it!
 			, 'assistant'       => 'X-MS-ASSISTANT'
 			, 'manager_name'    => 'X-MS-MANAGER'
@@ -188,6 +185,9 @@ class VCardProducer implements IVCardProducer
 
 		// Convert 'im' to IMPP tags:
 		$this->instantMessagingConvert($contactProperties, $p);
+
+		// Convert 'webpage' to URL tags:
+		$this->websiteConvert($contactProperties, $p);
 
 		if ($this->version >= 4) {
 			// Relation types 'assistant' and 'manager' are not RFC6350-compliant.
@@ -446,6 +446,20 @@ class VCardProducer implements IVCardProducer
 		// Add each element:
 		foreach ($elems as $elem) {
 			$this->vcard->add('IMPP', $elem[2]);
+		}
+	}
+
+	private function
+	websiteConvert ($contactProperties, $extendedProperties)
+	{
+		// Shorthand notation:
+		$p = $extendedProperties['webpage'];
+
+		if (!isset($contactProperties[$p]) || $contactProperties[$p] === '') {
+			return;
+		}
+		foreach (explode(';', $contactProperties[$p]) as $elem) {
+			$this->vcard->add('URL', $elem);
 		}
 	}
 }
