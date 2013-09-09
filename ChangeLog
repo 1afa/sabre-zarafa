@@ -1,3 +1,5 @@
+- FAX property now maps to 'business_fax_number', which is what Zarafa Webmail
+  uses, likewise with TEL,WORK and 'office_telephone_number';
 - Fix for a really common bug: avoid PHP fatal error in the folder name
   substitution code by checking if an array value is set before trying to
   access it;

@@ -490,7 +490,7 @@ class VCardParser implements IVCardParser
 				elseif (isset($types['FAX'])) {
 					$pk = 'business_fax_number';
 				}
-				else $pk = 'company_telephone_number';
+				else $pk = 'office_telephone_number';
 			}
 			elseif (isset($types['OTHER']))
 			{
@@ -507,7 +507,7 @@ class VCardParser implements IVCardParser
 				$map = array
 					( 'CAR'       => 'car_telephone_number'
 					, 'CELL'      => 'mobile_telephone_number'
-					, 'FAX'       => 'primary_fax_number'
+					, 'FAX'       => 'business_fax_number'
 					, 'IPHONE'    => 'mobile_telephone_number'
 					, 'ISDN'      => 'isdn_number'
 					, 'MAIN'      => 'primary_telephone_number'
