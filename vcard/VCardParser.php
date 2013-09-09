@@ -495,10 +495,12 @@ class VCardParser implements IVCardParser
 			elseif (isset($types['OTHER']))
 			{
 				// There is unfortunately no 'other_fax_number'.
+				// When you create an 'other fax' number in Zarafa Webmail,
+				// the value is mapped to the 'primary_fax_number' key.
 				// TODO: Zarafa defines faxes 1..3, maybe use them here:
-				if (!isset($types['FAX'])) {
-					$pk = 'other_telephone_number';
-				}
+				$pk = (isset($types['FAX']))
+					? 'primary_fax_number'
+					: 'other_telephone_number';
 			}
 			if (FALSE($pk)) {
 				// No match yet? Try to match against map:

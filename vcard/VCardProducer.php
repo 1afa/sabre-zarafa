@@ -230,6 +230,7 @@ class VCardProducer implements IVCardProducer
 			, 'business2_telephone_number' => array('type' => array('WORK','VOICE'), 'pref' => '2')
 			, 'business_fax_number'        => array('type' => array('WORK','FAX'))
 			, 'home_fax_number'            => array('type' => array('HOME','FAX'))
+			, 'primary_fax_number'         => array('type' => array('OTHER','FAX'))		// This is the mapping used by Zarafa Webmail.
 			, 'mobile_telephone_number'    => array('type' => 'CELL')
 			, 'pager_telephone_number'     => array('type' => 'PAGER')
 			, 'isdn_number'                => array('type' => 'ISDN')
@@ -238,7 +239,6 @@ class VCardProducer implements IVCardProducer
 			, 'assistant_telephone_number' => array('type' => 'SECR')
 			, 'other_telephone_number'     => array('type' => 'OTHER')
 			, 'primary_telephone_number'   => array('type' => 'VOICE', 'pref' => '1')
-			, 'primary_fax_number'         => array('type' => 'FAX', 'pref' => '1')
 			, 'ttytdd_telephone_number'    => array('type' => 'TEXTPHONE')
 
 			// Only Evolution has any support for the following:

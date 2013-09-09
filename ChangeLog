@@ -1,3 +1,5 @@
+- FAX,OTHER maps to 'primary_fax_number' and vice versa, which follows the
+  convention used by Zarafa Webmail and OSX Addressbook;
 - FAX property now maps to 'business_fax_number', which is what Zarafa Webmail
   uses, likewise with TEL,WORK and 'office_telephone_number';
 - Fix for a really common bug: avoid PHP fatal error in the folder name
