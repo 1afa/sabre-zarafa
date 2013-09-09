@@ -1,3 +1,6 @@
+- VCardParser: first collect all email addresses, then sort them in order of
+  preference as given by client. Previously the addresses were saved in source
+  order, the first three to appear made it to Zarafa.
 - FAX,OTHER maps to 'primary_fax_number' and vice versa, which follows the
   convention used by Zarafa Webmail and OSX Addressbook;
 - FAX property now maps to 'business_fax_number', which is what Zarafa Webmail

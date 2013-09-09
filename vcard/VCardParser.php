@@ -396,17 +396,13 @@ class VCardParser implements IVCardParser
 		$dump = print_r($emailsDisplayName, true);
 		$this->logger->trace("Display Names\n$dump");
 
+		$emails = array();
+
 		foreach ($this->vcard->select('EMAIL') as $email)
 		{
 			$numMail++;
-			$displayName = '';
 			$address = $email->getValue();
 
-			// Zarafa only handles 3 mails:
-			if ($numMail > 3) {
-				$this->logger->debug(sprintf('Discarding e-mail address "%s"; Zarafa has only three e-mail slots and this is number %d', $address, $numMail));
-				continue;
-			}
 			// Find display name:
 			if ($xCn = $email['X-CN']) {
 				$displayName = $xCn->getValue();
@@ -419,30 +415,70 @@ class VCardParser implements IVCardParser
 			}
 			$this->logger->debug("Found email $numMail : $displayName <$address>");
 
-			// Create one-off entry:
-			if (FALSE($oneoff = mapi_createoneoff($displayName, 'SMTP', $address))) {
-				$this->logger->warn(sprintf('Failed to create one-off for "%s", reason: %s', $address, get_mapi_error_name()));
+			// Find preference:
+			$t = $this->getTypes($email);
+
+			$pref = ($pr = $email['PREF'])
+				? intval($pr->getValue())
+				: ((isset($t['PREF'])) ? 1 : 0);
+
+			$emails[] = array
+				( 'address' => $address
+				, 'display_name' => $displayName
+				, 'pref' => $pref
+				, 'type' => ($type = $email['TYPE']) ? strtoupper($type->getValue()) : FALSE
+				, 'order' => $numMail
+				);
+		}
+		if ($numMail === 0) {
+			return;
+		}
+		// Now sort the $emails array according to preference:
+		usort($emails, 'self::emailSort');
+
+		for ($i = 0; $i < $numMail; $i++)
+		{
+			// Zarafa mailslots start counting at 1;
+			// Pick off the first three entries (Zarafa only supports three e-mail addresses):
+			if (($nmail = $i + 1) > 3) {
+				$this->logger->debug(sprintf('Discarding e-mail address "%s"; Zarafa has only three e-mail slots and this is number %d', $address, $nmail));
 				continue;
 			}
-			$this->mapi[$p["email_address_$numMail"]] = $address;
-			$this->mapi[$p["email_address_display_name_email_$numMail"]] = $address;
-			$this->mapi[$p["email_address_display_name_$numMail"]] = $displayName;
-			$this->mapi[$p["email_address_type_$numMail"]] = 'SMTP';
-			$this->mapi[$p["email_address_entryid_$numMail"]] = $oneoff;
+			// Create one-off entry:
+			if (FALSE($oneoff = mapi_createoneoff($emails[$i]['display_name'], 'SMTP', $emails[$i]['address']))) {
+				$this->logger->warn(sprintf('Failed to create one-off for "%s", reason: %s', $emails[$i]['address'], get_mapi_error_name()));
+				continue;
+			}
+			$this->mapi[$p["email_address_$nmail"]] = $emails[$i]['address'];
+			$this->mapi[$p["email_address_display_name_email_$nmail"]] = $emails[$i]['address'];
+			$this->mapi[$p["email_address_display_name_$nmail"]] = $emails[$i]['display_name'];
+			$this->mapi[$p["email_address_type_$nmail"]] = 'SMTP';
+			$this->mapi[$p["email_address_entryid_$nmail"]] = $oneoff;
 
 			// FIXME: doc: why populate an array(0 => 0, 1 => 1, 2 => 2) and so on?
-			$nremails[] = $numMail - 1;
+			$nremails[] = $i;
 
 			// FIXME: doc: some kind of bitmask, what's the significance?
-			$abprovidertype |= 2 ^ ($numMail - 1);
-		}
-		if ($numMail == 0) {
-			return;
+			$abprovidertype |= (2 ^ $i);
 		}
 		if (!empty($nremails)) {
 			$this->mapi[$p['address_book_mv']] = $nremails;
 		}
 		$this->mapi[$p['address_book_long']] = $abprovidertype;
+	}
+
+	private function
+	emailSort ($a, $b)
+	{
+		// If preference is equal, sort in order of occurrence (lower order number wins):
+		if ($a['pref'] === $b['pref']) return ($a['order'] < $b['order']) ? -1 : 1;
+
+		// A preference of 0 is always lowest:
+		if ($a['pref'] === 0 && $b['pref'] > 0) return 1;
+		if ($b['pref'] === 0 && $a['pref'] > 0) return -1;
+
+		// Lower preference number wins:
+		return ($a['pref'] < $b['pref']) ? -1 : 1;
 	}
 
 	private function
