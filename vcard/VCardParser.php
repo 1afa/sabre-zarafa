@@ -304,17 +304,17 @@ class VCardParser implements IVCardParser
 
 			// Don't use $this->mapi[$p['display_name']]; hasn't been set yet, and can
 			// be set by this very function in what would be a circular definition:
-			$displayname = (isset($this->vcard->FN)) ? $this->vcard->FN->getValue() : '';
+			$sub_displayname  = (isset($this->vcard->FN)) ? $this->vcard->FN->getValue() : '';
 
-			// Do substitutions
-			$substitutionKeys   = array('%d', '%l', '%f', '%c');
-			$substitutionValues = array(
-				$displayname,
-				$this->mapi[$p['surname']],
-				$this->mapi[$p['given_name']],
-				$this->mapi[$p['company_name']]
-			);
-			$fileas = str_replace($substitutionKeys, $substitutionValues, $fileas);
+			// Be careful to check for existence: not every property is always available:
+			$sub_surname      = (isset($this->mapi[$p['surname']]))      ? $this->mapi[$p['surname']]      : '';
+			$sub_given_name   = (isset($this->mapi[$p['given_name']]))   ? $this->mapi[$p['given_name']]   : '';
+			$sub_company_name = (isset($this->mapi[$p['company_name']])) ? $this->mapi[$p['company_name']] : '';
+
+			// Do substitutions:
+			$sub_keys = array('%d', '%l', '%f', '%c');
+			$sub_vals = array($sub_displayname, $sub_surname, $sub_given_name, $sub_company_name);
+			$fileas = str_replace($sub_keys, $sub_vals, $fileas);
 		}
 		$this->mapi[$p['fileas']] = $fileas;
 	}
