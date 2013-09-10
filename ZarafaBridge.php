@@ -58,6 +58,7 @@ class Zarafa_Bridge {
 	protected $wastebasketId = FALSE;
 	protected $extendedProperties = FALSE;
 	protected $connectedUser = FALSE;
+	private $webaccess_settings = FALSE;
 	private $folders_private = array();
 	private $folders_public = array();
 	private $stores_table = FALSE;
@@ -209,6 +210,52 @@ class Zarafa_Bridge {
 			$this->stores_public[] = new Zarafa_Store($this, $store[PR_ENTRYID], $handle, 'public');
 		}
 		return TRUE;
+	}
+
+	public function
+	get_webaccess_settings ()
+	{
+		$this->logger->trace(__FUNCTION__);
+
+		// Return cached version if available:
+		if (!FALSE($this->webaccess_settings)) {
+			return $this->webaccess_settings;
+		}
+		if (FALSE($private_store = $this->get_private_store())) {
+			$this->logger->warn(__FUNCTION__.': failed to get private store');
+			return FALSE;
+		}
+		// First check if property exist and we can open that using mapi_openproperty():
+		if (FALSE($storeProps = mapi_getprops($private_store->handle, array(PR_EC_WEBACCESS_SETTINGS_JSON)))) {
+			$this->logger->warn(__FUNCTION__.': failed to get store properties');
+			return FALSE;
+		}
+		if (!(isset($storeProps[PR_EC_WEBACCESS_SETTINGS_JSON]) || propIsError(PR_EC_WEBACCESS_SETTINGS_JSON, $storeProps) == MAPI_E_NOT_ENOUGH_MEMORY)) {
+			$this->logger->warn(__FUNCTION__.': failed to find PR_EC_WEBACCESS_SETTINGS_JSON property');
+			return FALSE;
+		}
+		// Read the settings property:
+		if (FALSE($stream = mapi_openproperty($private_store->handle, PR_EC_WEBACCESS_SETTINGS_JSON, IID_IStream, 0, 0))) {
+			$this->logger->warn(__FUNCTION__.': failed to open stream');
+			return FALSE;
+		}
+		$stat = mapi_stream_stat($stream);
+
+		if (FALSE(mapi_stream_seek($stream, 0, STREAM_SEEK_SET))) {
+			$this->logger->warn(__FUNCTION__.': failed to seek stream');
+			return FALSE;
+		}
+		$settings_string = '';
+		for ($i = 0; $i < $stat['cb']; $i += 1024) {
+			$settings_string .= mapi_stream_read($stream, 1024);
+		}
+		$settings = json_decode($settings_string, TRUE);
+
+		if (!is_array($settings) || !isset($settings['settings']) || !is_array($settings['settings'])) {
+			$this->logger->warn(__FUNCTION__.': failed to decode JSON settings string');
+			return FALSE;
+		}
+		return $this->webaccess_settings = $settings;
 	}
 
 	public function
