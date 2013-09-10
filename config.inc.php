@@ -116,6 +116,13 @@
 	// As SabreDav does not handle sub-folders, deleting "root" collection
 	// would delete all folders and contacts which might be dangerous
 	define ('ALLOW_DELETE_FOLDER', true);
+
+	// If set to true, all shared address books from other
+	// users are included under the own account. The list is taken
+	// from set Zarafa Webapp setting. You will need to make sure use a
+	// rename pattern the includes the provenance if there are name
+	// conflicts with own address books
+	define ('INCLUDE_SHARED_ADDRESSES', false);
 	
 	// When set to true SAVE_RAW_VCARD, the vCard will not
 	// only be parsed but also saved as a custom property to the contact.
@@ -151,5 +158,6 @@
 	// Change the name of the folder as returned by Sabre-Zarafa.
 	// Format options available:
 	//  %d - display name (default up to 0.20)
-	//  %p - provenance, either 'public' or 'private'
+	//  %p - provenance, either 'public' or 'private' or the other user's
+	//       name if shared
 	define('FOLDER_RENAME_PATTERN', '%d');
