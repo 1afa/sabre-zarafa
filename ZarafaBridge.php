@@ -46,6 +46,7 @@
 	require_once 'ZarafaLogger.php';
 	require_once 'function.restrict.php';
 	require_once 'class.zarafastore.php';
+	require_once 'ZarafaWebaccessSettings.php';
 
 /**
  * This is main class for Sabre backends
@@ -223,12 +224,16 @@ class Zarafa_Bridge {
 	{
 		$this->logger->trace(__FUNCTION__);
 
-		if (!is_array($other_users = $this->get_settings_by_path('zarafa/v1/contexts/hierarchy/shared_stores', NULL))) {
-			return TRUE;
-		}
 		if (FALSE($private_store = $this->get_private_store())) {
 			$this->logger->warn(__FUNCTION__.': failed to get private store');
 			return FALSE;
+		}
+		// Need the Webaccess settings to find the shared address books:
+		if (FALSE($this->webaccess_settings)) {
+			$this->webaccess_settings = new Zarafa_Webaccess_Settings($private_store->handle);
+		}
+		if (!is_array($other_users = $this->webaccess_settings->by_path('zarafa/v1/contexts/hierarchy/shared_stores'))) {
+			return TRUE;
 		}
 		foreach ($other_users as $username => $folder) {
 			if (!is_array($folder) || empty($folder)) {
@@ -243,73 +248,6 @@ class Zarafa_Bridge {
 			$this->stores_other[] = new Zarafa_Store($this, $user_entryid, $handle, $username);
 		}
 		return TRUE;
-	}
-
-	private function
-	get_settings_by_path ($path, $default = NULL)
-	{
-		if (FALSE($settings = $this->get_webaccess_settings()) || !isset($settings['settings'])) {
-			return FALSE;
-		}
-		$path = explode('/', $path);
-		$tmp = $settings['settings'];
-
-		foreach ($path as $pointer) {
-			if (empty($pointer)) {
-				continue;
-			}
-			if (!isset($tmp[$pointer])) {
-				return $default;
-			}
-			$tmp = $tmp[$pointer];
-		}
-		return $tmp;
-	}
-
-	public function
-	get_webaccess_settings ()
-	{
-		$this->logger->trace(__FUNCTION__);
-
-		// Return cached version if available:
-		if (!FALSE($this->webaccess_settings)) {
-			return $this->webaccess_settings;
-		}
-		if (FALSE($private_store = $this->get_private_store())) {
-			$this->logger->warn(__FUNCTION__.': failed to get private store');
-			return FALSE;
-		}
-		// First check if property exist and we can open that using mapi_openproperty():
-		if (FALSE($storeProps = mapi_getprops($private_store->handle, array(PR_EC_WEBACCESS_SETTINGS_JSON)))) {
-			$this->logger->warn(__FUNCTION__.': failed to get store properties');
-			return FALSE;
-		}
-		if (!(isset($storeProps[PR_EC_WEBACCESS_SETTINGS_JSON]) || propIsError(PR_EC_WEBACCESS_SETTINGS_JSON, $storeProps) == MAPI_E_NOT_ENOUGH_MEMORY)) {
-			$this->logger->warn(__FUNCTION__.': failed to find PR_EC_WEBACCESS_SETTINGS_JSON property');
-			return FALSE;
-		}
-		// Read the settings property:
-		if (FALSE($stream = mapi_openproperty($private_store->handle, PR_EC_WEBACCESS_SETTINGS_JSON, IID_IStream, 0, 0))) {
-			$this->logger->warn(__FUNCTION__.': failed to open stream');
-			return FALSE;
-		}
-		$stat = mapi_stream_stat($stream);
-
-		if (FALSE(mapi_stream_seek($stream, 0, STREAM_SEEK_SET))) {
-			$this->logger->warn(__FUNCTION__.': failed to seek stream');
-			return FALSE;
-		}
-		$settings_string = '';
-		for ($i = 0; $i < $stat['cb']; $i += 1024) {
-			$settings_string .= mapi_stream_read($stream, 1024);
-		}
-		$settings = json_decode($settings_string, TRUE);
-
-		if (!is_array($settings) || !isset($settings['settings']) || !is_array($settings['settings'])) {
-			$this->logger->warn(__FUNCTION__.': failed to decode JSON settings string');
-			return FALSE;
-		}
-		return $this->webaccess_settings = $settings;
 	}
 
 	public function
