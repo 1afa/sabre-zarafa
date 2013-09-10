@@ -71,7 +71,8 @@ class Zarafa_CardDav_Backend extends Sabre\CardDAV\Backend\AbstractBackend
 
 		$folders = array_merge(
 			$this->bridge->get_folders_private($principalUri),
-			$this->bridge->get_folders_public($principalUri)
+			$this->bridge->get_folders_public($principalUri),
+			$this->bridge->get_folders_other($principalUri)
 		);
 		$dump = print_r($folders, true);
 		$this->logger->debug("Address books:\n$dump");

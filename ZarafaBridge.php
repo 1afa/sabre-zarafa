@@ -61,9 +61,11 @@ class Zarafa_Bridge {
 	private $webaccess_settings = FALSE;
 	private $folders_private = array();
 	private $folders_public = array();
+	private $folders_other = array();
 	private $stores_table = FALSE;
 	private $stores_private = array();
 	private $stores_public = array();
+	private $stores_other = array();
 	private $logger;
 
 	/**
@@ -102,12 +104,16 @@ class Zarafa_Bridge {
 			$this->logger->warn(__FUNCTION__.': could not get public stores');
 			return FALSE;
 		}
+		if (FALSE($this->stores_get_other())) {
+			$this->logger->warn(__FUNCTION__.': could not get other stores');
+			return FALSE;
+		}
 		// Store username for principals
 		$this->connectedUser = $user;
 
 		return TRUE;
 	}
-	
+
 	/**
 	 * Get MAPI session 
 	 * @return MAPI session
@@ -116,7 +122,7 @@ class Zarafa_Bridge {
 		$this->logger->trace(__FUNCTION__);
 		return $this->session;
 	}
-	
+
 	/**
 	 * Get private store
 	 * @return ZarafaStore|FALSE
@@ -131,7 +137,7 @@ class Zarafa_Bridge {
 			? $this->stores_private[0]
 			: FALSE;
 	}
-	
+
 	/**
 	 * Get connected user login 
 	 * @return connected user
@@ -212,6 +218,54 @@ class Zarafa_Bridge {
 		return TRUE;
 	}
 
+	private function
+	stores_get_other ()
+	{
+		$this->logger->trace(__FUNCTION__);
+
+		if (!is_array($other_users = $this->get_settings_by_path('zarafa/v1/contexts/hierarchy/shared_stores', NULL))) {
+			return TRUE;
+		}
+		if (FALSE($private_store = $this->get_private_store())) {
+			$this->logger->warn(__FUNCTION__.': failed to get private store');
+			return FALSE;
+		}
+		foreach ($other_users as $username => $folder) {
+			if (!is_array($folder) || empty($folder)) {
+				continue;
+			}
+			$user_entryid = mapi_msgstore_createentryid($private_store->handle, $username);
+
+			if (FALSE($handle = mapi_openmsgstore($this->session, $user_entryid))) {
+				$this->logger->warn(__FUNCTION__.': failed to open other store');
+				continue;
+			}
+			$this->stores_other[] = new Zarafa_Store($this, $user_entryid, $handle, $username);
+		}
+		return TRUE;
+	}
+
+	private function
+	get_settings_by_path ($path, $default = NULL)
+	{
+		if (FALSE($settings = $this->get_webaccess_settings()) || !isset($settings['settings'])) {
+			return FALSE;
+		}
+		$path = explode('/', $path);
+		$tmp = $settings['settings'];
+
+		foreach ($path as $pointer) {
+			if (empty($pointer)) {
+				continue;
+			}
+			if (!isset($tmp[$pointer])) {
+				return $default;
+			}
+			$tmp = $tmp[$pointer];
+		}
+		return $tmp;
+	}
+
 	public function
 	get_webaccess_settings ()
 	{
@@ -278,6 +332,17 @@ class Zarafa_Bridge {
 			$this->folders_public = array_merge($this->folders_public, $store->get_dav_folders($principal_uri));
 		}
 		return $this->folders_public;
+	}
+
+	public function
+	get_folders_other ($principal_uri)
+	{
+		$this->logger->trace(__FUNCTION__."($principal_uri)");
+
+		foreach ($this->stores_other as $store) {
+			$this->folders_other = array_merge($this->folders_other, $store->get_dav_folders($principal_uri));
+		}
+		return $this->folders_other;
 	}
 
 	private function
@@ -363,6 +428,11 @@ class Zarafa_Bridge {
 			}
 		}
 		foreach ($this->stores_public as $store) {
+			if (!FALSE($folder = $store->get_folder($entryid))) {
+				return $folder;
+			}
+		}
+		foreach ($this->stores_other as $store) {
 			if (!FALSE($folder = $store->get_folder($entryid))) {
 				return $folder;
 			}

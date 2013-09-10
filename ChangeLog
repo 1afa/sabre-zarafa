@@ -1,3 +1,5 @@
+- Add support for shared addressbooks. Thanks to @erwint for donating the core
+  logic: https://github.com/erwint/sabre-zarafa/
 - ZarafaBridge: add method to get the Zarafa Webaccess settings, which we will
   need shortly in order to find the user's shared folders.
 - VCardParser: first collect all email addresses, then sort them in order of
