@@ -1,3 +1,5 @@
+- Introduce the INCLUDE_SHARED_ADDRESSBOOKS config option to pull in address
+  books shared with different users.
 - Split off the Webaccess settings into separate class: the ZarafaBridge class
   is getting a bit bloated.
 - Add support for shared addressbooks. Thanks to @erwint for donating the core

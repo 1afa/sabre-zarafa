@@ -122,7 +122,7 @@
 	// from set Zarafa Webapp setting. You will need to make sure use a
 	// rename pattern the includes the provenance if there are name
 	// conflicts with own address books
-	define ('INCLUDE_SHARED_ADDRESSES', false);
+	define ('INCLUDE_SHARED_ADDRESSBOOKS', false);
 	
 	// When set to true SAVE_RAW_VCARD, the vCard will not
 	// only be parsed but also saved as a custom property to the contact.

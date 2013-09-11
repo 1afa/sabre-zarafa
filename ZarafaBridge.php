@@ -105,7 +105,7 @@ class Zarafa_Bridge {
 			$this->logger->warn(__FUNCTION__.': could not get public stores');
 			return FALSE;
 		}
-		if (INCLUDE_SHARED_ADDRESSES) {
+		if (defined('INCLUDE_SHARED_ADDRESSBOOKS') && INCLUDE_SHARED_ADDRESSBOOKS) {
 			if (FALSE($this->stores_get_other())) {
 				$this->logger->warn(__FUNCTION__.': could not get other stores');
 				return FALSE;
