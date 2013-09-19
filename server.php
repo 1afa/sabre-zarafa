@@ -24,20 +24,6 @@
  * 
  */
 
-// Handle uncaught errors by logging them and quitting:
-function uncaught_error_handler ($errno, $errstr, $errfile, $errline)
-{
-	global $logger;
-
-	if (is_object($logger)) {
-		$logger->fatal("PHP error $errno in $errfile:$errline : $errstr");
-	}
-	else {
-		error_log("PHP error $errno in $errfile:$errline : $errstr");
-	}
-	die();
-}
-
  	// Load configuration file
 	define('BASE_PATH', dirname(__FILE__) . "/");
 
@@ -52,9 +38,6 @@ function uncaught_error_handler ($errno, $errstr, $errfile, $errline)
 	ini_set('display_errors', FALSE);
 	ini_set("html_errors", false);
 
-	// Handle all unhandled PHP errors through this function:
-	set_error_handler('uncaught_error_handler');
-	
 	// Include Zarafa SabreDav Bridge
 	include ("./ZarafaBridge.php");
 	
