@@ -68,7 +68,7 @@ class Zarafa_Principals_Backend implements Sabre\DAVACL\PrincipalBackend\Backend
 			$this->logger->warn("Unknown prefix path: $prefix_path");
 			return array();
 		}
-		if (FALSE($connected_user = $this->bridge->getConnectedUser())) {
+		if (($connected_user = $this->bridge->getConnectedUser()) === false) {
 			$this->logger->warn('Not connected');
 			return array();
 		}
@@ -147,14 +147,14 @@ class Zarafa_Principals_Backend implements Sabre\DAVACL\PrincipalBackend\Backend
 	 *
 	 * @param string $path
 	 * @param array $mutations
-	 * @return FALSE
+	 * @return false
 	 */
 	public function
 	updatePrincipal ($path, $mutations)
 	{
 		// Not implemented
 		$this->logger->trace(__FUNCTION__."($path, (mutations))");
-		return FALSE;
+		return false;
 	}
 
 	/**

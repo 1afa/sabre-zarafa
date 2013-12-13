@@ -54,16 +54,16 @@
  
 class Zarafa_Bridge {
 
-	protected $session = FALSE;
+	protected $session = false;
 	protected $publicStore;
-	protected $wastebasketId = FALSE;
-	protected $extendedProperties = FALSE;
-	protected $connectedUser = FALSE;
-	private $webaccess_settings = FALSE;
+	protected $wastebasketId = false;
+	protected $extendedProperties = false;
+	protected $connectedUser = false;
+	private $webaccess_settings = false;
 	private $folders_private = array();
 	private $folders_public = array();
 	private $folders_other = array();
-	private $stores_table = FALSE;
+	private $stores_table = false;
 	private $stores_private = array();
 	private $stores_public = array();
 	private $stores_other = array();
@@ -87,34 +87,34 @@ class Zarafa_Bridge {
 	{
 		$this->logger->trace(__FUNCTION__."($user, <password>)");
 
-		if (FALSE($this->session = mapi_logon_zarafa($user, $password, ZARAFA_SERVER))) {
+		if (($this->session = mapi_logon_zarafa($user, $password, ZARAFA_SERVER)) === false) {
 			$this->logger->debug(__FUNCTION__.': connection failed: '.get_mapi_error_name());
-			return FALSE;
+			return false;
 		}
 		$this->logger->debug(__FUNCTION__.': connected to zarafa server - init bridge');
 
-		if (FALSE($this->stores_table = mapi_getmsgstorestable($this->session))) {
+		if (($this->stores_table = mapi_getmsgstorestable($this->session)) === false) {
 			$this->logger->fatal(__FUNCTION__.': could not get messagestore table');
-			return FALSE;
+			return false;
 		}
-		if (FALSE($this->stores_get_private())) {
+		if ($this->stores_get_private() === false) {
 			$this->logger->warn(__FUNCTION__.': could not get private stores');
-			return FALSE;
+			return false;
 		}
-		if (FALSE($this->stores_get_public())) {
+		if ($this->stores_get_public() === false) {
 			$this->logger->warn(__FUNCTION__.': could not get public stores');
-			return FALSE;
+			return false;
 		}
 		if (defined('INCLUDE_SHARED_ADDRESSBOOKS') && INCLUDE_SHARED_ADDRESSBOOKS) {
-			if (FALSE($this->stores_get_other())) {
+			if ($this->stores_get_other() === false) {
 				$this->logger->warn(__FUNCTION__.': could not get other stores');
-				return FALSE;
+				return false;
 			}
 		}
 		// Store username for principals
 		$this->connectedUser = $user;
 
-		return TRUE;
+		return true;
 	}
 
 	/**
@@ -128,7 +128,7 @@ class Zarafa_Bridge {
 
 	/**
 	 * Get private store
-	 * @return ZarafaStore|FALSE
+	 * @return ZarafaStore|false
 	 */
 	public function
 	get_private_store()
@@ -138,7 +138,7 @@ class Zarafa_Bridge {
 		$this->logger->trace(__FUNCTION__);
 		return (isset($this->stores_private[0]))
 			? $this->stores_private[0]
-			: FALSE;
+			: false;
 	}
 
 	/**
@@ -155,7 +155,7 @@ class Zarafa_Bridge {
 	{
 		$this->logger->trace(__FUNCTION__);
 
-		if (FALSE($this->extendedProperties)) {
+		if ($this->extendedProperties === false) {
 			$this->initProperties();
 		}
 		return $this->extendedProperties;
@@ -170,9 +170,9 @@ class Zarafa_Bridge {
 	{
 		$this->logger->trace(__FUNCTION__);
 
-		static $userinfo = FALSE;
+		static $userinfo = false;
 
-		if (FALSE($userinfo)) {
+		if ($userinfo === false) {
 			$userinfo = $this->stores_private[0]->getuser_by_name($this->connectedUser);
 		}
 		$this->logger->debug("User email address: {$userinfo['emailaddress']}");
@@ -184,20 +184,20 @@ class Zarafa_Bridge {
 	{
 		$this->logger->trace(__FUNCTION__);
 
-		if (FALSE(tbl_restrict_propval($this->stores_table, PR_MDB_PROVIDER, ZARAFA_SERVICE_GUID, RELOP_EQ))) {
-			return FALSE;
+		if (tbl_restrict_propval($this->stores_table, PR_MDB_PROVIDER, ZARAFA_SERVICE_GUID, RELOP_EQ) === false) {
+			return false;
 		}
-		if (FALSE($stores = mapi_table_queryallrows($this->stores_table, array(PR_ENTRYID)))) {
-			return FALSE;
+		if (($stores = mapi_table_queryallrows($this->stores_table, array(PR_ENTRYID))) === false) {
+			return false;
 		}
 		foreach ($stores as $store) {
-			if (FALSE($handle = mapi_openmsgstore($this->session, $store[PR_ENTRYID]))) {
+			if (($handle = mapi_openmsgstore($this->session, $store[PR_ENTRYID])) === false) {
 				$this->logger->warn(__FUNCTION__.': failed to open private store');
 				continue;
 			}
 			$this->stores_private[] = new Zarafa_Store($this, $store[PR_ENTRYID], $handle, 'private');
 		}
-		return TRUE;
+		return true;
 	}
 
 	private function
@@ -205,20 +205,20 @@ class Zarafa_Bridge {
 	{
 		$this->logger->trace(__FUNCTION__);
 
-		if (FALSE(tbl_restrict_propval($this->stores_table, PR_MDB_PROVIDER, ZARAFA_STORE_PUBLIC_GUID, RELOP_EQ))) {
-			return FALSE;
+		if (tbl_restrict_propval($this->stores_table, PR_MDB_PROVIDER, ZARAFA_STORE_PUBLIC_GUID, RELOP_EQ) === false) {
+			return false;
 		}
-		if (FALSE($stores = mapi_table_queryallrows($this->stores_table, array(PR_ENTRYID)))) {
-			return FALSE;
+		if (($stores = mapi_table_queryallrows($this->stores_table, array(PR_ENTRYID))) === false) {
+			return false;
 		}
 		foreach ($stores as $store) {
-			if (FALSE($handle = mapi_openmsgstore($this->session, $store[PR_ENTRYID]))) {
+			if (($handle = mapi_openmsgstore($this->session, $store[PR_ENTRYID])) === false) {
 				$this->logger->warn(__FUNCTION__.': failed to open public store');
 				continue;
 			}
 			$this->stores_public[] = new Zarafa_Store($this, $store[PR_ENTRYID], $handle, 'public');
 		}
-		return TRUE;
+		return true;
 	}
 
 	private function
@@ -226,16 +226,16 @@ class Zarafa_Bridge {
 	{
 		$this->logger->trace(__FUNCTION__);
 
-		if (FALSE($private_store = $this->get_private_store())) {
+		if (($private_store = $this->get_private_store()) === false) {
 			$this->logger->warn(__FUNCTION__.': failed to get private store');
-			return FALSE;
+			return false;
 		}
 		// Need the Webaccess settings to find the shared address books:
-		if (FALSE($this->webaccess_settings)) {
+		if ($this->webaccess_settings === false) {
 			$this->webaccess_settings = new Zarafa_Webaccess_Settings($private_store->handle);
 		}
 		if (!is_array($other_users = $this->webaccess_settings->by_path('zarafa/v1/contexts/hierarchy/shared_stores'))) {
-			return TRUE;
+			return true;
 		}
 		foreach ($other_users as $username => $folder) {
 			if (!is_array($folder) || empty($folder)) {
@@ -243,13 +243,13 @@ class Zarafa_Bridge {
 			}
 			$user_entryid = mapi_msgstore_createentryid($private_store->handle, $username);
 
-			if (FALSE($handle = mapi_openmsgstore($this->session, $user_entryid))) {
+			if (($handle = mapi_openmsgstore($this->session, $user_entryid)) === false) {
 				$this->logger->warn(__FUNCTION__.': failed to open other store');
 				continue;
 			}
 			$this->stores_other[] = new Zarafa_Store($this, $user_entryid, $handle, $username);
 		}
-		return TRUE;
+		return true;
 	}
 
 	public function
@@ -334,8 +334,8 @@ class Zarafa_Bridge {
 	getProperties ($entryId, $store)
 	{
 		$this->logger->trace(__FUNCTION__.'('.bin2hex($entryId).')');
-		if (FALSE($mapiObject = mapi_msgstore_openentry($store, $entryId))) {
-			return FALSE;
+		if (($mapiObject = mapi_msgstore_openentry($store, $entryId)) === false) {
+			return false;
 		}
 		return mapi_getprops($mapiObject);
 	}
@@ -363,17 +363,17 @@ class Zarafa_Bridge {
 	get_folder ($entryid)
 	{
 		foreach ($this->stores_private as $store) {
-			if (!FALSE($folder = $store->get_folder($entryid))) {
+			if (($folder = $store->get_folder($entryid)) !== false) {
 				return $folder;
 			}
 		}
 		foreach ($this->stores_public as $store) {
-			if (!FALSE($folder = $store->get_folder($entryid))) {
+			if (($folder = $store->get_folder($entryid)) !== false) {
 				return $folder;
 			}
 		}
 		foreach ($this->stores_other as $store) {
-			if (!FALSE($folder = $store->get_folder($entryid))) {
+			if (($folder = $store->get_folder($entryid)) !== false) {
 				return $folder;
 			}
 		}
@@ -409,10 +409,10 @@ class Zarafa_Bridge {
 
 		$parser = new VCardParser($this);
 
-		if (FALSE($properties = $parser->vObjectToProperties($vcardData))) {
-			return FALSE;
+		if (($properties = $parser->vObjectToProperties($vcardData)) === false) {
+			return false;
 		}
-		$this->logger->debug("VCard properties:\n" . print_r($properties, TRUE));
+		$this->logger->debug("VCard properties:\n" . print_r($properties, true));
 		return $properties;
 	}
 
@@ -429,13 +429,13 @@ class Zarafa_Bridge {
 
 		$this->logger->trace(__FUNCTION__.'(' . bin2hex($contactId).')');
 
-		if (FALSE($contact = mapi_msgstore_openentry($store, $contactId))) {
+		if (($contact = mapi_msgstore_openentry($store, $contactId)) === false) {
 			$this->logger->fatal(__FUNCTION__.': cannot open contact: '.get_mapi_error_name());
-			return FALSE;
+			return false;
 		}
-		if (FALSE($p = $this->getExtendedProperties())) {
+		if (($p = $this->getExtendedProperties()) === false) {
 			$this->logger->fatal('cannot get extended properties');
-			return FALSE;
+			return false;
 		}
 		$this->logger->trace("PR_CARDDAV_RAW_DATA: " . PR_CARDDAV_RAW_DATA);
 		$this->logger->trace("PR_CARDDAV_RAW_DATA_GENERATION_TIME: " . PR_CARDDAV_RAW_DATA_GENERATION_TIME);
@@ -473,13 +473,13 @@ class Zarafa_Bridge {
 		// Produce VCard object
 		$this->logger->trace("Producing vcard from contact properties");
 
-		if (FALSE($producer->propertiesToVObject($contact, $contactProperties))) {
+		if ($producer->propertiesToVObject($contact, $contactProperties) === false) {
 			$this->logger->fatal('failed to convert MAPI contact to vCard object');
-			return FALSE;
+			return false;
 		}
-		if (FALSE($vCardData = $producer->serialize())) {
+		if (($vCardData = $producer->serialize()) === false) {
 			$this->logger->fatal('failed to serialize vCard');
-			return FALSE;
+			return false;
 		}
 		$this->logger->debug("Produced VCard\n" . $vCardData);
 		
@@ -490,7 +490,6 @@ class Zarafa_Bridge {
 			$this->logger->trace("Converting from UTF-8 to $targetCharset");
 			$vCardData = iconv("UTF-8", $targetCharset, $vCardData);
 		}
-		
 		if (SAVE_RAW_VCARD) {
 			$this->logger->trace("Saving vcard to contact properties");
 			// Check if raw vCard is up-to-date
@@ -654,15 +653,15 @@ class Zarafa_Bridge {
 	public function
 	save_properties (&$handle, $properties)
 	{
-		if (FALSE(mapi_setprops($handle, $properties))) {
+		if (mapi_setprops($handle, $properties) === false) {
 			$this->logger->fatal(__FUNCTION__.': MAPI error when applying mutations: '.get_mapi_error_name());
-			return FALSE;
+			return false;
 		}
-		if (FALSE(mapi_savechanges($handle))) {
+		if (mapi_savechanges($handle) === false) {
 			$this->logger->fatal(__FUNCTION__.': MAPI error when saving changes to object: '.get_mapi_error_name());
-			return FALSE;
+			return false;
 		}
-		return TRUE;
+		return true;
 	}
 
 	/**
@@ -713,7 +712,7 @@ class Zarafa_Bridge {
 	{
 		$this->logger->trace(__FUNCTION__);
 
-		$contactAttachment = FALSE;
+		$contactAttachment = false;
 
 		// Find if contact picture is already set:
 		if (mapi_getprops($contact, array(PR_HASATTACH))) {
@@ -740,22 +739,22 @@ class Zarafa_Bridge {
 			}
 		}
 		// Remove existing attachment if necessary:
-		if (!FALSE($contactAttachment)) {
+		if ($contactAttachment !== false) {
 			$this->logger->trace('removing existing contact picture');
-			if (FALSE(mapi_message_deleteattach($contact, $contactAttachment))) {
+			if (mapi_message_deleteattach($contact, $contactAttachment) === false) {
 				$this->logger->warn(__FUNCTION__.': could not delete attachment: '.get_mapi_error_name());
 				// TODO: should we return with error?
 			}
 		}
 		if ($contactPicture == NULL) {
-			return TRUE;
+			return true;
 		}
 		$this->logger->debug('Saving contact picture as attachment');
 
 		// Create attachment:
-		if (FALSE($attach = mapi_message_createattach($contact))) {
+		if (($attach = mapi_message_createattach($contact)) === false) {
 			$this->logger->warn(__FUNCTION__.': could not create attachment: '.get_mapi_error_name());
-			return FALSE;
+			return false;
 		}
 		// Update contact attachment properties:
 		$properties = array(

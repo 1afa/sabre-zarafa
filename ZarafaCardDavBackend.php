@@ -99,14 +99,14 @@ class Zarafa_CardDav_Backend extends Sabre\CardDAV\Backend\AbstractBackend
 		if (READ_ONLY) {
 			return $this->exc_forbidden(__FUNCTION__.': cannot update address book: permission denied by config (read-only)');
 		}
-		if (FALSE($folder = $this->bridge->get_folder($addressBookId))) {
+		if (($folder = $this->bridge->get_folder($addressBookId)) === false) {
 			return $this->exc_notfound(__FUNCTION__.': cannot find folder');
 		}
-		if (FALSE($folder->update_folder($mutations))) {
+		if ($folder->update_folder($mutations) === false) {
 			$this->logger->fatal(__FUNCTION__.': cannot apply mutations');
-			return FALSE;
+			return false;
 		}
-		return TRUE;
+		return true;
 	}
 
 	/**
@@ -127,7 +127,7 @@ class Zarafa_CardDav_Backend extends Sabre\CardDAV\Backend\AbstractBackend
 		if (READ_ONLY) {
 			return $this->exc_forbidden(__FUNCTION__.': cannot create address book: permission denied by config (read-only)');
 		}
-		if (FALSE($store = $this->bridge->get_private_store())) {
+		if (($store = $this->bridge->get_private_store()) === false) {
 			return $this->exc_notfound(__FUNCTION__.': cannot find private store');
 		}
 		return $store->create_folder($properties);
@@ -147,7 +147,7 @@ class Zarafa_CardDav_Backend extends Sabre\CardDAV\Backend\AbstractBackend
 		if (READ_ONLY || !ALLOW_DELETE_FOLDER) {
 			return $this->exc_forbidden(__FUNCTION__.': cannot delete address book: permission denied by config (read-only)');
 		}
-		if (FALSE($folder = $this->bridge->get_folder($addressBookId))) {
+		if (($folder = $this->bridge->get_folder($addressBookId)) === false) {
 			return $this->exc_notfound(__FUNCTION__.': cannot find folder');
 		}
 		return $folder->delete_folder();
@@ -169,7 +169,7 @@ class Zarafa_CardDav_Backend extends Sabre\CardDAV\Backend\AbstractBackend
 	{
 		$this->logger->trace(__FUNCTION__.'('.bin2hex($addressBookId).')');
 	
-		if (FALSE($folder = $this->bridge->get_folder($addressBookId))) {
+		if (($folder = $this->bridge->get_folder($addressBookId)) === false) {
 			$this->exc_notfound(__FUNCTION__.': cannot find folder');
 			return Array();
 		}
@@ -188,7 +188,7 @@ class Zarafa_CardDav_Backend extends Sabre\CardDAV\Backend\AbstractBackend
 	{
 		$this->logger->trace(__FUNCTION__.'('.bin2hex($addressBookId).", $uri)");
 
-		if (FALSE($folder = $this->bridge->get_folder($addressBookId))) {
+		if (($folder = $this->bridge->get_folder($addressBookId)) === false) {
 			$this->exc_notfound(__FUNCTION__.': cannot find folder');
 			return Array();
 		}
@@ -211,14 +211,14 @@ class Zarafa_CardDav_Backend extends Sabre\CardDAV\Backend\AbstractBackend
 		if (READ_ONLY) {
 			return $this->exc_forbidden(__FUNCTION__.': cannot create card: permission denied by config (read-only)');
 		}
-		if (FALSE($folder = $this->bridge->get_folder($addressBookId))) {
+		if (($folder = $this->bridge->get_folder($addressBookId)) === false) {
 			return $this->exc_notfound(__FUNCTION__.': cannot find folder');
 		}
-		if (FALSE($etag = $folder->create_contact($uri, $data))) {
+		if (($etag = $folder->create_contact($uri, $data)) === false) {
 			$this->logger->fatal(__FUNCTION__.': could not create card');
-			return FALSE;
+			return false;
 		}
-		return (is_string($etag)) ? $etag : NULL;
+		return (is_string($etag)) ? $etag : null;
 	} 
 
 	/**
@@ -237,14 +237,14 @@ class Zarafa_CardDav_Backend extends Sabre\CardDAV\Backend\AbstractBackend
 		if (READ_ONLY) {
 			return $this->exc_forbidden(__FUNCTION__.': cannot update card: permission denied by config (read-only)');
 		}
-		if (FALSE($folder = $this->bridge->get_folder($addressBookId))) {
+		if (($folder = $this->bridge->get_folder($addressBookId)) === false) {
 			return $this->exc_notfound(__FUNCTION__.': cannot find folder');
 		}
-		if (FALSE($etag = $folder->update_contact($uri, $data))) {
+		if (($etag = $folder->update_contact($uri, $data)) === false) {
 			$this->logger->fatal(__FUNCTION__.': failed to update card');
-			return FALSE;
+			return false;
 		}
-		return (is_string($etag)) ? $etag : NULL;
+		return (is_string($etag)) ? $etag : null;
 	}
 
 	/**
@@ -262,14 +262,14 @@ class Zarafa_CardDav_Backend extends Sabre\CardDAV\Backend\AbstractBackend
 		if (READ_ONLY) {
 			return $this->exc_forbidden(__FUNCTION__.': cannot delete card: permission denied by config (read-only)');
 		}
-		if (FALSE($folder = $this->bridge->get_folder($addressBookId))) {
+		if (($folder = $this->bridge->get_folder($addressBookId)) === false) {
 			return $this->exc_notfound(__FUNCTION__.': cannot find folder');
 		}
-		if (FALSE($folder->delete_contact($uri))) {
+		if ($folder->delete_contact($uri) === false) {
 			$this->logger->fatal(__FUNCTION__.': failed to delete card');
-			return FALSE;
+			return false;
 		}
-		return TRUE;
+		return true;
 	}
 
 	private function
@@ -277,7 +277,7 @@ class Zarafa_CardDav_Backend extends Sabre\CardDAV\Backend\AbstractBackend
 	{
 		$this->logger->fatal($msg);
 		throw new Sabre\DAV\Exception\Forbidden($msg);
-		return FALSE;
+		return false;
 	}
 
 	private function
@@ -285,6 +285,6 @@ class Zarafa_CardDav_Backend extends Sabre\CardDAV\Backend\AbstractBackend
 	{
 		$this->logger->fatal($msg);
 		throw new Sabre\DAV\Exception\NotFound($msg);
-		return FALSE;
+		return false;
 	}
 }

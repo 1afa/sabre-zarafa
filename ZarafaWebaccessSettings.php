@@ -29,9 +29,9 @@ require_once 'ZarafaLogger.php';
 
 class Zarafa_Webaccess_Settings
 {
-	private $logger = FALSE;
-	private $handle = FALSE;
-	private $settings = FALSE;
+	private $logger = false;
+	private $handle = false;
+	private $settings = false;
 
 	public function
 	__construct ($private_store_handle)
@@ -47,8 +47,11 @@ class Zarafa_Webaccess_Settings
 	{
 		$this->logger->trace(__FUNCTION__);
 
-		if (FALSE($settings = $this->get_settings()) || !isset($settings['settings'])) {
-			return FALSE;
+		if (($settings = $this->get_settings()) === false) {
+			return false;
+		}
+		if (!isset($settings['settings'])) {
+			return false;
 		}
 		$path = explode('/', $path);
 		$tmp = $settings['settings'];
@@ -58,7 +61,7 @@ class Zarafa_Webaccess_Settings
 				continue;
 			}
 			if (!isset($tmp[$pointer])) {
-				return FALSE;
+				return false;
 			}
 			$tmp = $tmp[$pointer];
 		}
@@ -71,42 +74,42 @@ class Zarafa_Webaccess_Settings
 		$this->logger->trace(__FUNCTION__);
 
 		// Return cached version if available:
-		if (!FALSE($this->settings)) {
+		if ($this->settings !== false) {
 			return $this->settings;
 		}
-		if (FALSE($this->handle)) {
+		if ($this->handle === false) {
 			$this->logger->warn(__FUNCTION__.': no handle to private store');
-			return FALSE;
+			return false;
 		}
 		// First check if property exist and we can open that using mapi_openproperty():
-		if (FALSE($storeProps = mapi_getprops($this->handle, array(PR_EC_WEBACCESS_SETTINGS_JSON)))) {
+		if (($storeProps = mapi_getprops($this->handle, array(PR_EC_WEBACCESS_SETTINGS_JSON))) === false) {
 			$this->logger->warn(__FUNCTION__.': failed to get store properties');
-			return FALSE;
+			return false;
 		}
 		if (!(isset($storeProps[PR_EC_WEBACCESS_SETTINGS_JSON]) || propIsError(PR_EC_WEBACCESS_SETTINGS_JSON, $storeProps) == MAPI_E_NOT_ENOUGH_MEMORY)) {
 			$this->logger->warn(__FUNCTION__.': failed to find PR_EC_WEBACCESS_SETTINGS_JSON property');
-			return FALSE;
+			return false;
 		}
 		// Read the settings property:
-		if (FALSE($stream = mapi_openproperty($this->handle, PR_EC_WEBACCESS_SETTINGS_JSON, IID_IStream, 0, 0))) {
+		if (($stream = mapi_openproperty($this->handle, PR_EC_WEBACCESS_SETTINGS_JSON, IID_IStream, 0, 0)) === false) {
 			$this->logger->warn(__FUNCTION__.': failed to open stream');
-			return FALSE;
+			return false;
 		}
 		$stat = mapi_stream_stat($stream);
 
-		if (FALSE(mapi_stream_seek($stream, 0, STREAM_SEEK_SET))) {
+		if (mapi_stream_seek($stream, 0, STREAM_SEEK_SET) === false) {
 			$this->logger->warn(__FUNCTION__.': failed to seek stream');
-			return FALSE;
+			return false;
 		}
 		$settings_string = '';
 		for ($i = 0; $i < $stat['cb']; $i += 1024) {
 			$settings_string .= mapi_stream_read($stream, 1024);
 		}
-		$settings = json_decode($settings_string, TRUE);
+		$settings = json_decode($settings_string, true);
 
 		if (!is_array($settings) || !isset($settings['settings']) || !is_array($settings['settings'])) {
 			$this->logger->warn(__FUNCTION__.': failed to decode JSON settings string');
-			return FALSE;
+			return false;
 		}
 		return $this->settings = $settings;
 	}

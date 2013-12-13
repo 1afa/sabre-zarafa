@@ -83,7 +83,7 @@ restrict_hidden ()
 {
 	return restrict_and(
 		restrict_exist(PR_ATTR_HIDDEN),
-		restrict_propval(PR_ATTR_HIDDEN, TRUE, RELOP_EQ)
+		restrict_propval(PR_ATTR_HIDDEN, true, RELOP_EQ)
 	);
 }
 
@@ -92,7 +92,7 @@ restrict_nonhidden ()
 {
 	return restrict_or(
 		restrict_not(restrict_exist(PR_ATTR_HIDDEN)),
-		restrict_propval(PR_ATTR_HIDDEN, FALSE, RELOP_EQ)
+		restrict_propval(PR_ATTR_HIDDEN, false, RELOP_EQ)
 	);
 }
 

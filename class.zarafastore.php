@@ -87,7 +87,7 @@ class Zarafa_Store
 			}
 		}
 		foreach ($folders as $entryid => $dummy) {
-			if (FALSE($folder = mapi_msgstore_openentry($this->handle, $entryid))) {
+			if (($folder = mapi_msgstore_openentry($this->handle, $entryid)) === false) {
 				continue;
 			}
 			$node = new Zarafa_Folder($this->bridge, $this, $folder, $entryid);
@@ -116,46 +116,52 @@ class Zarafa_Store
 	{
 		return (isset($this->folders[$entryid]))
 			? $this->folders[$entryid]
-			: FALSE;
+			: false;
 	}
 
 	public function
 	create_folder ($properties)
 	{
 		// For now, create new folders in the root only:
-		if (FALSE($this->root)) {
-			return FALSE;
+		if ($this->root === false) {
+			return false;
 		}
 		$displayname = isset($properties['{DAV:}displayname']) ? $properties['{DAV:}displayname'] : '';
 		$description = isset($properties['{' . Sabre\CardDAV\Plugin::NS_CARDDAV . '}addressbook-description']) ? $properties['{' . Sabre\CardDAV\Plugin::NS_CARDDAV . '}addressbook-description'] : '';
 
 		// FIXME: does this even work? According to the docs, mapi_folder_createfolder() returns a boolean...
-		if (FALSE($folder = mapi_folder_createfolder($this->root, $displayname, $description, MAPI_UNICODE | OPEN_IF_EXISTS, FOLDER_GENERIC))
-		 || FALSE($this->bridge->save_properties($folder, array(PR_CONTAINER_CLASS => 'IPF.Contact')))) {
+		if (($folder = mapi_folder_createfolder($this->root, $displayname, $description, MAPI_UNICODE | OPEN_IF_EXISTS, FOLDER_GENERIC)) === false) {
 			$this->logger->debug(__FUNCTION__.': '.get_mapi_error_name());
-			return FALSE;
+			return false;
+		}
+		if (($this->bridge->save_properties($folder, array(PR_CONTAINER_CLASS => 'IPF.Contact'))) === false) {
+			$this->logger->debug(__FUNCTION__.': '.get_mapi_error_name());
+			return false;
 		}
 		// FIXME add folder to internal cache?
-		return TRUE;
+		return true;
 	}
 
 	public function
 	delete_folder ($parentid, $entryid, $folder_handle)
 	{
 		if (!isset($this->folders[$entryid])) {
-			return FALSE;
+			return false;
 		}
-		if (FALSE($parent_handle = mapi_msgstore_openentry($this->handle, $parentid))) {
-			return FALSE;
+		if (($parent_handle = mapi_msgstore_openentry($this->handle, $parentid)) === false) {
+			return false;
 		}
-		// Delete folder content
-		if (FALSE(mapi_folder_emptyfolder($folder_handle, DEL_ASSOCIATED))
-		 || FALSE(mapi_folder_deletefolder($parent_handle, $entryid))) {
+		// Delete folder content:
+		if (mapi_folder_emptyfolder($folder_handle, DEL_ASSOCIATED) === false) {
 			$this->logger->debug(__FUNCTION__.': '.get_mapi_error_name());
-			return FALSE;
+			return false;
+		}
+		if (mapi_folder_deletefolder($parent_handle, $entryid) === false) {
+			$this->logger->debug(__FUNCTION__.': '.get_mapi_error_name());
+			return false;
 		}
 		unset($this->folders[$entryid]);
-		return TRUE;
+		return true;
 	}
 
 	private function
@@ -163,14 +169,20 @@ class Zarafa_Store
 	{
 		$folders = array();
 
-		if (FALSE($folder = mapi_msgstore_openentry($this->handle, $subtree_id))
-		 || FALSE($hier = mapi_folder_gethierarchytable($folder, CONVENIENT_DEPTH | MAPI_DEFERRED_ERRORS))
-		 || FALSE(mapi_table_restrict($hier, $restriction))) {
+		if (($folder = mapi_msgstore_openentry($this->handle, $subtree_id)) === false) {
+			$this->logger->debug(__FUNCTION__.': '.get_mapi_error_name());
+			return $folders;
+		}
+		if (($hier = mapi_folder_gethierarchytable($folder, CONVENIENT_DEPTH | MAPI_DEFERRED_ERRORS)) === false) {
+			$this->logger->debug(__FUNCTION__.': '.get_mapi_error_name());
+			return $folders;
+		}
+		if (mapi_table_restrict($hier, $restriction) === false) {
 			$this->logger->debug(__FUNCTION__.': '.get_mapi_error_name());
 			return $folders;
 		}
 		foreach (mapi_table_queryallrows($hier, array(PR_ENTRYID, PR_SUBFOLDERS)) as $row) {
-			$folders[$row[PR_ENTRYID]] = TRUE;
+			$folders[$row[PR_ENTRYID]] = true;
 			$folders = array_merge($folders, $this->subtree_walk($row[PR_ENTRYID], $restriction));
 		}
 		return $folders;
@@ -182,12 +194,12 @@ class Zarafa_Store
 	public function
 	is_unicode_store ()
 	{
-		$this->is_unicode = FALSE;
+		$this->is_unicode = false;
 		$supportmask = mapi_getprops($this->handle, array(PR_STORE_SUPPORT_MASK));
 		if (isset($supportmask[PR_STORE_SUPPORT_MASK]) && ($supportmask[PR_STORE_SUPPORT_MASK] & STORE_UNICODE_OK)) {
 			// Setlocale to UTF-8 in order to support properties containing Unicode characters:
 			setlocale(LC_CTYPE, "en_US.UTF-8");
-			$this->is_unicode = TRUE;
+			$this->is_unicode = true;
 		}
 	}
 

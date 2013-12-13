@@ -29,18 +29,18 @@ require_once 'ZarafaLogger.php';
 
 class Zarafa_Folder
 {
-	private $name = FALSE;
-	private $ctag = FALSE;
-	private $props = FALSE;
-	private $store = FALSE;
-	private $cards = FALSE;
-	private $bridge = FALSE;
-	public $handle = FALSE;
-	private $entryid = FALSE;
-	private $rowcount = FALSE;
-	private $contacts = FALSE;
-	private $contacts_table = FALSE;
-	private $uri_mapping = FALSE;
+	private $name = false;
+	private $ctag = false;
+	private $props = false;
+	private $store = false;
+	private $cards = false;
+	private $bridge = false;
+	public $handle = false;
+	private $entryid = false;
+	private $rowcount = false;
+	private $contacts = false;
+	private $contacts_table = false;
+	private $uri_mapping = false;
 	private $logger;
 
 	public function
@@ -52,15 +52,15 @@ class Zarafa_Folder
 		$this->entryid = $entryid;
 		$this->logger = new Zarafa_Logger(__CLASS__);
 
-		// This config setting was introduced in Sabre-Zarafa 0.19 and defaults to TRUE;
+		// This config setting was introduced in Sabre-Zarafa 0.19 and defaults to true;
 		// make sure it's defined for people who migrate from an old config:
-		if (!defined('ETAG_ENABLE')) define('ETAG_ENABLE', TRUE);
+		if (!defined('ETAG_ENABLE')) define('ETAG_ENABLE', true);
 	}
 
 	public function
 	folder_to_dav ($principal_uri)
 	{
-		if (FALSE($props = $this->get_props())) {
+		if (($props = $this->get_props()) === false) {
 			return array();
 		}
 		$ret = array(
@@ -72,7 +72,7 @@ class Zarafa_Folder
 			'{' . Sabre\CardDAV\Plugin::NS_CARDDAV . '}addressbook-description' => (isset($props[PR_COMMENT]) ? $props[PR_COMMENT] : ''),
 			'{' . Sabre\CardDAV\Plugin::NS_CARDDAV . '}supported-address-data' => new Sabre\CardDAV\Property\SupportedAddressData()
 		);
-		if (!FALSE($ctag = $this->get_ctag())) {
+		if (($ctag = $this->get_ctag()) !== false) {
 			$ret['ctag'] = $ctag;
 			$ret['{http://calendarserver.org/ns/}getctag'] = $ctag;
 		}
@@ -86,8 +86,8 @@ class Zarafa_Folder
 			? $contact[PR_CARDDAV_URI]
 			: $this->bridge->entryid_to_uri($contact[PR_ENTRYID]);
 
-		if (FALSE($carddata = $this->bridge->getContactVCard($contact, $this->store->handle))) {
-			return FALSE;
+		if (($carddata = $this->bridge->getContactVCard($contact, $this->store->handle)) === false) {
+			return false;
 		}
 		$ret = array(
 			'id' => $contact[PR_ENTRYID],
@@ -105,20 +105,20 @@ class Zarafa_Folder
 	get_dav_cards ()
 	{
 		// Can we serve the cards from our own cache?
-		if (!FALSE($this->cards)) {
+		if ($this->cards !== false) {
 			return $this->cards;
 		}
 		// Otherwise do the actual lookup:
-		if (FALSE($contacts = $this->get_contacts())) {
+		if (($contacts = $this->get_contacts()) === false) {
 			return array();
 		}
-		if (FALSE($this->uri_mapping)) {
+		if ($this->uri_mapping === false) {
 			$this->uri_mapping = array();
 		}
 		$this->cards = array();
 		foreach ($contacts as $contact)
 		{
-			if (FALSE($dav = $this->contact_to_dav($contact))) {
+			if (($dav = $this->contact_to_dav($contact)) === false) {
 				continue;
 			}
 			$this->cards[$dav['uri']] = $dav;
@@ -131,11 +131,11 @@ class Zarafa_Folder
 	get_dav_card ($uri)
 	{
 		// Can we serve the card from our own cache?
-		if (!FALSE($this->cards) && isset($this->cards[$uri])) {
+		if ($this->cards !== false && isset($this->cards[$uri])) {
 			return $this->cards[$uri];
 		}
 		// Otherwise do the actual lookup:
-		if (FALSE($entryid = $this->uri_to_entryid($uri)))
+		if (($entryid = $this->uri_to_entryid($uri)) === false)
 		{
 			// Do not log this at FATAL, ERROR or WARN levels even though it's
 			// technically an error. Some clients, notably OSX' Contacts.app, check
@@ -143,22 +143,22 @@ class Zarafa_Folder
 			// card, and *expecting* the lookup to fail. So this "error" occurs
 			// frequently during normal use. Don't needlessly pollute the logs:
 			$this->logger->info(__FUNCTION__.': could not find contact');
-			return FALSE;
+			return false;
 		}
-		if (FALSE($contacts = $this->get_contacts($entryid))) {
+		if (($contacts = $this->get_contacts($entryid)) === false) {
 			return array();
 		}
-		if (FALSE($this->cards)) {
+		if ($this->cards === false) {
 			$this->cards = array();
 		}
 		foreach ($contacts as $contact) {
-			if (FALSE($dav = $this->contact_to_dav($contact))) {
+			if (($dav = $this->contact_to_dav($contact)) === false) {
 				continue;
 			}
 			return $this->cards[$dav['uri']] = $dav;
 		}
 		$this->logger->fatal(__FUNCTION__.': could not find contact');
-		return FALSE;
+		return false;
 	}
 
 	public function
@@ -175,7 +175,7 @@ class Zarafa_Folder
 		foreach ($mutations as $m => $value) {
 			if (!in_array($m, $authorizedMutations)) {
 				$this->logger->warn("Unknown mutation: $m => $value");
-				return FALSE;
+				return false;
 			}
 		}
 		// Do the mutations
@@ -186,7 +186,7 @@ class Zarafa_Folder
 		if (isset($mutations['{DAV:}displayname'])) {
 			$displayName = $mutations['{DAV:}displayname'];
 			if ($displayName == '') {
-				return FALSE;
+				return false;
 			}
 			$mapiProperties[PR_DISPLAY_NAME] = $displayName;
 		}
@@ -197,7 +197,7 @@ class Zarafa_Folder
 		}
 		if (count($mapiProperties) == 0) {
 			$this->logger->info(__FUNCTION__.': no changes detected for folder');
-			return FALSE;
+			return false;
 		}
 		return $this->bridge->save_properties($this->handle, $mapiProperties);
 	}
@@ -205,9 +205,9 @@ class Zarafa_Folder
 	public function
 	delete_folder ()
 	{
-		if (FALSE($props = $this->get_props()) || !isset($props[PR_PARENT_ENTRYID])) {
+		if (($props = $this->get_props()) === false || !isset($props[PR_PARENT_ENTRYID])) {
 			$this->logger->fatal(__FUNCTION__.': could not get parent ID');
-			return FALSE;
+			return false;
 		}
 		return $this->store->delete_folder($props[PR_PARENT_ENTRYID], $this->entryid, $this->handle);
 	}
@@ -215,14 +215,14 @@ class Zarafa_Folder
 	public function
 	create_contact ($uri, $data)
 	{
-		if (FALSE($contact = mapi_folder_createmessage($this->handle))) {
+		if (($contact = mapi_folder_createmessage($this->handle)) === false) {
 			$this->logger->fatal(__FUNCTION__.': MAPI error: cannot create contact: '.get_mapi_error_name());
-			return FALSE;
+			return false;
 		}
 		$this->logger->trace(__FUNCTION__.': getting properties from vcard');
-		if (FALSE($mapiProperties = $this->bridge->vcardToMapiProperties($data))) {
+		if (($mapiProperties = $this->bridge->vcardToMapiProperties($data)) === false) {
 			$this->logger->fatal(__FUNCTION__.': could not convert VCard properties to MAPI properties');
-			return FALSE;
+			return false;
 		}
 		$mapiProperties[PR_CARDDAV_URI] = $uri;
 
@@ -252,11 +252,17 @@ class Zarafa_Folder
 		$mapiProperties[$p['message_class']] = 'IPM.Contact';
 		// message flags ?
 
-		if (FALSE($this->bridge->save_properties($contact, $mapiProperties))) {
-			return FALSE;
+		if ($this->bridge->save_properties($contact, $mapiProperties) === false) {
+			return false;
 		}
-		if (!ETAG_ENABLE || FALSE($p = mapi_getprops($contact)) || !isset($p[PR_ENTRYID]) || !isset($p[PR_LAST_MODIFICATION_TIME])) {
-			return TRUE;
+		if (!ETAG_ENABLE) {
+			return true;
+		}
+		if (($p = mapi_getprops($contact)) === false) {
+			return true;
+		}
+		if (!(isset($p[PR_ENTRYID]) && isset($p[PR_LAST_MODIFICATION_TIME]))) {
+			return true;
 		}
 		// Don't use the modification time from $mapiProperties, use the
 		// reported value; it may have been changed by the server!
@@ -266,17 +272,17 @@ class Zarafa_Folder
 	public function
 	update_contact ($uri, $data)
 	{
-		if (FALSE($entryid = $this->uri_to_entryid($uri))) {
+		if (($entryid = $this->uri_to_entryid($uri)) === false) {
 			$this->logger->fatal(__FUNCTION__.': could not find contact');
-			return FALSE;
+			return false;
 		}
-		if (FALSE($contact = mapi_msgstore_openentry($this->store->handle, $entryid))) {
+		if (($contact = mapi_msgstore_openentry($this->store->handle, $entryid)) === false) {
 			$this->logger->fatal(__FUNCTION__.': could not open contact object: '.get_mapi_error_name());
-			return FALSE;
+			return false;
 		}
-		if (FALSE($mapiProperties = $this->bridge->vcardToMapiProperties($data))) {
+		if (($mapiProperties = $this->bridge->vcardToMapiProperties($data)) === false) {
 			$this->logger->fatal(__FUNCTION__.': could not convert VCard properties to MAPI properties');
-			return FALSE;
+			return false;
 		}
 		if (SAVE_RAW_VCARD) {
 			$mapiProperties[PR_CARDDAV_RAW_DATA] = $data;
@@ -300,16 +306,22 @@ class Zarafa_Folder
 			}
 		//	$dump = print_r ($nullProperties, true);
 		//	$this->logger->trace("Removing properties\n$dump");
-			if (FALSE(mapi_deleteprops($contact, $nullProperties))) {
+			if (mapi_deleteprops($contact, $nullProperties) === false) {
 				$this->logger->fatal(__FUNCTION__.': could not remove properties in backend: '.get_mapi_error_name());
-				return FALSE;
+				return false;
 			}
 		}
-		if (FALSE($this->bridge->save_properties($contact, $mapiProperties))) {
-			return FALSE;
+		if ($this->bridge->save_properties($contact, $mapiProperties) === false) {
+			return false;
 		}
-		if (!ETAG_ENABLE || FALSE($p = mapi_getprops($contact)) || !isset($p[PR_ENTRYID]) || !isset($p[PR_LAST_MODIFICATION_TIME])) {
-			return TRUE;
+		if (!ETAG_ENABLE) {
+			return true;
+		}
+		if (($p = mapi_getprops($contact)) === false) {
+			return true;
+		}
+		if (!(isset($p[PR_ENTRYID]) && isset($p[PR_LAST_MODIFICATION_TIME]))) {
+			return true;
 		}
 		return $this->make_etag($p[PR_ENTRYID], $p[PR_LAST_MODIFICATION_TIME]);
 	}
@@ -323,15 +335,15 @@ class Zarafa_Folder
 	public function
 	delete_contact ($uri)
 	{
-		if (FALSE($entryid = $this->uri_to_entryid($uri))) {
+		if (($entryid = $this->uri_to_entryid($uri)) === false) {
 			$this->logger->fatal(__FUNCTION__.': could not find contact');
-			return FALSE;
+			return false;
 		}
-		if (FALSE(mapi_folder_deletemessages($this->handle, array($entryid)))) {
+		if (mapi_folder_deletemessages($this->handle, array($entryid)) === false) {
 			$this->logger->fatal(__FUNCTION__.': could not delete contact: '.get_mapi_error_name());
-			return FALSE;
+			return false;
 		}
-		return TRUE;
+		return true;
 	}
 
 	public function
@@ -343,7 +355,7 @@ class Zarafa_Folder
 	public function
 	get_props ()
 	{
-		return (FALSE($this->props))
+		return ($this->props === false)
 			? $this->props = mapi_getprops($this->handle)
 			: $this->props;
 	}
@@ -358,9 +370,9 @@ class Zarafa_Folder
 		// It seems logical to use the folder's modification time, but the problem is that that time
 		// doesn't change when a child is edited in-place. So unfortunately, to get clients to update
 		// properly after an edit, we must retrive all cards and check all their modification times:
-		if (FALSE($this->ctag)) {
-			if (FALSE($this->contacts) && FALSE($this->get_contacts())) {
-				return FALSE;
+		if ($this->ctag === false) {
+			if ($this->contacts === false && $this->get_contacts() === false) {
+				return false;
 			}
 			// Find latest modification time of child:
 			$this->ctag = 0;
@@ -373,7 +385,7 @@ class Zarafa_Folder
 				}
 			}
 			// Just to be sure, check against folder modification time too:
-			if (!FALSE($props = $this->get_props()) && isset($props[PR_LAST_MODIFICATION_TIME])) {
+			if (($props = $this->get_props()) !== false && isset($props[PR_LAST_MODIFICATION_TIME])) {
 				if ($props[PR_LAST_MODIFICATION_TIME] > $this->ctag) {
 					$this->ctag = $props[PR_LAST_MODIFICATION_TIME];
 				}
@@ -385,8 +397,8 @@ class Zarafa_Folder
 	private function
 	get_name ()
 	{
-		if (FALSE($this->name)) {
-			if (!FALSE($props = $this->get_props()) && isset($props[PR_DISPLAY_NAME])) {
+		if ($this->name === false) {
+			if (($props = $this->get_props()) !== false && isset($props[PR_DISPLAY_NAME])) {
 				$this->name = $props[PR_DISPLAY_NAME];
 			}
 		}
@@ -405,7 +417,7 @@ class Zarafa_Folder
 	private function
 	get_contacts_table ()
 	{
-		return (FALSE($this->contacts_table))
+		return ($this->contacts_table === false)
 			? $this->contacts_table = mapi_folder_getcontentstable($this->handle)
 			: $this->contacts_table;
 	}
@@ -413,18 +425,18 @@ class Zarafa_Folder
 	private function
 	get_rowcount ()
 	{
-		return (FALSE($this->rowcount))
-			? $this->rowcount = (FALSE($table = $this->get_contacts_table()) ? FALSE : mapi_table_getrowcount($table))
+		return ($this->rowcount === false)
+			? $this->rowcount = ((($table = $this->get_contacts_table()) === false) ? false : mapi_table_getrowcount($table))
 			: $this->rowcount;
 	}
 
 	private function
-	get_contacts ($specific_id = FALSE)
+	get_contacts ($specific_id = false)
 	{
 		// Do we happen to have the data in our cache?
-		if (!FALSE($this->contacts)) {
+		if ($this->contacts !== false) {
 			// If no specific ID requested, return everything:
-			if (FALSE($specific_id)) {
+			if ($specific_id === false) {
 				return $this->contacts;
 			}
 			// Else return the specific contact if we have it:
@@ -432,19 +444,19 @@ class Zarafa_Folder
 				return $this->contacts[$specific_id];
 			}
 		}
-		if (FALSE($table = $this->get_contacts_table())) {
-			return FALSE;
+		if (($table = $this->get_contacts_table()) === false) {
+			return false;
 		}
 		// If a specific ID was requested, enforce it with a table restriction:
-		$restrict = (FALSE($specific_id))
+		$restrict = ($specific_id === false)
 			? restrict_propstring(PR_MESSAGE_CLASS, 'IPM.Contact')
 			: restrict_and(restrict_propstring(PR_MESSAGE_CLASS, 'IPM.Contact'), restrict_propval(PR_ENTRYID, $specific_id, RELOP_EQ));
 
-		if (FALSE(mapi_table_restrict($table, $restrict))) {
-			return FALSE;
+		if (mapi_table_restrict($table, $restrict) === false) {
+			return false;
 		}
 		// Run the query, cache the result:
-		if (!FALSE($ret = mapi_table_queryallrows($table, array(PR_ENTRYID, PR_CARDDAV_URI, PR_LAST_MODIFICATION_TIME))) && FALSE($specific_id)) {
+		if (($ret = mapi_table_queryallrows($table, array(PR_ENTRYID, PR_CARDDAV_URI, PR_LAST_MODIFICATION_TIME))) !== false && $specific_id === false) {
 			$this->contacts = $ret;
 		}
 		tbl_restrict_none($table);
@@ -455,20 +467,20 @@ class Zarafa_Folder
 	get_uri_mapping ()
 	{
 		// Do we already have a cached URI mapping?
-		if (!FALSE($this->uri_mapping)) {
+		if ($this->uri_mapping !== false) {
 			return $this->uri_mapping;
 		}
 		// For all entries in this folder, generate a mapping from EntryID to URI:
 		// If $this->contacts is already set, then swell; else do a cheap lookup:
-		if (FALSE($contacts = $this->contacts)) {
-			if (FALSE($table = $this->get_contacts_table())) {
-				return FALSE;
+		if (($contacts = $this->contacts) === false) {
+			if (($table = $this->get_contacts_table()) === false) {
+				return false;
 			}
 			mapi_table_restrict($table, restrict_propstring(PR_MESSAGE_CLASS, 'IPM.Contact'));
 			$contacts = mapi_table_queryallrows($table, array(PR_ENTRYID, PR_CARDDAV_URI));
 			tbl_restrict_none($table);
-			if (FALSE($contacts)) {
-				return FALSE;
+			if ($contacts === false) {
+				return false;
 			}
 		}
 		$this->uri_mapping = array();
@@ -480,18 +492,18 @@ class Zarafa_Folder
 
 			$this->uri_mapping[$uri] = $entryid;
 		}
-		return TRUE;
+		return true;
 	}
 
 	private function
 	uri_to_entryid ($uri)
 	{
-		if (FALSE($this->uri_mapping) && FALSE($this->get_uri_mapping())) {
-			return FALSE;
+		if ($this->uri_mapping === false && $this->get_uri_mapping() === false) {
+			return false;
 		}
 		return (isset($this->uri_mapping[$uri]))
 			? $this->uri_mapping[$uri]
-			: FALSE;
+			: false;
 	}
 
 	private function
