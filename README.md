@@ -221,8 +221,8 @@ shed light on the problem.
 If you're still fairly certain that things should be working but they don't,
 try changing the error output statements in `server.php` to:
 
-    ini_set('display_errors', TRUE);
-    ini_set('html_errors', TRUE);
+    ini_set('display_errors', true);
+    ini_set('html_errors', true);
 
 PHP should now complain loudly when something goes wrong. Also, make sure
 `log4php` is installed and enable very verbose logging by setting the log level
@@ -299,7 +299,7 @@ and issues you find.
 
 Sabre-Zarafa 0.19 adds the `ETAG_ENABLE` config variable to `config.inc.php`.
 This variable controls the optional generation of ETags. If Sabre-Zarafa
-notices that the variable is not set, it will default to TRUE. So users with an
+notices that the variable is not set, it will default to true. So users with an
 existing config file don't absolutely need to update their config, though it is
 advised.
 

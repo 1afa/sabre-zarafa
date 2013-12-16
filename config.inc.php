@@ -153,7 +153,7 @@
 	// become confused when, for a given ETag, we don't return
 	// byte-for-byte the exact body that the client sent. So support for
 	// this feature is kept optional:
-	define('ETAG_ENABLE', TRUE);
+	define('ETAG_ENABLE', true);
 
 	// Change the name of the folder as returned by Sabre-Zarafa.
 	// Format options available:

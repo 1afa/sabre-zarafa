@@ -35,7 +35,7 @@
 	$logger = new Zarafa_Logger('server');
 
 	error_reporting(E_ALL);
-	ini_set('display_errors', FALSE);
+	ini_set('display_errors', false);
 	ini_set("html_errors", false);
 
 	// Include Zarafa SabreDav Bridge
@@ -43,7 +43,7 @@
 	
 	// Disable MAPI exceptions;
 	// we handle errors by checking a function's return status (at least for now):
-	mapi_enable_exceptions(FALSE);
+	mapi_enable_exceptions(false);
 
 	// SabreDAV
 	include('lib/SabreDAV/vendor/autoload.php');

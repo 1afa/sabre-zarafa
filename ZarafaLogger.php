@@ -34,7 +34,7 @@
 
 class Zarafa_Logger
 {
-	private $logger = FALSE;
+	private $logger = false;
 
 	public function __construct ($classname)
 	{

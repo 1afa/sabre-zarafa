@@ -43,8 +43,8 @@ class VCardProducer implements IVCardProducer
 	protected $bridge;
 	protected $version;
 	protected $logger;
-	protected $vcard = FALSE;
-	protected $extendedProperties = FALSE;
+	protected $vcard = false;
+	protected $extendedProperties = false;
 	
 	function __construct ($bridge, $version)
 	{
@@ -75,7 +75,7 @@ class VCardProducer implements IVCardProducer
 
 	public function serialize ()
 	{
-		return (FALSE($this->vcard)) ? FALSE : $this->vcard->serialize();
+		return ($this->vcard === false) ? false : $this->vcard->serialize();
 	}
 
 	/**
@@ -88,17 +88,17 @@ class VCardProducer implements IVCardProducer
 	{
 		$this->logger->debug('Generating contact vCard from properties');
 
-		if (FALSE($this->vcard)) {
+		if ($this->vcard === false) {
 			$this->logger->fatal('failed to create vCard object');
-			return FALSE;
+			return false;
 		}
-		if (FALSE($p = $this->extendedProperties = $this->bridge->getExtendedProperties())) {
+		if (($p = $this->extendedProperties = $this->bridge->getExtendedProperties()) === false) {
 			$this->logger->fatal('cannot get extended properties');
-			return FALSE;
+			return false;
 		}
-		if (FALSE($contactProperties = mapi_getprops($contact))) {
+		if (($contactProperties = mapi_getprops($contact)) === false) {
 			$this->logger->fatal('cannot get properties for contact: '.get_mapi_error_name());
-			return FALSE;
+			return false;
 		}
 		// $contactTableProps contains extra properties from the table,
 		// such as PR_ENTRYID, PR_LAST_MODIFICATION_TIME and PR_CARDDAV_URI.
@@ -109,7 +109,7 @@ class VCardProducer implements IVCardProducer
 				$contactProperties[$key] = $val;
 			}
 		}
-		$this->logger->trace("Contact properties: \n" . print_r($contactProperties, TRUE));
+		$this->logger->trace("Contact properties: \n" . print_r($contactProperties, true));
 		
 		// Version check
 		switch ($this->version) {
@@ -118,7 +118,7 @@ class VCardProducer implements IVCardProducer
 			case 4: $this->vcard->VERSION = '4.0'; break;
 			default:
 				$this->logger->fatal("Unrecognised VCard version: " . $this->version);
-				return FALSE;
+				return false;
 		}
 		// Private contact ?
 		if (isset($contactProperties[$p['private']]) && $contactProperties[$p['private']]) {
@@ -279,9 +279,9 @@ class VCardProducer implements IVCardProducer
 			          ? $contactProperties[$p["email_address_display_name_$i"]]
 			          : (isset($contactProperties[$p['display_name']])
 			                 ? $contactProperties[$p['display_name']]
-			                 : FALSE);
+			                 : false);
 
-			if (FALSE($dn)) {
+			if ($dn === false) {
 				$this->vcard->add('EMAIL', $contactProperties[$p["email_address_$i"]], array('pref' => "$i"));
 			}
 			else {
@@ -303,17 +303,19 @@ class VCardProducer implements IVCardProducer
 		$this->setVCard('NOTE', $contactProperties, $p['notes']);
 
 		$this->vcard->PRODID = VCARD_PRODUCT_ID;
-		return TRUE;
+		return true;
 	}
 
 	private function
 	get_contact_picture ($contact, $props)
 	{
-		if (!isset($props[PR_HASATTACH]) || !$props[PR_HASATTACH] || FALSE($this->vcard)) {
+		if (!isset($props[PR_HASATTACH]) || !$props[PR_HASATTACH] || $this->vcard === false) {
 			return;
 		}
-		if (FALSE($attachment_table = mapi_message_getattachmenttable($contact))
-		 || FALSE($attachments = mapi_table_queryallrows($attachment_table, array
+		if (($attachment_table = mapi_message_getattachmenttable($contact)) === false) {
+			return;
+		}
+		if (($attachments = mapi_table_queryallrows($attachment_table, array
 			( PR_ATTACH_NUM
 			, PR_ATTACH_SIZE
 			, PR_ATTACH_LONG_FILENAME
@@ -325,22 +327,24 @@ class VCardProducer implements IVCardProducer
 			, PR_ATTACH_MIME_TAG
 			, PR_ATTACHMENT_CONTACTPHOTO
 			, PR_EC_WA_ATTACHMENT_HIDDEN_OVERRIDE
-			)))) {
+			))) === false) {
 			return;
 		}
-		$photo = FALSE;
+		$photo = false;
 		foreach ($attachments as $attachment) {
 			if (!isset($attachment[PR_ATTACHMENT_CONTACTPHOTO]) || !$attachment[PR_ATTACHMENT_CONTACTPHOTO]) {
 				continue;
 			}
-			if (FALSE($handle = mapi_message_openattach($contact, $attachment[PR_ATTACH_NUM]))
-			 || FALSE($photo = mapi_attach_openbin($handle, PR_ATTACH_DATA_BIN))) {
+			if (($handle = mapi_message_openattach($contact, $attachment[PR_ATTACH_NUM])) === false) {
+				continue;
+			}
+			if (($photo = mapi_attach_openbin($handle, PR_ATTACH_DATA_BIN)) === false) {
 				continue;
 			}
 			$mime = (isset($attachment[PR_ATTACH_MIME_TAG])) ? $attachment[PR_ATTACH_MIME_TAG] : 'image/jpeg';
 			break;
 		}
-		if (FALSE($photo)) {
+		if ($photo === false) {
 			return;
 		}
 		// SogoConnector does not like image/jpeg
@@ -368,9 +372,9 @@ class VCardProducer implements IVCardProducer
 	{
 		$this->logger->trace("setVCardAddress - $addressType");
 
-		if (FALSE($this->vcard)) {
+		if ($this->vcard === false) {
 			$this->logger->fatal('failed to create vCard object');
-			return FALSE;
+			return false;
 		}
 		// Shorthand:
 		$p = $this->extendedProperties;
@@ -404,10 +408,10 @@ class VCardProducer implements IVCardProducer
 		$elems = array();
 		foreach (explode(';', $contactProperties[$p]) as $elem)
 		{
-			$type = FALSE;
-			$name = FALSE;
+			$type = false;
+			$name = false;
 
-			if (FALSE($pos = strpos($elem, ':'))) {
+			if (($pos = strpos($elem, ':')) === false) {
 				$name = $elem;
 			}
 			else if ($pos === 0 && strlen($elem) > 1) {
@@ -425,9 +429,9 @@ class VCardProducer implements IVCardProducer
 			}
 			// If no type tag, only add if same name with type tag
 			// not added (theirs is more specific):
-			if (FALSE($type)) {
+			if ($type === false) {
 				foreach ($elems as $e) {
-					if (!FALSE($e[0]) && $e[1] === $name) {
+					if ($e[0] !== false && $e[1] === $name) {
 						continue 2;
 					}
 				}
@@ -436,7 +440,7 @@ class VCardProducer implements IVCardProducer
 			// name but no type (ours is more specific):
 			else {
 				for ($i = count($elems) - 1; $i >= 0; $i--) {
-					if (FALSE($elems[$i][0]) && $elems[$i][1] === $name) {
+					if ($elems[$i][0] === false && $elems[$i][1] === $name) {
 						unset($elems[$i]);
 					}
 				}

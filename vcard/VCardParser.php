@@ -41,9 +41,9 @@ class VCardParser implements IVCardParser
 {
 	protected $bridge;
 	protected $logger;
-	protected $vcard = FALSE;
+	protected $vcard = false;
 	protected $mapi = array();
-	protected $extendedProperties = FALSE;
+	protected $extendedProperties = false;
 
 	function __construct ($bridge)
 	{
@@ -62,16 +62,16 @@ class VCardParser implements IVCardParser
 
 		$this->vcard = Sabre\VObject\Reader::read($vcardData);
 
-		if (FALSE($this->vcard)) {
+		if ($this->vcard === false) {
 			$this->logger->fatal('failed to create vCard object');
-			return FALSE;
+			return false;
 		}
-		$this->logger->trace("VObject: \n" . print_r($this->vcard, TRUE));
+		$this->logger->trace("VObject: \n" . print_r($this->vcard, true));
 		
 		// Common VCard properties parsing
-		if (FALSE($this->extendedProperties = $this->bridge->getExtendedProperties())) {
+		if (($this->extendedProperties = $this->bridge->getExtendedProperties()) === false) {
 			$this->logger->fatal('failed to load extended properties');
-			return FALSE;
+			return false;
 		}
 		// Use shorthand notation for brevity's sake:
 		$p = $this->extendedProperties;
@@ -192,14 +192,14 @@ class VCardParser implements IVCardParser
 		{
 			// If a property occurs more than once, we take the *first*
 			// mention to be the most important:
-			$already_set = FALSE;
+			$already_set = false;
 			foreach ($this->vcard->select($prop_vcard) as $prop) {
 				if ($already_set) {
 					$this->logger->info(sprintf('Discarding %s with value "%s"; MAPI can store just one field.', $prop_vcard, $prop->getValue()));
 					continue;
 				}
 				$this->mapi[$p[$prop_mapi]] = $prop->getValue();
-				$already_set = TRUE;
+				$already_set = true;
 			}
 		}
 		if (isset($this->vcard->ORG)) {
@@ -276,7 +276,7 @@ class VCardParser implements IVCardParser
 	private function
 	sortAsConvert ()
 	{
-		$fileas = FALSE;
+		$fileas = false;
 		$p = $this->extendedProperties;
 
 		$map = array
@@ -293,11 +293,11 @@ class VCardParser implements IVCardParser
 			}
 		}
 		// SORT-AS can also be given as a parameter to N:
-		if (FALSE($fileas) && isset($this->vcard->N) && $this->vcard->N->offsetExists('SORT-AS')) {
+		if ($fileas === false && isset($this->vcard->N) && $this->vcard->N->offsetExists('SORT-AS')) {
 			$fileas = $this->vcard->N->offsetGet('SORT-AS')->getValue();
 		}
 		// If not yet found, or override specified, derive:
-		if (FALSE($fileas) || SAVE_AS_OVERRIDE_SORTAS) {
+		if ($fileas === false || SAVE_AS_OVERRIDE_SORTAS) {
 			$this->logger->trace('Empty sort-as or SAVE_AS_OVERRIDE_SORTAS set');
 
 			$fileas = SAVE_AS_PATTERN;
@@ -349,14 +349,14 @@ class VCardParser implements IVCardParser
 				// OS X Contacts.app sends contacts back in the following form:
 				//   ADR;type=HOME;type=pref:;;Main Street;Littleville;Arizona;AAA999;Denmark
 				// Nice, multiple 'type' tags. Get them all:
-				$type = FALSE;
+				$type = false;
 				foreach ($types as $type => $dummy) {
 					if (isset($map[$type])) {
 						break;
 					}
-					$type = FALSE;
+					$type = false;
 				}
-				if (FALSE($type)) {
+				if ($type === false) {
 					$this->logger->info(sprintf('Ignoring address with unknown type(s) "%s"', $types->getValue()));
 					continue;
 				}
@@ -369,7 +369,7 @@ class VCardParser implements IVCardParser
 				$pCountry = "{$map[$type]}_address_country";
 			}
 			$parts = $addr->getParts();
-			$this->logger->trace("Address components:\n".print_r($parts, TRUE));
+			$this->logger->trace("Address components:\n".print_r($parts, true));
 
 			$this->mapi[$p[$pStreet]]  = isset($parts[2]) ? $parts[2] : '';
 			$this->mapi[$p[$pCity]]    = isset($parts[3]) ? $parts[3] : '';
@@ -426,7 +426,7 @@ class VCardParser implements IVCardParser
 				( 'address' => $address
 				, 'display_name' => $displayName
 				, 'pref' => $pref
-				, 'type' => ($type = $email['TYPE']) ? strtoupper($type->getValue()) : FALSE
+				, 'type' => ($type = $email['TYPE']) ? strtoupper($type->getValue()) : false
 				, 'order' => $numMail
 				);
 		}
@@ -445,7 +445,7 @@ class VCardParser implements IVCardParser
 				continue;
 			}
 			// Create one-off entry:
-			if (FALSE($oneoff = mapi_createoneoff($emails[$i]['display_name'], 'SMTP', $emails[$i]['address']))) {
+			if (($oneoff = mapi_createoneoff($emails[$i]['display_name'], 'SMTP', $emails[$i]['address'])) === false) {
 				$this->logger->warn(sprintf('Failed to create one-off for "%s", reason: %s', $emails[$i]['address'], get_mapi_error_name()));
 				continue;
 			}
@@ -488,7 +488,7 @@ class VCardParser implements IVCardParser
 		$n_work_voice = 0;
 		foreach ($this->vcard->select('TEL') as $tel)
 		{
-			$pk = FALSE;
+			$pk = false;
 			$types = $this->getTypes($tel);
 
 			if (isset($types['HOME'])) {
@@ -538,7 +538,7 @@ class VCardParser implements IVCardParser
 					? 'primary_fax_number'
 					: 'other_telephone_number';
 			}
-			if (FALSE($pk)) {
+			if ($pk === false) {
 				// No match yet? Try to match against map:
 				// Note: there is also 'cellular_telephone_number',
 				// but it's an alias for 'mobile_telephone_number'.
@@ -569,7 +569,7 @@ class VCardParser implements IVCardParser
 				}
 			}
 			// Still no match found?
-			if (FALSE($pk)) {
+			if ($pk === false) {
 				// If no type info set (so just 'TEL:'), use default phone property:
 				if (count($types) == 0) {
 					$pk = DEFAULT_TELEPHONE_NUMBER_PROPERTY;
@@ -590,14 +590,14 @@ class VCardParser implements IVCardParser
 		// Convert to JPEG if not already in that format:
 		if ($type != 'jpeg' && $type != 'image/jpeg' && $type != 'image/jpg')
 		{
-			if (FALSE(extension_loaded('gd'))) {
+			if (extension_loaded('gd') === false) {
 				$this->logger->warn("Cannot convert image of type \"$type\" to jpeg: GD extension not installed");
-				return FALSE;
+				return false;
 			}
 			$this->logger->trace('Converting to jpeg using GD');
-			if (FALSE($img = imagecreatefromstring($content))) {
+			if (($img = imagecreatefromstring($content)) === false) {
 				$this->logger->warn('Corrupted contact picture or unknown format');
-				return FALSE;
+				return false;
 			}
 			$this->logger->trace('Image loaded by GD');
 			// Capture output
@@ -609,10 +609,10 @@ class VCardParser implements IVCardParser
 		}
 		$this->logger->info('Contact has picture!');
 		$this->mapi['ContactPicture'] = $content;
-		$this->mapi[PR_HASATTACH] = TRUE;
-		$this->mapi[$this->extendedProperties['has_picture']] = TRUE;
+		$this->mapi[PR_HASATTACH] = true;
+		$this->mapi[$this->extendedProperties['has_picture']] = true;
 
-		return TRUE;
+		return true;
 	}
 
 	private function
@@ -627,9 +627,9 @@ class VCardParser implements IVCardParser
 			$pk = (isset($types['ASSISTANT'])) ? 'assistant'
 			   : ((isset($types['MANAGER'])) ? 'manager_name'
 			   : ((isset($types['SPOUSE'])) ? 'spouse_name'
-			   : FALSE));
+			   : false));
 
-			if (FALSE($pk)) {
+			if ($pk === false) {
 				$this->logger->info(sprintf('Ignoring RELATED property with unknown TYPE "%s"', implode('/', array_keys($types))));
 				continue;
 			}
@@ -671,10 +671,10 @@ class VCardParser implements IVCardParser
 			foreach ($this->vcard->select($propname) as $prop)
 			{
 				$elem = $prop->getValue();
-				$type = FALSE;
-				$name = FALSE;
+				$type = false;
+				$name = false;
 
-				if (FALSE($pos = strpos($elem, ':'))) {
+				if (($pos = strpos($elem, ':')) === false) {
 					$name = $elem;
 				}
 				else if ($pos === 0 && strlen($elem) > 1) {
@@ -692,9 +692,9 @@ class VCardParser implements IVCardParser
 				}
 				// If no type tag, only add if same name with type tag
 				// not added (theirs is more specific):
-				if (FALSE($type)) {
+				if ($type === false) {
 					foreach ($elems as $e) {
-						if (!FALSE($e[0]) && $e[1] === $name) {
+						if ($e[0] !== false && $e[1] === $name) {
 							continue 2;
 						}
 					}
@@ -703,7 +703,7 @@ class VCardParser implements IVCardParser
 				// name but no type (ours is more specific):
 				else {
 					for ($i = count($elems) - 1; $i >= 0; $i--) {
-						if (FALSE($elems[$i][0]) && $elems[$i][1] === $name) {
+						if ($elems[$i][0] === false && $elems[$i][1] === $name) {
 							unset($elems[$i]);
 						}
 					}
