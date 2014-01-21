@@ -7,10 +7,6 @@
     },
     "license": "agpl",
     "authors": [
-        {
-            "name": "Evert Pot",
-            "email": "evert@rooftopsolutions.nl"
-        }
     ],
     "minimum-stability": "stable"
 }
