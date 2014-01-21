@@ -44,58 +44,18 @@ This installs as any [SabreDAV](http://code.google.com/p/sabredav) server.
 Unpack the source into a directory. This readme will assume that
 `/var/www/htdocs/sabre-zarafa` is the root directory of the install.
 
-### Download and install SabreDAV
+### Download and install Composer
 
-As of version 0.18, Sabre-Zarafa is written against the SabreDAV 1.8 API, and
-[SabreDAV](http://code.google.com/p/sabredav) no longer comes included. Since
-the directory layout changed in SabreDAV 1.8, it no longer makes sense to
-bundle parts of it, and bundling the whole package seems excessive.
+Composer is required to install Sabre-Zarafa's dependencies.
+Installation instructions can be found on the
+[Composer website](https://getcomposer.org/doc/00-intro.md#installation-nix).
 
-You have to download a SabreDAV release from the 1.8 series yourself and unzip
-it in the `/lib` directory. As of Sabre-Zarafa 0.21, this must be at least
-SabreDAV 1.8.6 or higher, because lower versions in the 1.8 branch don't work
-correctly with the Sabre-VObject 3.x library.
+After installation is done, run the following two commands:
 
-    # cd /var/www/htdocs/sabre-zarafa/lib
-    # unzip /path/to/SabreDAV-1.8.6.zip
+    # cd /var/ww/htdocs/sabre-zarafa
+    # composer install
 
-### Download and install Sabre-VObject 3.x
-
-Starting with version 0.20, Sabre-Zarafa uses the Sabre-VObject 3.x library for
-parsing and creating vCards. Updating to this brand new version is necessary
-because the Sabre-VObject 2.x library shipped with SabreDAV 1.8 does not
-properly escape multiline property values. This caused multiline notes to come
-out wrong, and the sync to fail with such clients as OS X Contacts.app.
-
-Version 3.x of Sabre-VObject is not shipped in the SabreDAV package at the time
-of writing, because it's still under development. You must
-[download](https://github.com/fruux/sabre-vobject/tags) a release tarball
-and install it yourself. Sabre-Zarafa 0.21 is written and tested against
-Sabre-VObject 3.0.0 (the production release, not the alpha or beta versions!).
-
-Download the latest Sabre-VObject 3.x tarball, delete the existing 2.x library
-hidden deep within SabreDAV, and untar the new source in its place:
-
-    # cd /var/www/htdocs/sabre-zarafa/lib/SabreDAV/vendor/sabre/
-    # rm -r vobject
-    # tar xvzf /path/to/3.0.0.tar.gz
-    # mv sabre-vobject-3.0.0 vobject
-
-### Download and install Log4php
-
-Sabre-Zarafa logs using [Apache log4php](http://logging.apache.org/log4php). As
-of version 0.19, installing this package has become optional, to make it easier
-to get started with Sabre-Zarafa. If you don't install Log4php, log messages
-will be discarded. It is recommended to install the package and turn on at
-least some logging until you are sure that everything is working properly.
-[Download](http://logging.apache.org/log4php/download.html) the Log4php source
-and move the files in Log4php's `/src/main/php/` directory to Sabre-Zarafa's
-`/lib/log4php` directory:
-
-    # tar xvzf apache-log4php-2.3.0-src.tar.gz
-    # mv apache-log4php-2.3.0/src/main/php/ /var/www/htdocs/sabre-zarafa/lib/log4php
-
-See below on how to configure `log4php.xml`, the logger's config file.
+### Configure logging
 
 The webserver needs to write to the `data` directory, since it is used by
 SabreDAV to store DAV locks. (NB, the author is not convinced that CardDAV
