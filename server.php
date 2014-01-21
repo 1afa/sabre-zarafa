@@ -25,10 +25,10 @@
  */
 
  	// Load configuration file
-	define('BASE_PATH', dirname(__FILE__) . "/");
+	define('BASE_PATH', __DIR__ . '/');
 
 	// Change include path
-	set_include_path(get_include_path() . PATH_SEPARATOR . "/usr/share/php/" . PATH_SEPARATOR . BASE_PATH . "lib/");
+	set_include_path(get_include_path() . PATH_SEPARATOR . "/usr/share/php/");
 
 	// Logging and error handling
 	require_once 'ZarafaLogger.php';
@@ -46,7 +46,7 @@
 	mapi_enable_exceptions(false);
 
 	// SabreDAV
-	include('lib/SabreDAV/vendor/autoload.php');
+	include __DIR__ . '/vendor/autoload.php';
 
 	// Custom classes to tie together SabreDav and Zarafa
 	include "ZarafaAuthBackend.php";			// Authentification
