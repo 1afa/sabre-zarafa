@@ -24,14 +24,6 @@
  *
  */
 
-// A shim class for logging.
-// Try to get a log4php facility, but if that fails, ignore log messages.
-// This makes the installation of log4php optional.
-//
-// This include statement will fail silently and without warning if the file
-// is not available, which is what we want in this case:
-@include_once 'log4php/Logger.php';
-
 class Zarafa_Logger
 {
 	private $logger = false;
