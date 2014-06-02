@@ -417,17 +417,22 @@ class Zarafa_Folder
 	private function
 	get_contacts_table ()
 	{
-		return ($this->contacts_table === false)
-			? $this->contacts_table = mapi_folder_getcontentstable($this->handle)
-			: $this->contacts_table;
+		if ($this->contacts_table === false) {
+			$this->contacts_table = mapi_folder_getcontentstable($this->handle);
+		}
+		return $this->contacts_table;
 	}
 
 	private function
 	get_rowcount ()
 	{
-		return ($this->rowcount === false)
-			? $this->rowcount = ((($table = $this->get_contacts_table()) === false) ? false : mapi_table_getrowcount($table))
-			: $this->rowcount;
+		if ($this->rowcount === false) {
+			if (($table = $this->get_contacts_table()) === false) {
+				return false;
+			}
+			$this->rowcount = mapi_table_getrowcount($table);
+		}
+		return $this->rowcount;
 	}
 
 	private function
