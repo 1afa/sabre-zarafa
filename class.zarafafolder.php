@@ -162,44 +162,40 @@ class Zarafa_Folder
 	}
 
 	public function
-	update_folder (array $mutations)
+	update_folder (\Sabre\DAV\PropPatch $propPatch)
 	{
-	//	// Debug information
-	//	$dump = print_r($mutations, true);
-	//	$this->logger->debug("Mutations:\n$dump");
+		// Debug information
+		$dump = print_r($propPatch->getMutations(), true);
+		$this->logger->trace("Mutations:\n$dump");
 
-		// What we know to change
-		$authorizedMutations = array ('{DAV:}displayname', '{' . Sabre\CardDAV\Plugin::NS_CARDDAV . '}addressbook-description');
+		// These are the properties that our handler can update:
+		$handled = array
+			( '{DAV:}displayname'
+			, '{' . Sabre\CardDAV\Plugin::NS_CARDDAV . '}addressbook-description'
+			) ;
 
-		// Check the mutations
-		foreach ($mutations as $m => $value) {
-			if (!in_array($m, $authorizedMutations)) {
-				$this->logger->warn("Unknown mutation: $m => $value");
-				return false;
+		// Register the handler:
+		$propPatch->handle($handled, $this->update_handler);
+	}
+
+	public function
+	update_handler ($mutations)
+	{
+		$props = array();
+		foreach ($mutations as $key => $value) {
+			if ($key === '{DAV:}displayname') {
+				if ($value !== '') {
+					$props[PR_DISPLAY_NAME] = $value;
+				}
+			}
+			elseif ($key === '{' . Sabre\CardDAV\Plugin::NS_CARDDAV . '}addressbook-description') {
+				$props[PR_COMMENT] = $value;
 			}
 		}
-		// Do the mutations
-	//	$this->logger->trace("applying mutations");
-		$mapiProperties = array();
-
-		// Display Name
-		if (isset($mutations['{DAV:}displayname'])) {
-			$displayName = $mutations['{DAV:}displayname'];
-			if ($displayName == '') {
-				return false;
-			}
-			$mapiProperties[PR_DISPLAY_NAME] = $displayName;
-		}
-		// Description
-		if (isset($mutations['{' . Sabre\CardDAV\Plugin::NS_CARDDAV . '}addressbook-description'])) {
-			$description = $mutations['{' . Sabre\CardDAV\Plugin::NS_CARDDAV . '}addressbook-description'];
-			$mapiProperties[805568542] = $description;
-		}
-		if (count($mapiProperties) == 0) {
-			$this->logger->info(__FUNCTION__.': no changes detected for folder');
+		if (count($props) === 0) {
 			return false;
 		}
-		return $this->bridge->save_properties($this->handle, $mapiProperties);
+		return $this->bridge->save_properties($this->handle, $props);
 	}
 
 	public function

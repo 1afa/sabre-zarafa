@@ -80,21 +80,21 @@ class Zarafa_CardDav_Backend extends Sabre\CardDAV\Backend\AbstractBackend
 		return $folders;
 	} 
 
-	/**
-	 * Updates an addressbook's properties
+	/*
+	 * Updates properties for an address book.
 	 *
-	 * See Sabre_DAV_IProperties for a description of the mutations array, as
-	 * well as the return value.
+	 * The list of mutations is stored in a Sabre\DAV\PropPatch object.
+	 * To do the actual updates, you must tell this object which properties
+	 * you're going to process with the handle() method.
 	 *
-	 * @param mixed $addressBookId
-	 * @param array $mutations
-	 * @see Sabre_DAV_IProperties::updateProperties
-	 * @return bool|array
+	 * @param string $addressBookId
+	 * @param \Sabre\DAV\PropPatch $propPatch
+	 * @return void
 	 */
 	public function
-	updateAddressBook ($addressBookId, array $mutations)
+	updateAddressBook ($addressBookId, \Sabre\DAV\PropPatch $propPatch)
 	{
-		$this->logger->trace(__FUNCTION__.'('.bin2hex($addressBookId).', (mutations))');
+		$this->logger->trace(__FUNCTION__.'('.bin2hex($addressBookId).', (propPatch))');
 
 		if (READ_ONLY) {
 			return $this->exc_forbidden(__FUNCTION__.': cannot update address book: permission denied by config (read-only)');
@@ -102,7 +102,7 @@ class Zarafa_CardDav_Backend extends Sabre\CardDAV\Backend\AbstractBackend
 		if (($folder = $this->bridge->get_folder($addressBookId)) === false) {
 			return $this->exc_notfound(__FUNCTION__.': cannot find folder');
 		}
-		if ($folder->update_folder($mutations) === false) {
+		if ($folder->update_folder($propPatch) === false) {
 			$this->logger->fatal(__FUNCTION__.': cannot apply mutations');
 			return false;
 		}

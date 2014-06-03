@@ -1,3 +1,4 @@
+- SabreDAV 2.0: update Proppatch handler to the SabreDAV way of doing things;
 - Update composer.json to pull in SabreDAV 2.0; also add author names.
 - Change FALSE() functions to comparisons with the 'false' constant, to make
   the code more standard.

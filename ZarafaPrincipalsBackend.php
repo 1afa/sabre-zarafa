@@ -150,10 +150,11 @@ class Zarafa_Principals_Backend implements Sabre\DAVACL\PrincipalBackend\Backend
 	 * @return false
 	 */
 	public function
-	updatePrincipal ($path, $mutations)
+	updatePrincipal ($path, \Sabre\DAV\PropPatch $propPatch)
 	{
-		// Not implemented
-		$this->logger->trace(__FUNCTION__."($path, (mutations))");
+		// Not implemented:
+		$dump = print_r($propPatch->getMutations(), true);
+		$this->logger->trace(__FUNCTION__."($path, ($dump))");
 		return false;
 	}
 
