@@ -96,7 +96,7 @@
 	
 	// Start server
 	$logger->trace("Server exec");
-	$logger->info("SabreDAV version " . Sabre\DAV\Version::VERSION . '-' . Sabre\DAV\Version::STABILITY);
+	$logger->info("SabreDAV version " . Sabre\DAV\Version::VERSION);
 	$logger->info("Producer: " . VCARD_PRODUCT_ID );
 	$logger->info("Revision: " . (SABRE_ZARAFA_REV + 1) . ' - ' . SABRE_ZARAFA_DATE);
 	$server->exec();
