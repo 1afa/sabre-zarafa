@@ -271,7 +271,9 @@ Other improvements in version 0.19 are all "under the hood" and should require
 no special action on the administrator's part.
 
 
-## PHP 5.1 and 5.2 version
+## PHP < 5.4
+
+As of version 0.22, Sabre-Zarafa requires SabreDAV 2.0, which requires PHP 5.4.
 
 As of version 0.18, Sabre-Zarafa requires SabreDAV 1.8, which in turn requires
 PHP 5.3.
