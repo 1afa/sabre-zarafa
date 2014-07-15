@@ -27,9 +27,6 @@
 
 namespace SabreZarafa;
 
-require_once 'ZarafaLogger.php';
-require_once 'class.zarafafolder.php';
-
 use \Sabre\CardDAV;
 
 class Store

@@ -27,9 +27,6 @@
 
 namespace SabreZarafa;
 
-require_once 'common.inc.php';
-require_once 'ZarafaLogger.php';
-
 // PHP-MAPI
 require_once("mapi/mapi.util.php");
 require_once("mapi/mapicode.php");

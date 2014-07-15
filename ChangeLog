@@ -1,3 +1,4 @@
+- Move files into a PSR-0 dir structure, load with Composer;
 - VCardParser/VCardProducer: rename to Parser/Producer;
 - Rename Zarafa_Store class to Store;
 - Rename Zarafa_Folder class to Folder;

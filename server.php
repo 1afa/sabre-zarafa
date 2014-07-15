@@ -32,28 +32,19 @@
 	// Change include path
 	set_include_path(get_include_path() . PATH_SEPARATOR . "/usr/share/php/");
 
+	// Composer autoloader:
+	include __DIR__ . '/vendor/autoload.php';
+
 	// Logging and error handling
-	require_once 'ZarafaLogger.php';
 	$logger = new Logger('server');
 
 	error_reporting(E_ALL);
 	ini_set('display_errors', false);
 	ini_set("html_errors", false);
 
-	// Include Zarafa SabreDav Bridge
-	include ("./ZarafaBridge.php");
-	
 	// Disable MAPI exceptions;
 	// we handle errors by checking a function's return status (at least for now):
 	mapi_enable_exceptions(false);
-
-	// SabreDAV
-	include __DIR__ . '/vendor/autoload.php';
-
-	// Custom classes to tie together SabreDav and Zarafa
-	include "ZarafaAuthBackend.php";			// Authentification
-	include "ZarafaCardDavBackend.php";			// CardDav
-	include "ZarafaPrincipalsBackend.php";		// Principals
 
 	function checkMapiError($msg) {
 		global $logger;

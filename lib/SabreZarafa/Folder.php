@@ -27,8 +27,6 @@
 
 namespace SabreZarafa;
 
-require_once 'ZarafaLogger.php';
-
 use \Sabre\DAV;
 use \Sabre\CardDAV;
 

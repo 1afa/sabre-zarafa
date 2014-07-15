@@ -27,9 +27,6 @@
 
 namespace SabreZarafa\VCard;
 
-require_once 'ZarafaLogger.php';
-
-require_once "vcard/IVCardProducer.php";
 require_once "config.inc.php";
 	
 // PHP-MAPI

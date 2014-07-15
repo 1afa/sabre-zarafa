@@ -39,17 +39,6 @@ namespace SabreZarafa;
 	require_once("mapi/mapitags.php");
 	require_once("mapi/mapiguid.php");
 	
-	// VObject to mapi properties
-	require_once "vcard/IVCardParser.php";
-	include_once "vcard/VCardParser.php";
-	require_once "vcard/IVCardProducer.php";
-	include_once "vcard/VCardProducer.php";
-
-	require_once 'ZarafaLogger.php';
-	require_once 'Restrict.php';
-	require_once 'class.zarafastore.php';
-	require_once 'ZarafaWebaccessSettings.php';
-
 use SabreZarafa\VCard;
 
 /**

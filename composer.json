@@ -8,7 +8,7 @@
     "authors": [
         {
             "name": "Alfred Klomp",
-            "email": "alfred@bokxing-it.nl",
+            "email": "alfred@1afa.com",
             "role": "Developer"
         },
         {
@@ -16,5 +16,10 @@
             "role": "Developer"
         }
     ],
+    "autoload" : {
+        "psr-0" : {
+            "SabreZarafa" : "lib/"
+        }
+    },
     "minimum-stability": "stable"
 }

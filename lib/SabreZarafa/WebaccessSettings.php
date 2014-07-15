@@ -26,9 +26,6 @@
 
 namespace SabreZarafa;
 
-require_once 'common.inc.php';
-require_once 'ZarafaLogger.php';
-
 class WebaccessSettings
 {
 	private $logger = false;
