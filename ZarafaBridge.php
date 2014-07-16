@@ -78,7 +78,7 @@ class Zarafa_Bridge {
 	 */
 	public function __construct() {
 		// Stores a reference to Zarafa Auth Backend so as to get the session
-		$this->logger = new Zarafa_Logger(__CLASS__);
+		$this->logger = new Logger(__CLASS__);
 	}
 	
 	/**

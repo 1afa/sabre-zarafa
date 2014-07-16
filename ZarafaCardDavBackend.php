@@ -46,7 +46,7 @@ class Zarafa_CardDav_Backend extends \Sabre\CardDAV\Backend\AbstractBackend
 	{
 		// Stores a reference to Zarafa Auth Backend so as to get the session
 		$this->bridge = $zarafaBridge;
-		$this->logger = new Zarafa_Logger(__CLASS__);
+		$this->logger = new Logger(__CLASS__);
 	}
 
     /**

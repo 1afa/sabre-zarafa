@@ -34,7 +34,7 @@
 
 	// Logging and error handling
 	require_once 'ZarafaLogger.php';
-	$logger = new Zarafa_Logger('server');
+	$logger = new Logger('server');
 
 	error_reporting(E_ALL);
 	ini_set('display_errors', false);

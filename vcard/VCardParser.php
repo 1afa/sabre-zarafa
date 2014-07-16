@@ -52,7 +52,7 @@ class VCardParser implements IVCardParser
 	function __construct ($bridge)
 	{
 		$this->bridge = $bridge;
-		$this->logger = new \SabreZarafa\Zarafa_Logger(__CLASS__);
+		$this->logger = new \SabreZarafa\Logger(__CLASS__);
 		$this->logger->trace(__CLASS__ . " constructor done.");
 	}
 

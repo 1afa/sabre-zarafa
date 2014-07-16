@@ -26,7 +26,7 @@
 
 namespace SabreZarafa;
 
-class Zarafa_Logger
+class Logger
 {
 	private $logger = false;
 

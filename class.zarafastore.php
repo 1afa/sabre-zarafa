@@ -52,7 +52,7 @@ class Zarafa_Store
 		$this->handle = $handle;
 		$this->storetype = $storetype;
 
-		$this->logger = new Zarafa_Logger(__CLASS__);
+		$this->logger = new Logger(__CLASS__);
 
 		$this->root = mapi_msgstore_openentry($this->handle, NULL);
 		$this->root_props = mapi_getprops($this->root, array(PR_IPM_CONTACT_ENTRYID));

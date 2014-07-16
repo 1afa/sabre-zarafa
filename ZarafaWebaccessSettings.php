@@ -38,7 +38,7 @@ class Zarafa_Webaccess_Settings
 	public function
 	__construct ($private_store_handle)
 	{
-		$this->logger = new Zarafa_Logger(__CLASS__);
+		$this->logger = new Logger(__CLASS__);
 
 		// Need a handle to the private store in order to do our lookups:
 		$this->handle = $private_store_handle;

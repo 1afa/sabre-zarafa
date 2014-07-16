@@ -290,8 +290,8 @@ has not been fully tested.
 
 Starting with release 0.10 [log4php](http://logging.apache.org/log4php/) is
 used for debugging. Release 0.19 made the installation of log4php optional:
-logging is done by the Zarafa_Logger class, and if it can't find log4php, it
-will silently discard all log messages.
+logging is done by the SabreZarafa\Logger class, and if it can't find log4php,
+it will silently discard all log messages.
 
 To configure logging you need to edit `log4php.xml`. Default
 setup is to log WARN and FATAL messages to `debug.txt` with a maximum size of
