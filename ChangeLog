@@ -1,3 +1,4 @@
+- Place "our" classes in the SabreZarafa namespace;
 - Move restrict functions to separate class;
 - SabreDAV 2.0: fix runtime error by removing obsolete constant;
 - SabreDAV 2.0: update Proppatch handler to the SabreDAV way of doing things;

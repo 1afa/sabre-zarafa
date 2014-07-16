@@ -24,7 +24,9 @@
  * Project page: <http://github.com/bokxing-it/sabre-zarafa/>
  * 
  */
-	
+
+namespace SabreZarafa\VCard;
+
 interface IVCardProducer
 {
 	public function getDefaultCharset();

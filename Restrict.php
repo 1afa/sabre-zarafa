@@ -24,6 +24,8 @@
  *
  */
 
+namespace SabreZarafa;
+
 class Restrict
 {
 	public static function

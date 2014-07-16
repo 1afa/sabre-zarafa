@@ -24,6 +24,8 @@
  * 
  */
 
+	namespace SabreZarafa;
+
  	// Load configuration file
 	define('BASE_PATH', __DIR__ . '/');
 
@@ -73,30 +75,30 @@
 
 	// Setting up the directory tree // 
 	$nodes = array(
-		new Sabre\DAVACL\PrincipalCollection($principalBackend),
-		new Sabre\CardDAV\AddressBookRoot($principalBackend, $carddavBackend)
+		new \Sabre\DAVACL\PrincipalCollection($principalBackend),
+		new \Sabre\CardDAV\AddressBookRoot($principalBackend, $carddavBackend)
 	);
 
 	// The object tree needs in turn to be passed to the server class
 	$logger->trace("Starting server");
-	$server = new Sabre\DAV\Server($nodes);
+	$server = new \Sabre\DAV\Server($nodes);
 	$server->setBaseUri(CARDDAV_ROOT_URI);
 
 	// Required plugins 
 	$logger->trace("Adding plugins");
-	$server->addPlugin(new Sabre\DAV\Auth\Plugin($authBackend, SABRE_AUTH_REALM));
-	$server->addPlugin(new Sabre\CardDAV\Plugin());
-	$server->addPlugin(new Sabre\DAVACL\Plugin());
+	$server->addPlugin(new \Sabre\DAV\Auth\Plugin($authBackend, SABRE_AUTH_REALM));
+	$server->addPlugin(new \Sabre\CardDAV\Plugin());
+	$server->addPlugin(new \Sabre\DAVACL\Plugin());
 
 	// Optional plugins
 	if (SABRE_DAV_BROWSER_PLUGIN) {
 		// Do not allow POST
-		$server->addPlugin(new Sabre\DAV\Browser\Plugin(false));
+		$server->addPlugin(new \Sabre\DAV\Browser\Plugin(false));
 	}
 	
 	// Start server
 	$logger->trace("Server exec");
-	$logger->info("SabreDAV version " . Sabre\DAV\Version::VERSION);
+	$logger->info("SabreDAV version " . \Sabre\DAV\Version::VERSION);
 	$logger->info("Producer: " . VCARD_PRODUCT_ID );
 	$logger->info("Revision: " . (SABRE_ZARAFA_REV + 1) . ' - ' . SABRE_ZARAFA_DATE);
 	$server->exec();

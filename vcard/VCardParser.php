@@ -24,6 +24,8 @@
  * Project page: <http://github.com/bokxing-it/sabre-zarafa/>
  * 
  */
+
+namespace SabreZarafa\VCard;
  
 require_once "vcard/IVCardParser.php";
 require_once "config.inc.php";
@@ -36,7 +38,9 @@ require_once("mapi/mapicode.php");
 require_once("mapi/mapidefs.php");
 require_once("mapi/mapitags.php");
 require_once("mapi/mapiguid.php");
-	
+
+use \Sabre\VObject;
+
 class VCardParser implements IVCardParser
 {
 	protected $bridge;
@@ -48,7 +52,7 @@ class VCardParser implements IVCardParser
 	function __construct ($bridge)
 	{
 		$this->bridge = $bridge;
-		$this->logger = new Zarafa_Logger(__CLASS__);
+		$this->logger = new \SabreZarafa\Zarafa_Logger(__CLASS__);
 		$this->logger->trace(__CLASS__ . " constructor done.");
 	}
 
@@ -60,7 +64,7 @@ class VCardParser implements IVCardParser
 	{
 		$this->logger->trace(__FUNCTION__);
 
-		$this->vcard = Sabre\VObject\Reader::read($vcardData);
+		$this->vcard = VObject\Reader::read($vcardData);
 
 		if ($this->vcard === false) {
 			$this->logger->fatal('failed to create vCard object');

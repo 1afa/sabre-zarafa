@@ -24,6 +24,8 @@
  *
  */
 
+namespace SabreZarafa;
+
 class Zarafa_Logger
 {
 	private $logger = false;
@@ -31,11 +33,11 @@ class Zarafa_Logger
 	public function __construct ($classname)
 	{
 		// Check whether log4php was loaded:
-		if (!class_exists('Logger')) {
+		if (!class_exists('\Logger')) {
 			return;
 		}
-		Logger::configure('log4php.xml');
-		$this->logger = Logger::getLogger($classname);
+		\Logger::configure('log4php.xml');
+		$this->logger = \Logger::getLogger($classname);
 	}
 
 	public function fatal ($msg) {

@@ -25,7 +25,12 @@
  *
  */
 
+namespace SabreZarafa;
+
 require_once 'ZarafaLogger.php';
+
+use \Sabre\DAV;
+use \Sabre\CardDAV;
 
 class Zarafa_Folder
 {
@@ -69,8 +74,8 @@ class Zarafa_Folder
 			'description' => (isset($props[PR_COMMENT]) ? $props[PR_COMMENT] : ''),
 			'principaluri' => $principal_uri,
 			'displayname' => $this->get_name(),
-			'{' . Sabre\CardDAV\Plugin::NS_CARDDAV . '}addressbook-description' => (isset($props[PR_COMMENT]) ? $props[PR_COMMENT] : ''),
-			'{' . Sabre\CardDAV\Plugin::NS_CARDDAV . '}supported-address-data' => new Sabre\CardDAV\Property\SupportedAddressData()
+			'{' . CardDAV\Plugin::NS_CARDDAV . '}addressbook-description' => (isset($props[PR_COMMENT]) ? $props[PR_COMMENT] : ''),
+			'{' . CardDAV\Plugin::NS_CARDDAV . '}supported-address-data' => new CardDAV\Property\SupportedAddressData()
 		);
 		if (($ctag = $this->get_ctag()) !== false) {
 			$ret['ctag'] = $ctag;
@@ -162,7 +167,7 @@ class Zarafa_Folder
 	}
 
 	public function
-	update_folder (\Sabre\DAV\PropPatch $propPatch)
+	update_folder (DAV\PropPatch $propPatch)
 	{
 		// Debug information
 		$dump = print_r($propPatch->getMutations(), true);
@@ -171,7 +176,7 @@ class Zarafa_Folder
 		// These are the properties that our handler can update:
 		$handled = array
 			( '{DAV:}displayname'
-			, '{' . Sabre\CardDAV\Plugin::NS_CARDDAV . '}addressbook-description'
+			, '{' . CardDAV\Plugin::NS_CARDDAV . '}addressbook-description'
 			) ;
 
 		// Register the handler:
@@ -188,7 +193,7 @@ class Zarafa_Folder
 					$props[PR_DISPLAY_NAME] = $value;
 				}
 			}
-			elseif ($key === '{' . Sabre\CardDAV\Plugin::NS_CARDDAV . '}addressbook-description') {
+			elseif ($key === '{' . CardDAV\Plugin::NS_CARDDAV . '}addressbook-description') {
 				$props[PR_COMMENT] = $value;
 			}
 		}

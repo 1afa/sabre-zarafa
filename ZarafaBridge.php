@@ -25,6 +25,8 @@
  * 
  */
 
+namespace SabreZarafa;
+
 	// Load config and common
 	include (BASE_PATH . "config.inc.php");
 	include (BASE_PATH . "version.inc.php");
@@ -47,6 +49,8 @@
 	require_once 'Restrict.php';
 	require_once 'class.zarafastore.php';
 	require_once 'ZarafaWebaccessSettings.php';
+
+use SabreZarafa\VCard;
 
 /**
  * This is main class for Sabre backends
@@ -407,7 +411,7 @@ class Zarafa_Bridge {
 		$this->logger->trace(__FUNCTION__);
 		$this->logger->debug("VCARD:\n" . $vcardData);
 
-		$parser = new VCardParser($this);
+		$parser = new VCard\VCardParser($this);
 
 		if (($properties = $parser->vObjectToProperties($vcardData)) === false) {
 			return false;
@@ -468,7 +472,7 @@ class Zarafa_Bridge {
 				$this->logger->trace("Generation of vcards forced by config");
 			}
 		}
-		$producer = new VCardProducer($this, VCARD_VERSION);
+		$producer = new VCard\VCardProducer($this, VCARD_VERSION);
 
 		// Produce VCard object
 		$this->logger->trace("Producing vcard from contact properties");

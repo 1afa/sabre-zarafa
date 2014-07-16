@@ -25,7 +25,9 @@
  * 
  */
 
-class Zarafa_Auth_Basic_Backend extends Sabre\DAV\Auth\Backend\AbstractBasic
+namespace SabreZarafa;
+
+class Zarafa_Auth_Basic_Backend extends \Sabre\DAV\Auth\Backend\AbstractBasic
 {
 	protected $bridge;
 

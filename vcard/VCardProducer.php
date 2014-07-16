@@ -25,6 +25,8 @@
  * 
  */
 
+namespace SabreZarafa\VCard;
+
 require_once 'ZarafaLogger.php';
 
 require_once "vcard/IVCardProducer.php";
@@ -36,7 +38,9 @@ require_once("mapi/mapicode.php");
 require_once("mapi/mapidefs.php");
 require_once("mapi/mapitags.php");
 require_once("mapi/mapiguid.php");
-	
+
+use \Sabre\VObject;
+
 class VCardProducer implements IVCardProducer
 {
 	public $defaultCharset;
@@ -51,9 +55,9 @@ class VCardProducer implements IVCardProducer
 		$this->bridge = $bridge;
 		$this->version = $version;
 		$this->defaultCharset = 'utf-8';
-		$this->logger = new Zarafa_Logger(__CLASS__);
+		$this->logger = new \SabreZarafa\Zarafa_Logger(__CLASS__);
 
-		$this->vcard = new Sabre\VObject\Component\VCard();
+		$this->vcard = new VObject\Component\VCard();
 	}
 
 	/**

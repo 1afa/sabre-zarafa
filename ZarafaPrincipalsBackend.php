@@ -25,10 +25,12 @@
  * 
  */
 
+namespace SabreZarafa;
+
 require_once 'common.inc.php';
 require_once 'ZarafaLogger.php';
 
-class Zarafa_Principals_Backend implements Sabre\DAVACL\PrincipalBackend\BackendInterface
+class Zarafa_Principals_Backend implements \Sabre\DAVACL\PrincipalBackend\BackendInterface
 {
 	protected $bridge;
 	protected $principals;
@@ -206,7 +208,7 @@ class Zarafa_Principals_Backend implements Sabre\DAVACL\PrincipalBackend\Backend
 		$this->logger->trace(__FUNCTION__."($principal)");
 
 		if (count($this->getPrincipalByPath($principal)) == 0) {
-			throw new Sabre\DAV\Exception('Principal not found');
+			throw new \Sabre\DAV\Exception('Principal not found');
 		}
 		return array();
 	}
@@ -223,7 +225,7 @@ class Zarafa_Principals_Backend implements Sabre\DAVACL\PrincipalBackend\Backend
 		$this->logger->trace(__FUNCTION__."($principal)");
 
 		if (count($this->getPrincipalByPath($principal)) == 0) {
-			throw new Sabre\DAV\Exception('Principal not found');
+			throw new \Sabre\DAV\Exception('Principal not found');
 		}
 		return array();
 	}
