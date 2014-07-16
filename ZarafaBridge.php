@@ -236,7 +236,7 @@ class Bridge {
 		}
 		// Need the Webaccess settings to find the shared address books:
 		if ($this->webaccess_settings === false) {
-			$this->webaccess_settings = new Zarafa_Webaccess_Settings($private_store->handle);
+			$this->webaccess_settings = new WebaccessSettings($private_store->handle);
 		}
 		if (!is_array($other_users = $this->webaccess_settings->by_path('zarafa/v1/contexts/hierarchy/shared_stores'))) {
 			return true;
