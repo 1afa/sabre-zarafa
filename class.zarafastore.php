@@ -70,13 +70,13 @@ class Zarafa_Store
 	private function
 	get_folders ()
 	{
-		$folders = $this->subtree_walk(NULL, restrict_and(restrict_propstring(PR_CONTAINER_CLASS, 'IPF.Contact'), restrict_nonhidden()));
+		$folders = $this->subtree_walk(NULL, Restrict::rAnd(Restrict::propstring(PR_CONTAINER_CLASS, 'IPF.Contact'), Restrict::nonhidden()));
 
 		$deleted = (isset($this->props[PR_IPM_WASTEBASKET_ENTRYID]))
-			? $this->subtree_walk($this->props[PR_IPM_WASTEBASKET_ENTRYID], restrict_propstring(PR_CONTAINER_CLASS, 'IPF.Contact'))
+			? $this->subtree_walk($this->props[PR_IPM_WASTEBASKET_ENTRYID], Restrict::propstring(PR_CONTAINER_CLASS, 'IPF.Contact'))
 			: array();
 
-		$hidden = $this->subtree_walk(NULL, restrict_and(restrict_propstring(PR_CONTAINER_CLASS, 'IPF.Contact'), restrict_hidden()));
+		$hidden = $this->subtree_walk(NULL, Restrict::rAnd(Restrict::propstring(PR_CONTAINER_CLASS, 'IPF.Contact'), Restrict::hidden()));
 
 		$deleted = array_merge($deleted, $hidden);
 

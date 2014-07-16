@@ -44,7 +44,7 @@
 	include_once "vcard/VCardProducer.php";
 
 	require_once 'ZarafaLogger.php';
-	require_once 'function.restrict.php';
+	require_once 'Restrict.php';
 	require_once 'class.zarafastore.php';
 	require_once 'ZarafaWebaccessSettings.php';
 
@@ -184,7 +184,7 @@ class Zarafa_Bridge {
 	{
 		$this->logger->trace(__FUNCTION__);
 
-		if (tbl_restrict_propval($this->stores_table, PR_MDB_PROVIDER, ZARAFA_SERVICE_GUID, RELOP_EQ) === false) {
+		if (Restrict::tbl_restrict_propval($this->stores_table, PR_MDB_PROVIDER, ZARAFA_SERVICE_GUID, RELOP_EQ) === false) {
 			return false;
 		}
 		if (($stores = mapi_table_queryallrows($this->stores_table, array(PR_ENTRYID))) === false) {
@@ -205,7 +205,7 @@ class Zarafa_Bridge {
 	{
 		$this->logger->trace(__FUNCTION__);
 
-		if (tbl_restrict_propval($this->stores_table, PR_MDB_PROVIDER, ZARAFA_STORE_PUBLIC_GUID, RELOP_EQ) === false) {
+		if (Restrict::tbl_restrict_propval($this->stores_table, PR_MDB_PROVIDER, ZARAFA_STORE_PUBLIC_GUID, RELOP_EQ) === false) {
 			return false;
 		}
 		if (($stores = mapi_table_queryallrows($this->stores_table, array(PR_ENTRYID))) === false) {
@@ -295,12 +295,12 @@ class Zarafa_Bridge {
 		}
 		// Get all contact folders from "Deleted Items" folder:
 		$trash_hier = mapi_folder_gethierarchytable($trash_folder, CONVENIENT_DEPTH);
-		mapi_table_restrict($trash_hier, restrict_propstring(PR_CONTAINER_CLASS, 'IPF.Contact'));
+		mapi_table_restrict($trash_hier, Restrict::propstring(PR_CONTAINER_CLASS, 'IPF.Contact'));
 
 		$restr = Array();
 		if ($deleted_folders = mapi_table_queryallrows($trash_hier, array(PR_ENTRYID))) {
 			foreach ($deleted_folders as $folder) {
-				$restr[] = restrict_propval(PR_ENTRYID, $folder[PR_ENTRYID], RELOP_NE);
+				$restr[] = Restrict::propval(PR_ENTRYID, $folder[PR_ENTRYID], RELOP_NE);
 			}
 		}
 		return $restr;
@@ -312,17 +312,17 @@ class Zarafa_Bridge {
 		$this->logger->trace(__FUNCTION__);
 
 		// Restriction for only IPF.Contact folder items:
-		$restr_contacts = restrict_propstring(PR_CONTAINER_CLASS, 'IPF.Contact');
+		$restr_contacts = Restrict::propstring(PR_CONTAINER_CLASS, 'IPF.Contact');
 
 		// Restriction for only nondeleted items:
 		$restr_nondeleted = $this->get_deletion_restriction();
 
 		// Combine these restrictions into one big compound restriction:
 		if (count($restr_nondeleted) > 0) {
-			mapi_table_restrict($hierarchy_table, restrict_and(restrict_and($restr_nondeleted, restrict_nonhidden()), $restr_contacts));
+			mapi_table_restrict($hierarchy_table, Restrict::rAnd(Restrict::rAnd($restr_nondeleted, Restrict::nonhidden()), $restr_contacts));
 		}
 		else {
-			mapi_table_restrict($hierarchy_table, restrict_and(restrict_nonhidden(), $restr_contacts));
+			mapi_table_restrict($hierarchy_table, Restrict::rAnd(Restrict::nonhidden(), $restr_contacts));
 		}
 	}
 

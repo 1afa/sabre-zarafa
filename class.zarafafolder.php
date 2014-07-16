@@ -450,8 +450,8 @@ class Zarafa_Folder
 		}
 		// If a specific ID was requested, enforce it with a table restriction:
 		$restrict = ($specific_id === false)
-			? restrict_propstring(PR_MESSAGE_CLASS, 'IPM.Contact')
-			: restrict_and(restrict_propstring(PR_MESSAGE_CLASS, 'IPM.Contact'), restrict_propval(PR_ENTRYID, $specific_id, RELOP_EQ));
+			? Restrict::propstring(PR_MESSAGE_CLASS, 'IPM.Contact')
+			: Restrict::rAnd(Restrict::propstring(PR_MESSAGE_CLASS, 'IPM.Contact'), Restrict::propval(PR_ENTRYID, $specific_id, RELOP_EQ));
 
 		if (mapi_table_restrict($table, $restrict) === false) {
 			return false;
@@ -460,7 +460,7 @@ class Zarafa_Folder
 		if (($ret = mapi_table_queryallrows($table, array(PR_ENTRYID, PR_CARDDAV_URI, PR_LAST_MODIFICATION_TIME))) !== false && $specific_id === false) {
 			$this->contacts = $ret;
 		}
-		tbl_restrict_none($table);
+		Restrict::tbl_restrict_none($table);
 		return $ret;
 	}
 
@@ -477,9 +477,9 @@ class Zarafa_Folder
 			if (($table = $this->get_contacts_table()) === false) {
 				return false;
 			}
-			mapi_table_restrict($table, restrict_propstring(PR_MESSAGE_CLASS, 'IPM.Contact'));
+			mapi_table_restrict($table, Restrict::propstring(PR_MESSAGE_CLASS, 'IPM.Contact'));
 			$contacts = mapi_table_queryallrows($table, array(PR_ENTRYID, PR_CARDDAV_URI));
-			tbl_restrict_none($table);
+			Restrict::tbl_restrict_none($table);
 			if ($contacts === false) {
 				return false;
 			}
