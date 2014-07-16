@@ -32,7 +32,7 @@ require_once 'class.zarafafolder.php';
 
 use \Sabre\CardDAV;
 
-class Zarafa_Store
+class Store
 {
 	private $bridge;
 	public $entryid;
