@@ -41,7 +41,7 @@ require_once("mapi/mapiguid.php");
 
 use \Sabre\VObject;
 
-class VCardProducer implements IVCardProducer
+class Producer implements IProducer
 {
 	public $defaultCharset;
 	protected $bridge;

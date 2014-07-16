@@ -411,7 +411,7 @@ class Bridge {
 		$this->logger->trace(__FUNCTION__);
 		$this->logger->debug("VCARD:\n" . $vcardData);
 
-		$parser = new VCard\VCardParser($this);
+		$parser = new VCard\Parser($this);
 
 		if (($properties = $parser->vObjectToProperties($vcardData)) === false) {
 			return false;
@@ -472,7 +472,7 @@ class Bridge {
 				$this->logger->trace("Generation of vcards forced by config");
 			}
 		}
-		$producer = new VCard\VCardProducer($this, VCARD_VERSION);
+		$producer = new VCard\Producer($this, VCARD_VERSION);
 
 		// Produce VCard object
 		$this->logger->trace("Producing vcard from contact properties");

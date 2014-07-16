@@ -1,3 +1,4 @@
+- VCardParser/VCardProducer: rename to Parser/Producer;
 - Rename Zarafa_Store class to Store;
 - Rename Zarafa_Folder class to Folder;
 - Rename Zarafa_Webaccess_Settings class to just WebaccessSettings;

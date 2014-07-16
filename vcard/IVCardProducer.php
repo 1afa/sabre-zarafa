@@ -27,7 +27,7 @@
 
 namespace SabreZarafa\VCard;
 
-interface IVCardProducer
+interface IProducer
 {
 	public function getDefaultCharset();
 

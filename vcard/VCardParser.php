@@ -41,7 +41,7 @@ require_once("mapi/mapiguid.php");
 
 use \Sabre\VObject;
 
-class VCardParser implements IVCardParser
+class Parser implements IParser
 {
 	protected $bridge;
 	protected $logger;

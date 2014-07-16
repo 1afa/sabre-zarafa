@@ -26,7 +26,7 @@
 
 namespace SabreZarafa\VCard;
 
-interface IVCardParser
+interface IParser
 {
 	/**
 	 * Convert vObject to an array of properties
