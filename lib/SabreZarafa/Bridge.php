@@ -2,27 +2,27 @@
 /*
  * Copyright 2011 - 2012 Guillaume Lapierre
  * Copyright 2012 - 2013 Bokxing IT, http://www.bokxing-it.nl
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3, 
+ * it under the terms of the GNU Affero General Public License, version 3,
  * as published by the Free Software Foundation.
- *  
- * "Zarafa" is a registered trademark of Zarafa B.V. 
+ *
+ * "Zarafa" is a registered trademark of Zarafa B.V.
  *
  * This software use SabreDAV, an open source software distributed
  * with New BSD License. Please see <http://code.google.com/p/sabredav/>
  * for more information about SabreDAV
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Affero General Public License for more details.
- *  
+ *
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  * Project page: <http://github.com/bokxing-it/sabre-zarafa/>
- * 
+ *
  */
 
 namespace SabreZarafa;
@@ -38,13 +38,13 @@ namespace SabreZarafa;
 	require_once("mapi/mapidefs.php");
 	require_once("mapi/mapitags.php");
 	require_once("mapi/mapiguid.php");
-	
+
 use SabreZarafa\VCard;
 
 /**
  * This is main class for Sabre backends
  */
- 
+
 class Bridge {
 
 	protected $session = false;
@@ -69,7 +69,7 @@ class Bridge {
 		// Stores a reference to Zarafa Auth Backend so as to get the session
 		$this->logger = new Logger(__CLASS__);
 	}
-	
+
 	/**
 	 * Connect to Zarafa and do some init
 	 * @param $user user login
@@ -111,7 +111,7 @@ class Bridge {
 	}
 
 	/**
-	 * Get MAPI session 
+	 * Get MAPI session
 	 * @return MAPI session
 	 */
 	public function getMapiSession() {
@@ -135,7 +135,7 @@ class Bridge {
 	}
 
 	/**
-	 * Get connected user login 
+	 * Get connected user login
 	 * @return connected user
 	 */
 	public function getConnectedUser() {
@@ -171,7 +171,7 @@ class Bridge {
 		$this->logger->debug("User email address: {$userinfo['emailaddress']}");
 		return $userinfo['emailaddress'];
 	}
-	
+
 	private function
 	stores_get_private ()
 	{
@@ -332,14 +332,14 @@ class Bridge {
 		}
 		return mapi_getprops($mapiObject);
 	}
-	
+
 	/**
 	 * Convert an entryId to a human readable string
 	 */
 	public function entryIdToStr($entryId) {
 		return bin2hex($entryId);
 	}
-	
+
 	/**
 	 * Convert a human readable string to an entryid
 	 */
@@ -347,8 +347,7 @@ class Bridge {
 		// Check if $str is a valid Zarafa entryID. If not returns 0
 		if (!preg_match('/^[0-9a-zA-Z]*$/', $str)) {
 			return 0;
-		} 
-		
+		}
 		return pack("H*", $str);
 	}
 
@@ -389,7 +388,7 @@ class Bridge {
 		return "$chunk1-$chunk2-$chunk3-$chunk4-$chunk5.vcf";
 	}
 
-	
+
 	/**
 	 * Convert vcard data to an array of MAPI properties
 	 * @param $vcardData
@@ -434,11 +433,11 @@ class Bridge {
 		$this->logger->trace("PR_CARDDAV_RAW_DATA_GENERATION_TIME: " . PR_CARDDAV_RAW_DATA_GENERATION_TIME);
 		$this->logger->trace("PR_CARDDAV_RAW_DATA_VERSION: " . PR_CARDDAV_RAW_DATA_VERSION);
 		$this->logger->debug("CACHE VERSION: " . CACHE_VERSION);
-		
+
 		// dump properties
 		$dump = print_r($contactProperties, true);
 		$this->logger->trace("Contact properties:\n$dump");
-		
+
 		if (SAVE_RAW_VCARD && isset($contactProperties[PR_CARDDAV_RAW_DATA])) {
 			// Check if raw vCard is up-to-date
 			$vcardGenerationTime = $contactProperties[PR_CARDDAV_RAW_DATA_GENERATION_TIME];
@@ -475,10 +474,10 @@ class Bridge {
 			return false;
 		}
 		$this->logger->debug("Produced VCard\n" . $vCardData);
-		
+
 		// Charset conversion?
 		$targetCharset = (VCARD_CHARSET == '') ? $producer->getDefaultCharset() : VCARD_CHARSET;
-		
+
 		if ($targetCharset != 'utf-8') {
 			$this->logger->trace("Converting from UTF-8 to $targetCharset");
 			$vCardData = iconv("UTF-8", $targetCharset, $vCardData);
@@ -494,13 +493,13 @@ class Bridge {
 		}
 		return $vCardData;
 	}
-	
+
 	/**
 	 * Init properties to read contact data
 	 */
 	protected function initProperties() {
 		$this->logger->trace(__FUNCTION__);
-		
+
 		$properties = array();
 		$properties["subject"] = PR_SUBJECT;
 		$properties["icon_index"] = PR_ICON_INDEX;
@@ -624,20 +623,20 @@ class Bridge {
 		$properties["anniversary_eventid"] = "PT_BINARY:PSETID_Address:0x804E";
 
 		$properties["notes"] = PR_BODY;
-		
+
 		// Has contact picture
 		$properties["has_picture"] = "PT_BOOLEAN:{00062004-0000-0000-C000-000000000046}:0x8015";
-		
+
 		// Custom properties needed for carddav functionnality
 		$properties["carddav_uri"] = PR_CARDDAV_URI;
 		$properties["carddav_rawdata"] = PR_CARDDAV_RAW_DATA;
 		$properties["carddav_generation_time"] = PR_CARDDAV_RAW_DATA_GENERATION_TIME;
 		$properties["contact_count"] = PR_CARDDAV_AB_CONTACT_COUNT;
 		$properties["carddav_version"] = PR_CARDDAV_RAW_DATA_VERSION;
-		
+
 		// Ask Mapi to load those properties and store mapping.
 		$this->extendedProperties = $this->stores_private[0]->get_propids_from_strings($properties);
-		
+
 		// Dump properties to debug
 		$dump = print_r ($this->extendedProperties, true);
 		$this->logger->trace("Properties init done:\n$dump");
@@ -659,14 +658,14 @@ class Bridge {
 
 	/**
 	 * Generate a GUID using random numbers (version 4)
-	 * GUID are 128 bits long numbers 
+	 * GUID are 128 bits long numbers
 	 * returns string version {8-4-4-4-12}
 	 * Use uuid_create if php5-uuid extension is available
 	 */
 	public function generateRandomGuid() {
-		
+
 		$this->logger->trace(__FUNCTION__);
-		
+
 		/*
 		if (function_exists('uuid_create')) {
 			// Not yet tested :)
@@ -677,13 +676,13 @@ class Bridge {
 			return trim($uuid);
 		}
 		*/
-		
+
 		$data1a = mt_rand(0, 0xFFFF);		// 32 bits - splited
 		$data1b = mt_rand(0, 0xFFFF);
 		$data2  = mt_rand(0, 0xFFFF);		// 16 bits
 		$data3  = mt_rand(0, 0xFFF);		// 12 bits (last 4 bits is version generator)
-		
-		// data4 is 64 bits long 
+
+		// data4 is 64 bits long
 		$data4a = mt_rand(0, 0xFFFF);
 		$data4b = mt_rand(0, 0xFFFF);
 		$data4c = mt_rand(0, 0xFFFF);
@@ -691,7 +690,7 @@ class Bridge {
 
 		// Force variant 4 + standard for this GUID
 		$data4a = ($data4a | 0x8000) & 0xBFFF;	// standard
-		
+
 		return sprintf("%04x%04x-%04x-%03x4-%04x-%04x%04x%04x", $data1a, $data1b, $data2, $data3, $data4a, $data4b, $data4c, $data4d);
 	}
 
