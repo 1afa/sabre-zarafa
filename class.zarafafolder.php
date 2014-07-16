@@ -32,7 +32,7 @@ require_once 'ZarafaLogger.php';
 use \Sabre\DAV;
 use \Sabre\CardDAV;
 
-class Zarafa_Folder
+class Folder
 {
 	private $name = false;
 	private $ctag = false;

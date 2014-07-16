@@ -1,3 +1,4 @@
+- Rename Zarafa_Folder class to Folder;
 - Rename Zarafa_Webaccess_Settings class to just WebaccessSettings;
 - Rename Zarafa_Bridge class to just Bridge;
 - Backends: remove Zarafa_ prefix from classname;

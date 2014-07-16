@@ -94,7 +94,7 @@ class Zarafa_Store
 			if (($folder = mapi_msgstore_openentry($this->handle, $entryid)) === false) {
 				continue;
 			}
-			$node = new Zarafa_Folder($this->bridge, $this, $folder, $entryid);
+			$node = new Folder($this->bridge, $this, $folder, $entryid);
 
 			if ($node->is_empty()) {
 				continue;
