@@ -1,3 +1,4 @@
+- Rename Zarafa_Bridge class to just Bridge;
 - Backends: remove Zarafa_ prefix from classname;
 - Place "our" classes in the SabreZarafa namespace;
 - Move restrict functions to separate class;

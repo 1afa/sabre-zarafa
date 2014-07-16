@@ -56,7 +56,7 @@ use SabreZarafa\VCard;
  * This is main class for Sabre backends
  */
  
-class Zarafa_Bridge {
+class Bridge {
 
 	protected $session = false;
 	protected $publicStore;

@@ -65,8 +65,8 @@
 	
 	// Zarafa bridge
 	$logger->trace("Init bridge");
-	$bridge = new Zarafa_Bridge();
-	
+	$bridge = new Bridge();
+
 	// Backends
 	$logger->trace("Loading backends");
 	$authBackend      = new AuthBasicBackend($bridge);

@@ -32,7 +32,7 @@ class AuthBasicBackend extends \Sabre\DAV\Auth\Backend\AbstractBasic
 	protected $bridge;
 
 	public function
-	__construct (Zarafa_Bridge $bridge)
+	__construct (Bridge $bridge)
 	{
 		$this->bridge = $bridge;
 	}
