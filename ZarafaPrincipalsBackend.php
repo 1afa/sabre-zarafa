@@ -30,7 +30,7 @@ namespace SabreZarafa;
 require_once 'common.inc.php';
 require_once 'ZarafaLogger.php';
 
-class Zarafa_Principals_Backend implements \Sabre\DAVACL\PrincipalBackend\BackendInterface
+class PrincipalsBackend implements \Sabre\DAVACL\PrincipalBackend\BackendInterface
 {
 	protected $bridge;
 	protected $principals;

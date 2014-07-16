@@ -69,9 +69,9 @@
 	
 	// Backends
 	$logger->trace("Loading backends");
-	$authBackend      = new Zarafa_Auth_Basic_Backend($bridge);
-	$principalBackend = new Zarafa_Principals_Backend($bridge);
-	$carddavBackend   = new Zarafa_CardDav_Backend($bridge); 
+	$authBackend      = new AuthBasicBackend($bridge);
+	$principalBackend = new PrincipalsBackend($bridge);
+	$carddavBackend   = new CardDavBackend($bridge);
 
 	// Setting up the directory tree // 
 	$nodes = array(
