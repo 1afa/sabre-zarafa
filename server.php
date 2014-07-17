@@ -31,9 +31,6 @@ error_reporting(E_ALL);
 ini_set('display_errors', false);
 ini_set("html_errors", false);
 
-// Make the application's basedir available to our classes:
-define('BASE_PATH', __DIR__ . '/');
-
 // Include the config and version number file:
 include __DIR__ . '/config.inc.php';
 include __DIR__ . '/version.inc.php';
