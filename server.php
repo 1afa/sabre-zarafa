@@ -32,8 +32,8 @@ ini_set('display_errors', false);
 ini_set("html_errors", false);
 
 // Include the config and version number file:
-include __DIR__ . '/config.inc.php';
 include __DIR__ . '/version.inc.php';
+include __DIR__ . '/config.inc.php';
 
 // Expand the include path with the standard location for the PHP-MAPI includes:
 set_include_path(get_include_path() . PATH_SEPARATOR . '/usr/share/php/');
@@ -50,7 +50,7 @@ include __DIR__ . '/vendor/autoload.php';
 
 // Logging and error handling
 $logger = new Logger('server');
-$logger->trace('Initializing Sabre-Zarafa' . SABRE_ZARAFA_REV);
+$logger->trace(sprintf('Initializing Sabre-Zarafa version %s, revision %s', SABRE_ZARAFA_VERSION, SABRE_ZARAFA_REV);
 
 // Disable MAPI exceptions;
 // we handle errors by checking a function's return status (at least for now):
