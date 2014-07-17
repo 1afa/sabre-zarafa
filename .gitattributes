@@ -1,5 +1,6 @@
 # Files that should not be part of the release packages:
 .gitattributes export-ignore
+.gitignore export-ignore
 
 # Files that should be subject to substitution upon export:
 version.inc.php export-subst
