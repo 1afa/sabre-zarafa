@@ -1,7 +1,7 @@
 # Sabre-Zarafa
 
 The aim of this project is to provide a full CardDav backend for
-[SabreDAV](http://code.google.com/p/sabredav) to connect with
+[SabreDAV](http://http://sabre.io/dav) to connect with
 [Zarafa](http://www.zarafa.com) groupware.
 
 Tarballs and zipfiles of the source can be downloaded
@@ -40,7 +40,7 @@ License, version 3](http://www.gnu.org/licenses/agpl-3.0.html).
 
 ### Introduction
 
-This installs as any [SabreDAV](http://code.google.com/p/sabredav) server.
+This installs as any [SabreDAV](http://sabre.io/dav) server.
 Unpack the source into a directory. This readme will assume that
 `/var/www/htdocs/sabre-zarafa` is the root directory of the install.
 
@@ -52,7 +52,7 @@ Installation instructions can be found on the
 
 After installation is done, run the following two commands:
 
-    # cd /var/ww/htdocs/sabre-zarafa
+    # cd /var/www/htdocs/sabre-zarafa
     # composer install
 
 ### Configure logging
@@ -128,6 +128,14 @@ Sabre-Zarafa, put something like the following configuration in `httpd.conf`:
         <Files /var/www/htdocs/sabre-zarafa/debug.txt>
             Deny from all
         </Files>
+
+        # Deny access to application directories:
+        <Directory /var/www/htdocs/sabre-zarafa/lib>
+            Deny from all
+        </Directory>
+        <Directory /var/www/htdocs/sabre-zarafa/vendor>
+            Deny from all
+        </Directory>
     </VirtualHost>
 
 Don't forget to edit `config.inc.php` and change `CARDDAV_ROOT_URI` to `/`.
@@ -162,6 +170,14 @@ case, use a variant of this configuration:
     <Files /var/www/htdocs/sabre-zarafa/debug.txt>
         Deny from all
     </Files>
+
+    # Deny access to application directories:
+    <Directory /var/www/htdocs/sabre-zarafa/lib>
+        Deny from all
+    </Directory>
+    <Directory /var/www/htdocs/sabre-zarafa/vendor>
+        Deny from all
+    </Directory>
 
 Edit `config.inc.php` and change `CARDDAV_ROOT_URI` to `/sabre-zarafa`.
 
@@ -225,10 +241,18 @@ should *always* enable SSL on the server, since sending plaintext passwords
 over an unencrypted connection is a security risk.
 
 Some detailed information about SabreDAV setup are available in [SabreDAV
-documentation](http://code.google.com/p/sabredav/wiki/Introduction). Do not
-hesitate to read it!
+documentation](http://sabre.io/dav). Do not hesitate to read it!
 
 ## Upgrading
+
+### 0.21 to 0.22
+
+Sabre-Zarafa is now installed completely by running
+[Composer][http://getcomposer.org] in the toplevel directory. Run `composer
+update` to update the dependencies (such as SabreDAV). If you visit the
+application in a browser, you'll notice a new design. Internally, the file and
+class structure of Sabre-Zarafa received a thorough reworking, but that should
+be invisible from the outside.
 
 ### 0.20 to 0.21
 
@@ -278,12 +302,6 @@ As of version 0.22, Sabre-Zarafa requires SabreDAV 2.0, which requires PHP 5.4.
 As of version 0.18, Sabre-Zarafa requires SabreDAV 1.8, which in turn requires
 PHP 5.3.
 
-As of 0.15 Sabre-Zarafa uses SabreDAV 1.6.1 which requires PHP 5.3. If you use
-older versions of PHP you will need to revert to official SabreDAV 1.5 (PHP
-5.2). If you use PHP 5.1 you should look for the specific PHP 5.1 branch of
-SabreDAV, download it and install it in the `lib` directory. This configuration
-has not been fully tested.
-
 ## Debugging
 
 ### Log4Php
@@ -306,12 +324,3 @@ Make sure the path to `debug.txt` in `log4php.xml` is absolute:
 Log4PHP allow you to log selected messages the way you want. For instance one
 could log connection failed messages to syslog or to a database. See [log4php
 website](http://logging.apache.org/log4php/) for details!
-
-### Releases 0.9 and before
-
-To enable debugging you need to create a debug.txt file in your sabre-zarafa
-installation directory. The web server needs write permissions for this file.
-This is __very verbose__ especially if you use contact pictures! so enable only
-if needed/asked for.
-
-No password is stored in this debug file.
