@@ -27,13 +27,6 @@
 
 namespace SabreZarafa;
 
-// PHP-MAPI
-require_once("mapi/mapi.util.php");
-require_once("mapi/mapicode.php");
-require_once("mapi/mapidefs.php");
-require_once("mapi/mapitags.php");
-require_once("mapi/mapiguid.php");
-
 class CardDavBackend extends \Sabre\CardDAV\Backend\AbstractBackend
 {
 	protected $bridge;

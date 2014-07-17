@@ -27,23 +27,7 @@
 
 namespace SabreZarafa;
 
-	// Load config and common
-	include (BASE_PATH . "config.inc.php");
-	include (BASE_PATH . "version.inc.php");
-	include (BASE_PATH . "common.inc.php");
-
-	// PHP-MAPI
-	require_once("mapi/mapi.util.php");
-	require_once("mapi/mapicode.php");
-	require_once("mapi/mapidefs.php");
-	require_once("mapi/mapitags.php");
-	require_once("mapi/mapiguid.php");
-
 use SabreZarafa\VCard;
-
-/**
- * This is main class for Sabre backends
- */
 
 class Bridge {
 
