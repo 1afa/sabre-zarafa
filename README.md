@@ -248,7 +248,7 @@ documentation](http://sabre.io/dav). Do not hesitate to read it!
 ### 0.21 to 0.22
 
 Sabre-Zarafa is now installed completely by running
-[Composer][http://getcomposer.org] in the toplevel directory. Run `composer
+[Composer](http://getcomposer.org) in the toplevel directory. Run `composer
 update` to update the dependencies (such as SabreDAV). If you visit the
 application in a browser, you'll notice a new design. Internally, the file and
 class structure of Sabre-Zarafa received a thorough reworking, but that should
