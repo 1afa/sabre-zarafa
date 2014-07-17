@@ -1,3 +1,4 @@
+* Thu Jul 17 2014 Alfred Klomp <alfred@1afa.com> 0.22
 - Move files into a PSR-0 dir structure, load with Composer;
 - VCardParser/VCardProducer: rename to Parser/Producer;
 - Rename Zarafa_Store class to Store;
