@@ -178,7 +178,7 @@ class Folder
 			) ;
 
 		// Register the handler:
-		$propPatch->handle($handled, $this->update_handler);
+		$propPatch->handle($handled, [ $this, 'update_handler' ]);
 	}
 
 	public function
