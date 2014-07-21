@@ -50,7 +50,7 @@ include __DIR__ . '/vendor/autoload.php';
 
 // Logging and error handling
 $logger = new Logger('server');
-$logger->trace(sprintf('Initializing Sabre-Zarafa version %s, revision %s', SABRE_ZARAFA_VERSION, SABRE_ZARAFA_REV);
+$logger->trace(sprintf('Initializing Sabre-Zarafa version %s, revision %s', SABRE_ZARAFA_VERSION, SABRE_ZARAFA_REV));
 
 // Disable MAPI exceptions;
 // we handle errors by checking a function's return status (at least for now):
