@@ -48,8 +48,11 @@ include 'mapi/mapiguid.php';
 // Include the Composer autoloader:
 include __DIR__ . '/vendor/autoload.php';
 
-// Logging and error handling
-$logger = new Logger('server');
+// Load global logging config:
+\Logger::configure(__DIR__ . '/log4php.xml');
+
+// Create logger for this server:
+$logger = \Logger::getLogger('server');
 $logger->trace(sprintf('Initializing Sabre-Zarafa version %s, revision %s', SABRE_ZARAFA_VERSION, SABRE_ZARAFA_REV));
 
 // Disable MAPI exceptions;

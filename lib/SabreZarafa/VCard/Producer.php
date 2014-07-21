@@ -43,7 +43,7 @@ class Producer implements IProducer
 		$this->bridge = $bridge;
 		$this->version = $version;
 		$this->defaultCharset = 'utf-8';
-		$this->logger = new \SabreZarafa\Logger(__CLASS__);
+		$this->logger = \Logger::getLogger(__CLASS__);
 
 		$this->vcard = new VObject\Component\VCard();
 	}

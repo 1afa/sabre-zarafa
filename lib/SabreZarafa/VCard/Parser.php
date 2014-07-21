@@ -40,7 +40,7 @@ class Parser implements IParser
 	function __construct ($bridge)
 	{
 		$this->bridge = $bridge;
-		$this->logger = new \SabreZarafa\Logger(__CLASS__);
+		$this->logger = \Logger::getLogger(__CLASS__);
 		$this->logger->trace(__CLASS__ . " constructor done.");
 	}
 
