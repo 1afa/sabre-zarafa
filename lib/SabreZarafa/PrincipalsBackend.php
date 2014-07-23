@@ -38,7 +38,7 @@ class PrincipalsBackend implements \Sabre\DAVACL\PrincipalBackend\BackendInterfa
 	{
 		// Stores a reference to Zarafa Auth Backend so as to get the session
 		$this->bridge = $zarafaBridge;
-		$this->logger = new Logger(__CLASS__);
+		$this->logger = \Logger::getLogger(__CLASS__);
 	}
 
 	/**

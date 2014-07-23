@@ -35,7 +35,7 @@ class WebaccessSettings
 	public function
 	__construct ($private_store_handle)
 	{
-		$this->logger = new Logger(__CLASS__);
+		$this->logger = \Logger::getLogger(__CLASS__);
 
 		// Need a handle to the private store in order to do our lookups:
 		$this->handle = $private_store_handle;

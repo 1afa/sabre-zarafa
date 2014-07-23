@@ -49,9 +49,9 @@ class Bridge {
 	/**
 	 * Constructor
 	 */
-	public function __construct() {
-		// Stores a reference to Zarafa Auth Backend so as to get the session
-		$this->logger = new Logger(__CLASS__);
+	public function __construct()
+	{
+		$this->logger = \Logger::getLogger(__CLASS__);
 	}
 
 	/**

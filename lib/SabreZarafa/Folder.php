@@ -53,7 +53,7 @@ class Folder
 		$this->store = $store;
 		$this->handle = $handle;
 		$this->entryid = $entryid;
-		$this->logger = new Logger(__CLASS__);
+		$this->logger = \Logger::getLogger(__CLASS__);
 
 		// This config setting was introduced in Sabre-Zarafa 0.19 and defaults to true;
 		// make sure it's defined for people who migrate from an old config:
@@ -178,7 +178,7 @@ class Folder
 			) ;
 
 		// Register the handler:
-		$propPatch->handle($handled, $this->update_handler);
+		$propPatch->handle($handled, [ $this, 'update_handler' ]);
 	}
 
 	public function
