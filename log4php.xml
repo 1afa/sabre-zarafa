@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration xmlns="http://logging.apache.org/log4php/">
-	
+
+	<!-- Log file configuration: -->
 	<appender name="fileAppender" class="LoggerAppenderRollingFile">
 		<layout class="LoggerLayoutPattern">
 			<param name="conversionPattern" value="%d{Y-m-d H:i:s} %-5p %c %x - %m%n" />
@@ -10,10 +11,16 @@
 		<param name="maxBackupIndex" value="3" />
 	</appender>
 
+	<!-- Null configuration: -->
 	<appender name="noDebug" class="LoggerAppenderNull" />
-	
+
 	<root>
-		<level value="WARN" />
+		<!-- Choose configuration here: -->
 		<appender_ref ref="fileAppender" />
+
+		<!-- Choose max log level here:
+		     From least to most granular:
+		     FATAL, ERROR, WARN, INFO, DEBUG, TRACE -->
+		<level value="WARN" />
 	</root>
 </configuration>

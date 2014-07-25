@@ -55,7 +55,7 @@ After installation is done, run the following two commands:
     # cd /var/www/htdocs/sabre-zarafa
     # composer install
 
-### Configure logging
+### Configure permissions and logging
 
 The webserver needs to write to the `data` directory, since it is used by
 SabreDAV to store DAV locks. (NB, the author is not convinced that CardDAV
@@ -66,6 +66,47 @@ writable. If your server runs as the user `apache`:
     # chmod 0750 /var/www/htdocs/sabre-zarafa/data
     # chown apache:apache /var/www/htdocs/sabre-zarafa/debug.txt
     # chmod 0640 /var/www/htdocs/sabre-zarafa/debug.txt
+
+Sabre-Zarafa logs using [log4php](http://logging.apache.org/log4php/).
+To configure logging you need to edit `log4php.xml`.
+Default setup is to log WARN, ERROR and FATAL messages to `debug.txt` with a maximum size of 5MB for logfile and 3 backup indexes (`debug.txt.1`).
+If you want to log to some other file, insert the proper filename here.
+(The default config file uses `debug.txt` in the application dir, which is probably not what you want.)
+To disable debugging simply set the root appender to `noDebug`.
+Optionally, choose a max logging level to observe.
+In order from less to more logging, you can specify `FATAL`, `ERROR`, `WARN`, `INFO`, `DEBUG`, and `TRACE`.
+
+Example config for logging all errors at or higher than INFO to `/var/log/sabrezarafa.log`:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration xmlns="http://logging.apache.org/log4php/">
+	<appender name="fileAppender" class="LoggerAppenderRollingFile">
+		<layout class="LoggerLayoutPattern">
+			<param name="conversionPattern" value="%d{Y-m-d H:i:s} %-5p %c %x - %m%n" />
+		</layout>
+		<param name="file" value="/var/log/sabrezarafa.log" />
+		<param name="maxFileSize" value="5MB" />
+		<param name="maxBackupIndex" value="3" />
+	</appender>
+	<root>
+		<appender_ref ref="fileAppender" />
+		<level value="INFO" />
+	</root>
+</configuration>
+```
+
+Example config for suppressing all logging by specifying the null appender:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration xmlns="http://logging.apache.org/log4php/">
+	<appender name="noDebug" class="loggerAppenderNull" />
+        <root>
+		<appender_ref ref="noDebug" />
+	</root>
+</configuration>
+```
 
 ### Sabre-Zarafa configuration
 
@@ -310,17 +351,3 @@ Starting with release 0.10 [log4php](http://logging.apache.org/log4php/) is
 used for debugging. Release 0.19 made the installation of log4php optional:
 logging is done by the SabreZarafa\Logger class, and if it can't find log4php,
 it will silently discard all log messages.
-
-To configure logging you need to edit `log4php.xml`. Default
-setup is to log WARN and FATAL messages to `debug.txt` with a maximum size of
-5MB for logfile and 3 backup indexes (`debug.txt.1`).
-
-To disable debugging simply set the root appender to `noDebug`.
-
-Make sure the path to `debug.txt` in `log4php.xml` is absolute:
-
-    <param name="file" value="/var/www/htdocs/sabre-zarafa/debug.txt" />
-
-Log4PHP allow you to log selected messages the way you want. For instance one
-could log connection failed messages to syslog or to a database. See [log4php
-website](http://logging.apache.org/log4php/) for details!
