@@ -27,4 +27,4 @@
 	
 	define ('SABRE_ZARAFA_REV', '$Format:%h$');
 	define ('SABRE_ZARAFA_DATE', '$Format:%ci$');
-	define ('SABRE_ZARAFA_VERSION', '0.22.1');
+	define ('SABRE_ZARAFA_VERSION', '0.22.2');

@@ -1,3 +1,4 @@
+* Fri Jul 25 2014 Alfred Klomp <alfred@1afa.com> 0.22.2
 - Add log configuration instructions to README.md;
 - Remove custom Logger class, use stock Log4php singleton everywhere instead;
 
