@@ -182,6 +182,9 @@ class Producer implements IProducer
 		// Convert 'webpage' to URL tags:
 		$this->websiteConvert($contactProperties);
 
+		// Convert emails to EMAIL tags:
+		$this->emailConvert($contactProperties);
+
 		if ($this->version >= 4) {
 			// Relation types 'assistant' and 'manager' are not RFC6350-compliant.
 			if (isset($contactProperties[$p['assistant']])
@@ -260,26 +263,7 @@ class Producer implements IProducer
 		$this->setVCardAddress('HOME',  $contactProperties, 'home');
 		$this->setVCardAddress('WORK',  $contactProperties, 'business');
 		$this->setVCardAddress('OTHER', $contactProperties, 'other');
-		
-		// emails
-		for ($i = 1; $i <= 3; $i++) {
-			if (!isset($contactProperties[$p["email_address_$i"]])) {
-				continue;
-			}
-			// Get display name:
-			$dn = isset($contactProperties[$p["email_address_display_name_$i"]])
-			          ? $contactProperties[$p["email_address_display_name_$i"]]
-			          : (isset($contactProperties[$p['display_name']])
-			                 ? $contactProperties[$p['display_name']]
-			                 : false);
 
-			if ($dn === false) {
-				$this->vcard->add('EMAIL', $contactProperties[$p["email_address_$i"]], array('pref' => "$i"));
-			}
-			else {
-				$this->vcard->add('EMAIL', $contactProperties[$p["email_address_$i"]], array('pref' => "$i", 'X-CN' => "\"$dn\""));
-			}
-		}
 		// Categories: $contactProperties[$p['categories']] can be array or string:
 		$this->setVCard('CATEGORIES', $contactProperties, $p['categories']);
 
@@ -386,6 +370,37 @@ class Producer implements IProducer
 		}
 		$this->logger->trace("Nonempty address - adding $propertyPrefix");
 		$this->vcard->add('ADR', $address, array('TYPE' => $addressType));
+	}
+
+	private function
+	emailConvert ($contactProperties)
+	{
+		// Shorthand notation:
+		$p = $this->extendedProperties;
+
+		for ($i = 1; $i <= 3; $i++) {
+			if (!isset($contactProperties[$p["email_address_$i"]])) {
+				continue;
+			}
+			// Get display name:
+			$dn = isset($contactProperties[$p["email_address_display_name_$i"]])
+			          ? $contactProperties[$p["email_address_display_name_$i"]]
+			          : (isset($contactProperties[$p['display_name']])
+			                 ? $contactProperties[$p['display_name']]
+			                 : false);
+
+			$props = array();
+			if ($dn !== false) {
+				$props['X-CN'] = sprintf('"%s"', $dn);
+			}
+			if ($this->version === 4) {
+				$props['pref'] = (string)$i;
+			}
+			else if ($i === 1) {
+				$props['TYPE'] = 'PREF';
+			}
+			$this->vcard->add('EMAIL', $contactProperties[$p["email_address_$i"]], $props);
+		}
 	}
 
 	private function
