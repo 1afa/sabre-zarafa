@@ -219,11 +219,7 @@ class Producer implements IProducer
 		// Telephone numbers
 		// webaccess can handle 19 telephone numbers...
 		$map = array
-			( 'home_telephone_number'      => array('type' => array('HOME','VOICE'), 'pref' => '1')
-			, 'home2_telephone_number'     => array('type' => array('HOME','VOICE'), 'pref' => '2')
-			, 'office_telephone_number'    => array('type' => array('WORK','VOICE'), 'pref' => '1')
-			, 'business2_telephone_number' => array('type' => array('WORK','VOICE'), 'pref' => '2')
-			, 'business_fax_number'        => array('type' => array('WORK','FAX'))
+			( 'business_fax_number'        => array('type' => array('WORK','FAX'))
 			, 'home_fax_number'            => array('type' => array('HOME','FAX'))
 			, 'primary_fax_number'         => array('type' => array('OTHER','FAX'))		// This is the mapping used by Zarafa Webmail.
 			, 'mobile_telephone_number'    => array('type' => 'CELL')
@@ -233,7 +229,6 @@ class Producer implements IProducer
 			, 'car_telephone_number'       => array('type' => 'CAR')
 			, 'assistant_telephone_number' => array('type' => 'SECR')
 			, 'other_telephone_number'     => array('type' => 'OTHER')
-			, 'primary_telephone_number'   => array('type' => 'VOICE', 'pref' => '1')
 			, 'ttytdd_telephone_number'    => array('type' => 'TEXTPHONE')
 
 			// Only Evolution has any support for the following:
@@ -242,6 +237,21 @@ class Producer implements IProducer
 			, 'callback_telephone_number'  => array('type' => 'X-EVOLUTION-CALLBACK')
 			);
 
+		// Handle preference data differently for VCard 3.0 and 4.0:
+		if ($this->version >= 4) {
+			$map['home_telephone_number']      = ['type' => ['HOME','VOICE'], 'pref' => '1'];
+			$map['home2_telephone_number']     = ['type' => ['HOME','VOICE'], 'pref' => '2'];
+			$map['office_telephone_number']    = ['type' => ['WORK','VOICE'], 'pref' => '1'];
+			$map['business2_telephone_number'] = ['type' => ['WORK','VOICE'], 'pref' => '2'];
+			$map['primary_telephone_number']   = ['type' => 'VOICE', 'pref' => '1'];
+		}
+		else {
+			$map['home_telephone_number']      = ['type' => ['HOME','VOICE','PREF']];
+			$map['home2_telephone_number']     = ['type' => ['HOME','VOICE']];
+			$map['office_telephone_number']    = ['type' => ['WORK','VOICE','PREF']];
+			$map['business2_telephone_number'] = ['type' => ['WORK','VOICE']];
+			$map['primary_telephone_number']   = ['type' => ['VOICE','PREF']];
+		}
 		// OSX Addressbook sends back VCards in this format:
 		// TEL;type=WORK;type=VOICE:00334xxxxx
 		foreach ($map as $prop_mapi => $prop_vcard) {
