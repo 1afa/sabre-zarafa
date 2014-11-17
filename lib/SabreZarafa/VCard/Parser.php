@@ -213,11 +213,11 @@ class Parser implements IParser
 		}
 		// Dates:
 		if (isset($this->vcard->bday)) {
-			$time = new DateTime($this->vcard->bday->getValue());
+			$time = new \DateTime($this->vcard->bday->getValue());
 			$this->mapi[$p['birthday']] = $time->format('U');
 		}
 		if (isset($this->vcard->anniversary)) {
-			$time = new DateTime($this->vcard->anniversary->getValue());
+			$time = new \DateTime($this->vcard->anniversary->getValue());
 			$this->mapi[$p['wedding_anniversary']] = $time->format('U');
 		}
 		// It's tempting to interpret REV: as a Unix timestamp, but don't; Evolution
