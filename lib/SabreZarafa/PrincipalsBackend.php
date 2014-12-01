@@ -34,11 +34,15 @@ class PrincipalsBackend implements \Sabre\DAVACL\PrincipalBackend\BackendInterfa
 	private $logger;
 
 	public function
-	__construct ($zarafaBridge)
+	__construct ($zarafaBridge, $logger = null)
 	{
 		// Stores a reference to Zarafa Auth Backend so as to get the session
 		$this->bridge = $zarafaBridge;
-		$this->logger = \Logger::getLogger(__CLASS__);
+
+		// For testing purposes, take optional logger class:
+		$this->logger = (is_null($logger))
+			? \Logger::getLogger(__CLASS__)
+			: $logger;
 	}
 
 	/**
@@ -186,11 +190,29 @@ class PrincipalsBackend implements \Sabre\DAVACL\PrincipalBackend\BackendInterfa
 	 * @return array
 	 */
 	public function
-	searchPrincipals ($prefixPath, array $searchProperties)
+	searchPrincipals ($prefixPath, array $searchProperties, $test = 'allof')
 	{
-		$this->logger->trace(__FUNCTION__."($prefixPath, (searchProperties))");
-		// Not supported
+		$this->logger->trace(__FUNCTION__."($prefixPath, (searchProperties), $test)");
+
+		// Not supported:
+		$this->logger->warn(__FUNCTION__.': not supported.');
 		return array();
+	}
+
+	/**
+	 * Finds a principal by its URI.
+	 *
+	 * @param string $uri
+	 * @return string
+	 */
+	public function
+	findByUri ($uri)
+	{
+		$this->logger->trace(__FUNCTION__."($uri)");
+
+		// Not supported:
+		$this->logger->warn(__FUNCTION__.': not supported.');
+		return null;
 	}
 
 	/**
