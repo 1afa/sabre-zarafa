@@ -37,11 +37,13 @@ class Parser implements IParser
 	protected $mapi = array();
 	protected $extendedProperties = false;
 
-	function __construct ($bridge)
+	public function
+	__construct ($bridge, $logger = null)
 	{
 		$this->bridge = $bridge;
-		$this->logger = \Logger::getLogger(__CLASS__);
-		$this->logger->trace(__CLASS__ . " constructor done.");
+		$this->logger = (is_null($logger))
+			? \Logger::getLogger(__CLASS__)
+			: $logger;
 	}
 
 	/**
