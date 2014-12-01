@@ -32,11 +32,15 @@ class CardDavBackend extends \Sabre\CardDAV\Backend\AbstractBackend
 	protected $bridge;
 	private $logger;
 
-	public function __construct ($zarafaBridge)
+	public function
+	__construct ($zarafaBridge, $logger = null)
 	{
 		// Stores a reference to Zarafa Auth Backend so as to get the session
 		$this->bridge = $zarafaBridge;
-		$this->logger = \Logger::getLogger(__CLASS__);
+
+		$this->logger = (is_null($logger))
+			? \Logger::getLogger(__CLASS__)
+			: $logger;
 	}
 
     /**
