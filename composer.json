@@ -1,7 +1,7 @@
 {
     "name": "bokxing-it/sabre-zarafa",
     "require": {
-        "sabre/dav"      : "~2.0",
+        "sabre/dav"      : "~2.1.0",
         "apache/log4php" : "~2.3.0"
     },
     "license": "agpl",
