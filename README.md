@@ -286,6 +286,11 @@ documentation](http://sabre.io/dav). Do not hesitate to read it!
 
 ## Upgrading
 
+### 0.22 to 0.23
+
+Sabre-Zarafa now depends on SabreDAV 2.1. Run `composer update` to update the
+dependencies.
+
 ### 0.21 to 0.22
 
 Sabre-Zarafa is now installed completely by running

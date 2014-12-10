@@ -1,3 +1,6 @@
+* Wed Dec 10 2014 Alfred Klomp <alfred@1afa.com> 0.23
+- Make compatible with SabreDAV 2.1
+
 * Mon Nov 17 2014 Alfred Klomp <alfred@1afa.com> 0.22.3
 - VCard\Parser: fix class declaration error (Issue #24)
 - VCard\Producer: distinguish between vCard 3 and 4 phone preference formats;
