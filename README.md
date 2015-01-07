@@ -5,10 +5,10 @@ The aim of this project is to provide a full CardDav backend for
 [Zarafa](http://www.zarafa.com) groupware.
 
 Tarballs and zipfiles of the source can be downloaded
-[here](https://github.com/bokxing-it/sabre-zarafa/tags). See below for
+[here](https://github.com/1afa/sabre-zarafa/tags). See below for
 installation instructions, you will also need to download and install SabreDAV
 and log4php. For an overview of the changes, see the
-[ChangeLog](https://github.com/bokxing-it/sabre-zarafa/blob/master/ChangeLog).
+[ChangeLog](https://github.com/1afa/sabre-zarafa/blob/master/ChangeLog).
 
 Sabre-Zarafa is a backend for the SabreDAV server. SabreDAV is a generic DAV
 server that processes CardDAV, CalDAV and WebDAV requests. It handles all the

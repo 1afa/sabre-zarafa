@@ -20,7 +20,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Project page: <http://github.com/bokxing-it/sabre-zarafa/>
+ * Project page: <http://github.com/1afa/sabre-zarafa/>
  * 
  */
 
