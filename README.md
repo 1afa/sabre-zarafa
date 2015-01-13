@@ -29,7 +29,7 @@ This particular repository is a continuation of the original Sabre-Zarafa
 project, which is hosted [at Google Code](http://code.google.com/p/sabre-zarafa),
 and which has not been maintained for a while. This repository is not really a
 fork, but is intended to be the new mainline tree. Work on Sabre-Zarafa is
-sponsored by [Bokxing IT](http://www.bokxing-it.nl).
+sponsored by [1A First Alternative](http://www.1a-first-alternative.com).
 
 ## License
 
