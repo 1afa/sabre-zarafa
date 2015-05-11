@@ -21,7 +21,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Project page: <http://github.com/1afa/sabre-zarafa/>
+ * Project page: <http://github.com/bokxing-it/sabre-zarafa/>
  * 
  */
 
@@ -206,7 +206,7 @@ class PrincipalsBackend implements \Sabre\DAVACL\PrincipalBackend\BackendInterfa
 	 * @return string
 	 */
 	public function
-	findByUri ($uri)
+	findByUri ($uri, $principalPrefix)
 	{
 		$this->logger->trace(__FUNCTION__."($uri)");
 
