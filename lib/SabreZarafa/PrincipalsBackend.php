@@ -206,7 +206,7 @@ class PrincipalsBackend implements \Sabre\DAVACL\PrincipalBackend\BackendInterfa
 	 * @return string
 	 */
 	public function
-	findByUri ($uri)
+	findByUri ($uri, $principalPrefix)
 	{
 		$this->logger->trace(__FUNCTION__."($uri)");
 
