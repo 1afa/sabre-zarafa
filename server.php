@@ -36,7 +36,7 @@ include __DIR__ . '/version.inc.php';
 include __DIR__ . '/config.inc.php';
 
 // Expand the include path with the standard location for the PHP-MAPI includes:
-set_include_path(get_include_path() . PATH_SEPARATOR . '/usr/share/php/');
+set_include_path(get_include_path() . PATH_SEPARATOR . '/usr/share/kopano/php/');
 
 // Include PHP-MAPI libraries:
 include 'mapi/mapi.util.php';
@@ -57,7 +57,8 @@ $logger->trace(sprintf('Initializing Sabre-Zarafa version %s, revision %s', SABR
 
 // Disable MAPI exceptions;
 // we handle errors by checking a function's return status (at least for now):
-mapi_enable_exceptions(false);
+// Makes MAPI.SO CRASH
+// mapi_enable_exceptions(false);
 
 function checkMapiError($msg) {
 	global $logger;
