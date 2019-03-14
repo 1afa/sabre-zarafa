@@ -1,3 +1,7 @@
+**Note:** Maintenance of Zarafa was ceased in 2017 in favor of Kopano. Therefor
+this repository is no longer maintained. There is a fork available which was
+created for Kopano specifically: [https://github.com/markVnl/kopano-sabre](https://github.com/markVnl/kopano-sabre).
+
 # Sabre-Zarafa
 
 The aim of this project is to provide a full CardDav backend for
